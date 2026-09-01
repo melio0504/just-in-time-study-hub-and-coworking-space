@@ -68,26 +68,3 @@ npm run start
 ```bash
 npm run lint
 ```
-
-## How to Create a Pull Request on GitHub
-
-1. Create a new branch for your changes.
-2. Make and test your updates locally.
-3. Commit your changes with a clear message.
-4. Push the branch to your GitHub repository.
-5. Open the repository on GitHub and click Compare & pull request.
-6. Add a title and description that explain what changed and why.
-7. Review the files, request reviewers if needed, and submit the pull request.
-8. Respond to feedback, make any follow-up commits, and push them to the same branch.
-9. Once approved, merge the pull request using the repository’s preferred merge option.
-
-### Suggested Git Naming Convention
-
-- Branch name: `feature/add-homepage-gallery`
-- Commit message: `feat: add homepage gallery section`
-- Other common patterns: `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`
-
-## Notes
-
-- Replace the image placeholders near the top of this file with final screenshots when they are available.
-- Update the project description and feature list as the app grows.
