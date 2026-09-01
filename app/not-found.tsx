@@ -10,7 +10,7 @@ const quickLinks = [
 
 export default function NotFound() {
   return (
-    <main className="relative overflow-hidden bg-gradient-to-b from-[#fffcf7] via-[#fff8ed] to-[#fff4e3]">
+    <main className="relative overflow-hidden bg-linear-to-b from-[#fffcf7] via-[#fff8ed] to-[#fff4e3]">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-24 right-0 h-80 w-80 rounded-full bg-[#fef3dc] blur-3xl opacity-80" />
         <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-[#fff1d6] blur-3xl opacity-70" />
@@ -67,8 +67,8 @@ export default function NotFound() {
           </div>
 
           <div className="relative mx-auto w-full max-w-md">
-            <div className="absolute inset-0 rounded-[2rem] bg-[#e5a930]/10 blur-2xl" />
-            <div className="relative overflow-hidden rounded-[2rem] border border-[#f3ede4] bg-white/85 p-8 shadow-2xl backdrop-blur-sm sm:p-10">
+            <div className="absolute inset-0 rounded-4xl bg-[#e5a930]/10 blur-2xl" />
+            <div className="relative overflow-hidden rounded-4xl border border-[#f3ede4] bg-white/85 p-8 shadow-2xl backdrop-blur-sm sm:p-10">
               <div className="flex items-center justify-between text-sm text-[#6b5e52]">
                 <span className="rounded-full bg-[#fef3dc] px-3 py-1 text-[#8a6510]">Lost page</span>
                 <span>Just in Time Study Hub</span>
