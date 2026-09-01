@@ -2,7 +2,6 @@
 
 _A modern study hub and coworking space experience built with Next.js._
 
-<!-- Add project screenshots or a hero image here when ready. -->
 ![Project preview](public/images/solo-learner.jpg)
 
 ## Overview
