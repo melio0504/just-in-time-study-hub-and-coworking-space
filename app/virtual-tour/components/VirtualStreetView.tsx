@@ -32,7 +32,6 @@ import {
   type PanoramaId,
   type TourDirection,
 } from '../lib/tourGraph';
-import { TourOverviewMap } from './TourOverviewMap';
 
 type Scene = {
   id: PanoramaId;
@@ -546,11 +545,6 @@ export function VirtualStreetView() {
             <h3 className="mt-1 text-xl font-medium text-white md:text-2xl">{activeScene.title}</h3>
             <p className="mt-1 text-sm text-white/75">{zoneLabel}</p>
           </div>
-          <TourOverviewMap
-            activeSeatId={activeSeatId}
-            date={tourDate}
-            onSelectSeat={navigateToSeat}
-          />
         </div>
 
         <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
