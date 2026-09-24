@@ -71,6 +71,7 @@ const DIRECTION_ARROWS: Record<TourDirection, typeof ArrowUp> = {
 
 const SPHERE_RADIUS = 480;
 const SEAT_LABEL_OFFSET = new Vector3(0, 28, 0);
+const CAMERA_FOV = 75;
 
 const PANORAMA_YAW_OFFSET: Record<PanoramaId, number> = {
   lounge: 0,
@@ -104,9 +105,13 @@ const SEAT_MARKERS: Record<PanoramaId, SeatMarker[]> = {
   ],
 };
 
-const toSpherePosition = (u: number, v: number, yawOffset = 0) => {
+const getVerticalCoverage = (aspectRatio: number) =>
+  Math.min(Math.PI, (Math.PI * 2) / aspectRatio);
+
+const toSpherePosition = (u: number, v: number, yawOffset = 0, aspectRatio = 2) => {
   const theta = (u - 0.5 + yawOffset) * Math.PI * 2;
-  const phi = v * Math.PI;
+  const verticalCoverage = getVerticalCoverage(aspectRatio);
+  const phi = (Math.PI - verticalCoverage) / 2 + v * verticalCoverage;
   const sinPhi = Math.sin(phi);
   return new Vector3(
     SPHERE_RADIUS * sinPhi * Math.sin(theta),
@@ -235,19 +240,35 @@ function getTodayString() {
 }
 
 function PanoramaSphere({
+  id,
   image,
   opacity,
   active,
+  onAspectRatio,
 }: {
+  id: PanoramaId;
   image: string;
   opacity: number;
   active: boolean;
+  onAspectRatio: (id: PanoramaId, aspectRatio: number) => void;
 }) {
   const texture = useLoader(TextureLoader, image);
+  const imageWidth = texture.image?.naturalWidth || texture.image?.width || 2;
+  const imageHeight = texture.image?.naturalHeight || texture.image?.height || 1;
+  const imageAspectRatio = imageWidth / imageHeight;
+
+  // Full equirectangular panoramas are 2:1 (360° × 180°). Wider images have
+  // less vertical coverage and belong on a spherical band, not a full sphere.
+  const verticalCoverage = getVerticalCoverage(imageAspectRatio);
+  const verticalStart = (Math.PI - verticalCoverage) / 2;
+
+  useEffect(() => {
+    onAspectRatio(id, imageAspectRatio);
+  }, [id, imageAspectRatio, onAspectRatio]);
 
   return (
     <mesh scale={[-1, 1, 1]}>
-      <sphereGeometry args={[500, 64, 64]} />
+      <sphereGeometry args={[500, 64, 64, 0, Math.PI * 2, verticalStart, verticalCoverage]} />
       <meshBasicMaterial
         map={texture}
         side={BackSide}
@@ -259,11 +280,35 @@ function PanoramaSphere({
   );
 }
 
-function PanoramaScene({ current, next, progress }: { current: Scene; next: Scene | null; progress: number }) {
+function PanoramaScene({
+  current,
+  next,
+  progress,
+  onAspectRatio,
+}: {
+  current: Scene;
+  next: Scene | null;
+  progress: number;
+  onAspectRatio: (id: PanoramaId, aspectRatio: number) => void;
+}) {
   return (
     <>
-      <PanoramaSphere image={current.image} opacity={next ? 1 - progress : 1} active={!next} />
-      {next ? <PanoramaSphere image={next.image} opacity={progress} active /> : null}
+      <PanoramaSphere
+        id={current.id}
+        image={current.image}
+        opacity={next ? 1 - progress : 1}
+        active={!next}
+        onAspectRatio={onAspectRatio}
+      />
+      {next ? (
+        <PanoramaSphere
+          id={next.id}
+          image={next.image}
+          opacity={progress}
+          active
+          onAspectRatio={onAspectRatio}
+        />
+      ) : null}
     </>
   );
 }
@@ -280,6 +325,9 @@ export function VirtualStreetView() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [zoomTarget, setZoomTarget] = useState<number | null>(null);
   const [selectedSeatId, setSelectedSeatId] = useState<string | null>(null);
+  const [panoramaAspectRatios, setPanoramaAspectRatios] = useState<
+    Partial<Record<PanoramaId, number>>
+  >({});
   const containerRef = useRef<HTMLDivElement | null>(null);
   const cameraRef = useRef<ThreePerspectiveCamera | null>(null);
   const minZoom = 0.75;
@@ -292,6 +340,12 @@ export function VirtualStreetView() {
   const availableDirections = useMemo(() => getAvailableDirections(activeSeatId), [activeSeatId]);
   const seatMarkers = useMemo(() => SEAT_MARKERS[activePanoramaId] ?? [], [activePanoramaId]);
   const yawOffset = PANORAMA_YAW_OFFSET[activePanoramaId] ?? 0;
+  const activePanoramaAspectRatio = panoramaAspectRatios[activePanoramaId] ?? 2;
+  const activeVerticalCoverage = getVerticalCoverage(activePanoramaAspectRatio);
+  const widestCameraVerticalFov = 2 * Math.atan(Math.tan((CAMERA_FOV * Math.PI) / 360) / minZoom);
+  const verticalLookRange = Math.max(0.04, (activeVerticalCoverage - widestCameraVerticalFov) / 2);
+  const minPolarAngle = Math.PI / 2 - verticalLookRange;
+  const maxPolarAngle = Math.PI / 2 + verticalLookRange;
   const selectedSeatAvailable = selectedSeatId ? !reservedSeats.has(selectedSeatId) : true;
   const selectedSeatZone = selectedSeatId ? getSeatZoneLabel(selectedSeatId) : '';
 
@@ -465,6 +519,12 @@ export function VirtualStreetView() {
     setSelectedSeatId(seatId);
   };
 
+  const handlePanoramaAspectRatio = useCallback((id: PanoramaId, aspectRatio: number) => {
+    setPanoramaAspectRatios((current) =>
+      current[id] === aspectRatio ? current : { ...current, [id]: aspectRatio },
+    );
+  }, []);
+
   return (
     <div
       ref={containerRef}
@@ -532,15 +592,28 @@ export function VirtualStreetView() {
           eventPrefix="client"
           className="touch-none"
         >
-          <PerspectiveCamera ref={cameraRef} makeDefault position={[0, 0, 0.1]} fov={75} zoom={zoomLevel} />
+          <PerspectiveCamera
+            ref={cameraRef}
+            makeDefault
+            position={[0, 0, 0.1]}
+            fov={CAMERA_FOV}
+            zoom={zoomLevel}
+          />
           <color attach="background" args={['#120f0b']} />
           <ambientLight intensity={1} />
-          <PanoramaScene current={activeScene} next={nextScene} progress={transitionProgress} />
+          <PanoramaScene
+            current={activeScene}
+            next={nextScene}
+            progress={transitionProgress}
+            onAspectRatio={handlePanoramaAspectRatio}
+          />
           {seatMarkers.map((marker) => (
             <SeatLabel
               key={marker.id}
               id={marker.id}
-              position={toSpherePosition(marker.u, marker.v, yawOffset).add(SEAT_LABEL_OFFSET)}
+              position={toSpherePosition(marker.u, marker.v, yawOffset, activePanoramaAspectRatio).add(
+                SEAT_LABEL_OFFSET,
+              )}
               isAvailable={!reservedSeats.has(marker.id)}
               onSelect={handleSeatLabelClick}
               scaleBoost={isFullscreen ? 1 : 1.12}
@@ -550,8 +623,8 @@ export function VirtualStreetView() {
             enableZoom={false}
             enablePan={false}
             rotateSpeed={isFullscreen ? -0.35 : -0.40}
-            minPolarAngle={Math.PI * 0.2}
-            maxPolarAngle={Math.PI * 0.8}
+            minPolarAngle={minPolarAngle}
+            maxPolarAngle={maxPolarAngle}
           />
         </Canvas>
 
