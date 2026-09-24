@@ -373,8 +373,8 @@ export default function KioskPage() {
           <Image
             src="/images/logo.png"
             alt="Just In Time Study Hub"
-            width={56}
-            height={56}
+            width={245}
+            height={118}
             className="w-12 h-auto shrink-0"
           />
           <div className="min-w-0">

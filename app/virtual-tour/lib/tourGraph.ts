@@ -1,17 +1,22 @@
 import { allSeatIds } from '@/app/admin/lib/seats';
 
-export type PanoramaId = 'lounge' | 'study';
+export type PanoramaId = 'overview' | 'pods' | 'lounge' | 'study';
 export type TourDirection = 'north' | 'south' | 'east' | 'west';
 
 export const PANORAMA_IMAGES: Record<PanoramaId, string> = {
-  lounge: '/virtual/1_virtual.png',
-  study: '/virtual/2_virtual.png',
+  overview: '/virtual/1_virtual.png',
+  pods: '/virtual/2_virtual.png',
+  lounge: '/virtual/3_virtual.png',
+  study: '/virtual/4_virtual.png',
 };
 
-const LOUNGE_PREFIXES = ['LA', 'LB', 'UA', 'UB', 'LW'];
-
 export function getPanoramaForSeat(seatId: string): PanoramaId {
-  return LOUNGE_PREFIXES.some((prefix) => seatId.startsWith(prefix)) ? 'lounge' : 'study';
+  const zone = seatId.slice(0, 2);
+
+  if (['LA', 'LB'].includes(zone)) return 'pods';
+  if (['UA', 'UB', 'LW'].includes(zone)) return 'overview';
+  if (['RA', 'RB'].includes(zone)) return 'lounge';
+  return 'study';
 }
 
 export function getSeatZoneLabel(seatId: string): string {

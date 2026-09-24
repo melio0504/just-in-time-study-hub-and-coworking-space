@@ -79,7 +79,7 @@ export default function AdminLogin() {
 
           {/* Admin Login Form */}
           <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-[#f3ede4]">
-            <Image src="/images/logo.png" alt="Just in Time" width={96} height={96} className="mb-4" style={{ width: '6rem', height: 'auto' }} />
+            <Image src="/images/logo.png" alt="Just in Time" width={245} height={118} className="mb-4" style={{ width: '6rem', height: 'auto' }} />
             <h2 className="text-3xl text-[#2d2520] mb-6">Admin Sign In</h2>
 
             <div className="bg-[#fef3dc] rounded-xl p-4 mb-6 border border-[#e5a930]/30">

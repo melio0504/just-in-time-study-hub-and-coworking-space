@@ -96,8 +96,8 @@ export function Header() {
               <Image
                 src="/images/logo.png"
                 alt="Study Hub Logo"
-                width={180}
-                height={72}
+                width={245}
+                height={118}
                 priority
                 className="h-9 w-auto max-w-35 shrink-0 object-contain sm:h-12 sm:max-w-45"
               />
@@ -166,8 +166,8 @@ export function Header() {
                 <Image
                   src="/images/logo.png"
                   alt="Study Hub Logo"
-                  width={140}
-                  height={56}
+                  width={245}
+                  height={118}
                   className="h-8 w-auto object-contain"
                 />
               </Link>

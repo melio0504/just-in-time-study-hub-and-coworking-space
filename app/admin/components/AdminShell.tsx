@@ -111,8 +111,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <Image
             src="/images/logo.png"
             alt="Just in Time"
-            width={128}
-            height={128}
+            width={245}
+            height={118}
             className="block mx-auto"
             style={{ width: '8rem', height: 'auto' }}
           />

@@ -11,7 +11,7 @@ import {
   Vector3,
   type PerspectiveCamera as ThreePerspectiveCamera,
 } from 'three';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Armchair, CheckCircle2, XCircle } from 'lucide-react';
+import { Armchair, CheckCircle2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { getReservedSeatsForDate } from '@/app/admin/lib/seats';
 import {
@@ -48,37 +48,45 @@ type SeatMarker = {
 
 const scenes: Scene[] = [
   {
+    id: 'overview',
+    title: 'Study Hub Overview',
+    subtitle: 'Reception and the heart of the study hub.',
+    image: PANORAMA_IMAGES.overview,
+  },
+  {
+    id: 'pods',
+    title: 'Private Study Pods',
+    subtitle: 'Individual desks for distraction-free work.',
+    image: PANORAMA_IMAGES.pods,
+  },
+  {
     id: 'lounge',
     title: 'Welcome Lounge',
-    subtitle: 'Flexible seating near the entrance and upper study rows.',
+    subtitle: 'Relaxed tiered seating for breaks and collaboration.',
     image: PANORAMA_IMAGES.lounge,
   },
   {
     id: 'study',
     title: 'Quiet Study Zone',
-    subtitle: 'Focused desks along the right wall and bottom row.',
+    subtitle: 'Shared tables and focused desks along the quiet wall.',
     image: PANORAMA_IMAGES.study,
   },
 ];
-
-const DIRECTION_ARROWS: Record<TourDirection, typeof ArrowUp> = {
-  north: ArrowUp,
-  south: ArrowDown,
-  east: ArrowRight,
-  west: ArrowLeft,
-};
 
 const SPHERE_RADIUS = 480;
 const SEAT_LABEL_OFFSET = new Vector3(0, 28, 0);
 const CAMERA_FOV = 75;
 
 const PANORAMA_YAW_OFFSET: Record<PanoramaId, number> = {
+  overview: 0,
+  pods: 0,
   lounge: 0,
   study: 0,
 };
 
 const SEAT_MARKERS: Record<PanoramaId, SeatMarker[]> = {
-  lounge: [
+  overview: [],
+  pods: [
     { id: 'LA01', u: 0.054, v: 0.4622 },
     { id: 'LA02', u: 0.1397, v: 0.4859 },
     { id: 'LA03', u: 0.2338, v: 0.4994 },
@@ -90,7 +98,7 @@ const SEAT_MARKERS: Record<PanoramaId, SeatMarker[]> = {
     { id: 'LB01', u: 0.085, v: 0.5378 },
     { id: 'LB02', u: 0.2231, v: 0.6426 },
   ],
-  study: [
+  lounge: [
     { id: 'RA01', u: 0.7614, v: 0.4532 },
     { id: 'RA02', u: 0.789, v: 0.4577 },
     { id: 'RA03', u: 0.4593, v: 0.4758 },
@@ -102,7 +110,78 @@ const SEAT_MARKERS: Record<PanoramaId, SeatMarker[]> = {
     { id: 'RC01', u: 0.9931, v: 0.5423 },
     { id: 'RC02', u: 0.9638, v: 0.5479 },
   ],
+  study: [],
 };
+
+const DIRECTION_PLACEMENT: Record<TourDirection, string> = {
+  north: 'left-1/2 top-0 -translate-x-1/2',
+  south: 'bottom-0 left-1/2 -translate-x-1/2 rotate-180',
+  east: 'bottom-3 right-4 rotate-90',
+  west: 'bottom-3 left-4 -rotate-90',
+};
+
+function StreetViewArrow({
+  direction,
+  destination,
+  disabled,
+  onClick,
+}: {
+  direction: TourDirection;
+  destination: string | null;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={destination ? `Go to ${destination}` : 'No seat this way'}
+      aria-label={
+        destination
+          ? `Move ${direction} to seat ${destination}`
+          : `No seat to the ${direction}`
+      }
+      className={`group absolute ${DIRECTION_PLACEMENT[direction]} flex h-18 w-18 items-center justify-center rounded-full transition duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80 ${
+        disabled
+          ? 'pointer-events-none opacity-0'
+          : 'pointer-events-auto cursor-pointer opacity-95 hover:scale-110 hover:opacity-100 active:scale-95'
+      }`}
+    >
+      <span className="absolute inset-2 rounded-full bg-black/10 blur-md transition group-hover:bg-black/20" />
+      <svg
+        viewBox="0 0 64 64"
+        className="relative h-16 w-16 overflow-visible drop-shadow-[0_3px_3px_rgba(0,0,0,0.8)]"
+        aria-hidden
+      >
+        <path
+          d="M10 38 32 19l22 19"
+          fill="none"
+          stroke="rgba(0,0,0,0.38)"
+          strokeWidth="13"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M10 38 32 19l22 19"
+          fill="none"
+          stroke="white"
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M17 48 32 35l15 13"
+          fill="none"
+          stroke="rgba(255,255,255,0.92)"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  );
+}
 
 const getVerticalCoverage = (aspectRatio: number) =>
   Math.min(Math.PI, (Math.PI * 2) / aspectRatio);
@@ -653,51 +732,30 @@ export function VirtualStreetView() {
           </div>
         </div>
 
-        {/* Street View–style navigation */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center px-4 pb-4">
+        {/* Google Maps–style ground navigation */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-2 z-20 flex justify-center px-4 md:bottom-4">
           <div
-            className="pointer-events-auto grid grid-cols-3 grid-rows-3 gap-1 rounded-full border border-white/20 bg-black/55 p-2 backdrop-blur-md shadow-xl"
+            className="relative h-36 w-72 [perspective:420px]"
             role="group"
-            aria-label="Move between seats"
+            aria-label="Move through the virtual tour"
           >
+            <div className="absolute inset-x-10 bottom-0 h-24 origin-bottom [transform:rotateX(58deg)] rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.24),transparent_68%)]" />
             {(['north', 'west', 'east', 'south'] as const).map((direction) => {
-              const Icon = DIRECTION_ARROWS[direction];
               const neighbor = getNeighbor(activeSeatId, direction);
               const isAvailable = availableDirections.includes(direction);
-              const gridClass =
-                direction === 'north'
-                  ? 'col-start-2 row-start-1'
-                  : direction === 'west'
-                    ? 'col-start-1 row-start-2'
-                    : direction === 'east'
-                      ? 'col-start-3 row-start-2'
-                      : 'col-start-2 row-start-3';
 
               return (
-                <button
+                <StreetViewArrow
                   key={direction}
-                  type="button"
-                  onClick={() => moveInDirection(direction)}
+                  direction={direction}
+                  destination={neighbor}
                   disabled={!isAvailable || Boolean(transitionTarget)}
-                  title={neighbor ? `Go to ${neighbor}` : 'No seat this way'}
-                  aria-label={
-                    neighbor ? `Move ${direction} to seat ${neighbor}` : `No seat to the ${direction}`
-                  }
-                  className={`${gridClass} flex h-11 w-11 items-center justify-center rounded-full transition ${
-                    isAvailable
-                      ? 'bg-white/90 text-[#241b0f] hover:bg-white hover:scale-105 active:scale-95'
-                      : 'cursor-not-allowed bg-white/10 text-white/25'
-                  }`}
-                >
-                  <Icon className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-                </button>
+                  onClick={() => moveInDirection(direction)}
+                />
               );
             })}
-            <div
-              className="col-start-2 row-start-2 flex h-11 w-11 items-center justify-center rounded-full bg-[#e5a930]/25 text-[10px] font-bold text-[#f5cf82]"
-              aria-hidden
-            >
-              {activeSeatId.slice(2)}
+            <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 rounded-full border border-white/25 bg-black/55 px-3 py-1 text-[11px] font-semibold tracking-wide text-white shadow-lg backdrop-blur-sm">
+              {activeSeatId}
             </div>
           </div>
         </div>
