@@ -67,7 +67,7 @@
     "recharts": "2.15.2",
     "sonner": "2.0.3",
     "tailwind-merge": "3.2.0",
-    "three": "^0.184.0",
+    "three": "0.182.0",
     "tw-animate-css": "1.3.8",
     "vaul": "1.1.2"
   },
