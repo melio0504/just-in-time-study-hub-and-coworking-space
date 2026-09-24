@@ -23,18 +23,25 @@ Just In Time Study Hub and Coworking Space is a responsive web app for a study a
 - Tailwind CSS v4
 - Radix UI components
 - Lucide icons, Motion, and other supporting UI libraries
+- Supabase Auth and Postgres with row-level security
 
 ## Project Structure
 
-- `app/` contains the Next.js App Router pages and shared layout
-- `app/components/` contains reusable UI components
+- `app/(client)/` contains the public website and its header/footer layout
+- `app/(admin)/` contains the admin login and panel layouts
+- `app/(kiosk)/` contains the isolated facility kiosk layout
+- `app/components/` contains the reusable UI components that are shared across route groups
+- `lib/` contains shared domain logic used by multiple route groups
 - `public/images/` stores the image assets used throughout the site
+
+Route groups organize the code without changing its URLs. For example, the admin
+dashboard remains available at `/admin/dashboard` and the kiosk at `/kiosk`.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18 or newer
+- Node.js 20.9 or newer
 - npm
 
 ### Install Dependencies
@@ -42,6 +49,14 @@ Just In Time Study Hub and Coworking Space is a responsive web app for a study a
 ```bash
 npm install
 ```
+
+### Configure Supabase
+
+Copy `.env.example` to `.env`, then add the project URL and publishable key from
+the Supabase project dashboard. Apply the SQL migration in
+`supabase/migrations/20260925000000_auth_and_bookings.sql` before using account
+or booking features. See `supabase/README.md` for the authentication email
+template and admin-role setup.
 
 ### Run the Development Server
 
