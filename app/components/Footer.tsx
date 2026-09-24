@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Facebook, Instagram, Mail, Phone, MapPin, Clock } from 'lucide-react';
 
 export function Footer() {
@@ -9,9 +10,11 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
           <div className="col-span-1 sm:col-span-2">
-            <img
+            <Image
               src="/images/logo.png"
               alt="Study Hub Logo"
+              width={245}
+              height={118}
               className="h-10 sm:h-12 w-auto mb-4"
             />
             <p className="text-[#6b5e52] max-w-md leading-relaxed mb-6">

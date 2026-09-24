@@ -4,6 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 const MOBILE_NAV_LINKS = [
   { href: '/pricing', label: 'Pricing' },
@@ -33,12 +35,20 @@ export function Header() {
   const closeMenu = () => setIsMenuOpen(false);
 
   useEffect(() => {
-    const checkLoginStatus = () => {
-      setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
-    };
-    checkLoginStatus();
-    window.addEventListener('storage', checkLoginStatus);
-    return () => window.removeEventListener('storage', checkLoginStatus);
+    if (!isSupabaseConfigured) {
+      return;
+    }
+
+    const supabase = createClient();
+    void supabase.auth.getUser().then(({ data }) => {
+      setIsLoggedIn(Boolean(data.user));
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(Boolean(session?.user));
+    });
+
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
