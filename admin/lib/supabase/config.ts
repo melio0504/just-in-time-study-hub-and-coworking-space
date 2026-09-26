@@ -1,10 +1,26 @@
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
+function isAllowedSupabaseUrl(value: string | undefined) {
+  if (!value) return false;
+
+  try {
+    const url = new URL(value);
+    const isLoopbackHost =
+      url.hostname === "localhost" ||
+      url.hostname === "127.0.0.1" ||
+      url.hostname === "[::1]";
+
+    return url.protocol === "https:" || (url.protocol === "http:" && isLoopbackHost);
+  } catch {
+    return false;
+  }
+}
+
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
     supabasePublishableKey &&
-    supabaseUrl.startsWith("https://") &&
+    isAllowedSupabaseUrl(supabaseUrl) &&
     !supabaseUrl.includes("your-project-ref") &&
     !supabasePublishableKey.includes("your_key"),
 );
