@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import {
   QrCode,
-  ScanLine,
   Clock,
   Users,
   Armchair,
@@ -21,8 +20,9 @@ import {
   Activity,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { CameraQrScanner } from "./CameraQrScanner";
 
-type KioskMode = "check-in" | "check-out";
+type KioskAction = "check-in" | "check-out";
 type ScanState = "idle" | "scanning" | "success" | "error";
 
 interface Booking {
@@ -56,10 +56,8 @@ interface ActivityEntry {
 type ValidationError =
   | "invalid"
   | "expired"
-  | "already_checked_in"
   | "not_yet_scheduled"
-  | "payment_pending"
-  | "not_checked_in";
+  | "payment_pending";
 
 const STORAGE_SESSIONS = "jit_kiosk_active_sessions";
 const STORAGE_ACTIVITY = "jit_kiosk_activity_log";
@@ -132,10 +130,6 @@ const ERROR_MESSAGES: Record<ValidationError, { title: string; description: stri
     title: "Booking Expired",
     description: "Your reservation window has ended. Please book a new session at the front desk or online.",
   },
-  already_checked_in: {
-    title: "Already Checked In",
-    description: "This pass was already used for entry. Scan again at checkout when you leave.",
-  },
   not_yet_scheduled: {
     title: "Not Yet Scheduled",
     description: "Your booking is not active yet. Please return within 15 minutes of your start time.",
@@ -143,10 +137,6 @@ const ERROR_MESSAGES: Record<ValidationError, { title: string; description: stri
   payment_pending: {
     title: "Payment Not Confirmed",
     description: "Complete payment first, then scan your QR again to check in.",
-  },
-  not_checked_in: {
-    title: "No Active Session",
-    description: "We could not find an active check-in for this booking. Scan at entry first.",
   },
 };
 
@@ -217,11 +207,10 @@ function resolveBooking(code: string): Booking | null {
 
 export default function KioskPage() {
   const [now, setNow] = useState(() => new Date());
-  const [mode, setMode] = useState<KioskMode>("check-in");
   const [scanState, setScanState] = useState<ScanState>("idle");
-  const [codeInput, setCodeInput] = useState("");
   const [errorType, setErrorType] = useState<ValidationError>("invalid");
   const [successBooking, setSuccessBooking] = useState<Booking | null>(null);
+  const [lastAction, setLastAction] = useState<KioskAction | null>(null);
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
 
@@ -265,8 +254,8 @@ export default function KioskPage() {
 
   const resetToIdle = useCallback(() => {
     setScanState("idle");
-    setCodeInput("");
     setSuccessBooking(null);
+    setLastAction(null);
   }, []);
 
   const validateCheckIn = useCallback(
@@ -275,10 +264,9 @@ export default function KioskPage() {
       const nowMs = Date.now();
       if (nowMs > booking.scheduledEnd.getTime()) return "expired";
       if (nowMs < booking.scheduledStart.getTime() - 15 * 60 * 1000) return "not_yet_scheduled";
-      if (sessions.some((s) => s.bookingId === booking.id)) return "already_checked_in";
       return null;
     },
-    [sessions]
+    []
   );
 
   const processScan = useCallback(
@@ -296,58 +284,48 @@ export default function KioskPage() {
         return;
       }
 
-      if (mode === "check-in") {
-        const err = validateCheckIn(booking);
-        if (err) {
-          setErrorType(err);
-          setScanState("error");
-          return;
-        }
-
-        const session: ActiveSession = {
-          bookingId: booking.id,
-          guestName: booking.guestName,
-          seats: booking.seats,
-          checkedInAt: new Date().toISOString(),
-          scheduledEnd: booking.scheduledEnd.toISOString(),
-        };
-        const next = [...sessions.filter((s) => s.bookingId !== booking.id), session];
-        persistSessions(next);
+      const existing = sessions.find((session) => session.bookingId === booking.id);
+      if (existing) {
+        persistSessions(sessions.filter((session) => session.bookingId !== booking.id));
         addActivity({
-          type: "check-in",
+          type: "check-out",
           guestName: booking.guestName,
           seats: booking.seats,
         });
+        setLastAction("check-out");
         setSuccessBooking(booking);
         setScanState("success");
-        window.setTimeout(resetToIdle, 8000);
+        window.setTimeout(resetToIdle, 6000);
         return;
       }
 
-      const existing = sessions.find((s) => s.bookingId === booking.id);
-      if (!existing) {
-        setErrorType("not_checked_in");
+      const error = validateCheckIn(booking);
+      if (error) {
+        setErrorType(error);
         setScanState("error");
         return;
       }
 
-      persistSessions(sessions.filter((s) => s.bookingId !== booking.id));
+      const session: ActiveSession = {
+        bookingId: booking.id,
+        guestName: booking.guestName,
+        seats: booking.seats,
+        checkedInAt: new Date().toISOString(),
+        scheduledEnd: booking.scheduledEnd.toISOString(),
+      };
+      persistSessions([...sessions, session]);
       addActivity({
-        type: "check-out",
+        type: "check-in",
         guestName: booking.guestName,
         seats: booking.seats,
       });
+      setLastAction("check-in");
       setSuccessBooking(booking);
       setScanState("success");
-      window.setTimeout(resetToIdle, 6000);
+      window.setTimeout(resetToIdle, 8000);
     },
-    [mode, sessions, validateCheckIn, persistSessions, addActivity, resetToIdle]
+    [sessions, validateCheckIn, persistSessions, addActivity, resetToIdle]
   );
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    processScan(codeInput);
-  };
 
   const todayLabel = useMemo(
     () =>
@@ -428,42 +406,6 @@ export default function KioskPage() {
       <div className="flex-1 grid lg:grid-cols-[1fr_320px] gap-0 min-h-0 overflow-hidden">
         {/* Main scanner */}
         <main className="flex flex-col min-h-0 overflow-hidden px-5 py-3 lg:px-8">
-          {/* Mode toggle */}
-          <div className="flex justify-center mb-2 shrink-0">
-            <div className="inline-flex bg-white/80 border border-[#f3ede4] rounded-full p-0.5 shadow-sm">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("check-in");
-                  resetToIdle();
-                }}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm transition-all ${
-                  mode === "check-in"
-                    ? "bg-[#e5a930] text-white shadow-md"
-                    : "text-[#6b5e52] hover:text-[#2d2520]"
-                }`}
-              >
-                <LogIn className="w-4 h-4" />
-                Check In
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("check-out");
-                  resetToIdle();
-                }}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm transition-all ${
-                  mode === "check-out"
-                    ? "bg-[#2d2520] text-white shadow-md"
-                    : "text-[#6b5e52] hover:text-[#2d2520]"
-                }`}
-              >
-                <LogOut className="w-4 h-4" />
-                Check Out
-              </button>
-            </div>
-          </div>
-
           <AnimatePresence mode="wait">
             {scanState === "idle" && (
               <motion.div
@@ -474,95 +416,13 @@ export default function KioskPage() {
                 className="flex-1 flex flex-col items-center justify-center min-h-0 max-w-2xl mx-auto w-full"
               >
                 <h2 className="text-xl sm:text-2xl text-center text-[#2d2520] mb-1 shrink-0 leading-tight">
-                  {mode === "check-in" ? (
-                    <>
-                      Scan your <span className="text-[#e5a930]">QR pass</span> to enter
-                    </>
-                  ) : (
-                    <>
-                      Scan to <span className="text-[#2d2520]">check out</span>
-                    </>
-                  )}
+                  Scan your <span className="text-[#e5a930]">QR pass</span>
                 </h2>
                 <p className="text-[#6b5e52] text-center text-xs sm:text-sm mb-2 max-w-md shrink-0">
-                  {mode === "check-in"
-                    ? "Hold your booking QR up to the scanner. Your seat activates automatically."
-                    : "Scan the same QR when leaving to record your time out."}
+                  Hold your booking QR in front of the camera. The kiosk automatically checks you in or out.
                 </p>
 
-                {/* Scanner frame */}
-                <div className="relative flex-1 w-full max-w-[min(100%,420px)] min-h-[220px] max-h-[min(44dvh,420px)] aspect-square mb-3">
-                  <div className="absolute inset-0 rounded-3xl border-[3px] border-[#e5a930]/30" />
-                  <motion.div
-                    className="absolute inset-4 rounded-2xl border-[3px] border-dashed border-[#e5a930]"
-                    animate={{ opacity: [0.4, 1, 0.4] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-3xl m-6">
-                    <ScanLine className="w-16 h-16 sm:w-20 sm:h-20 text-[#e5a930] mb-3" />
-                    <QrCode className="w-24 h-24 sm:w-32 sm:h-32 text-[#6b5e52]/40" />
-                    <motion.div
-                      className="absolute left-8 right-8 h-1 bg-[#e5a930] shadow-[0_0_16px_#e5a930]"
-                      animate={{ top: ["18%", "82%", "18%"] }}
-                      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                  </div>
-                  <div className="absolute top-3 left-3 w-10 h-10 border-t-[5px] border-l-[5px] border-[#e5a930] rounded-tl-xl" />
-                  <div className="absolute top-3 right-3 w-10 h-10 border-t-[5px] border-r-[5px] border-[#e5a930] rounded-tr-xl" />
-                  <div className="absolute bottom-3 left-3 w-10 h-10 border-b-[5px] border-l-[5px] border-[#e5a930] rounded-bl-xl" />
-                  <div className="absolute bottom-3 right-3 w-10 h-10 border-b-[5px] border-r-[5px] border-[#e5a930] rounded-br-xl" />
-                </div>
-
-                <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-1 shrink-0">
-                  <label className="block text-[10px] sm:text-xs text-[#6b5e52] uppercase tracking-wider text-center">
-                    Or enter booking ID manually
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={codeInput}
-                      onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-                      placeholder="RES-XXXXXXXX"
-                      className="flex-1 px-3 py-2.5 rounded-xl border border-[#f3ede4] bg-white text-[#2d2520] text-sm sm:text-base font-mono focus:outline-none focus:ring-2 focus:ring-[#e5a930] placeholder:text-[#6b5e52]/50"
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                    <button
-                      type="submit"
-                      disabled={!codeInput.trim()}
-                      className="px-4 py-2.5 bg-[#e5a930] text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed font-medium text-sm"
-                    >
-                      {mode === "check-in" ? "Enter" : "Exit"}
-                    </button>
-                  </div>
-                </form>
-
-                <p className="text-[10px] sm:text-xs text-[#6b5e52] mt-2 text-center shrink-0">
-                  Demo codes:{" "}
-                  <button
-                    type="button"
-                    onClick={() => processScan("RES-DEMO-VALID")}
-                    className="text-[#e5a930] hover:underline"
-                  >
-                    RES-DEMO-VALID
-                  </button>
-                  {" · "}
-                  <button
-                    type="button"
-                    onClick={() => processScan("RES-DEMO-EXPIRED")}
-                    className="text-[#e5a930] hover:underline"
-                  >
-                    expired
-                  </button>
-                  {" · "}
-                  <button
-                    type="button"
-                    onClick={() => processScan("RES-DEMO-EARLY")}
-                    className="text-[#e5a930] hover:underline"
-                  >
-                    early
-                  </button>
-                </p>
+                <CameraQrScanner onScan={processScan} />
               </motion.div>
             )}
 
@@ -596,9 +456,11 @@ export default function KioskPage() {
                   <CheckCircle2 className="w-12 h-12 text-[#16a34a]" />
                 </div>
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl text-[#2d2520] mb-2 shrink-0">
-                  {mode === "check-in" ? "Check-in successful" : "Check-out complete"}
+                  {lastAction === "check-out" ? "Check-out complete" : "Check-in successful"}
                 </h2>
-                <p className="text-xl sm:text-2xl text-[#e5a930] mb-4 shrink-0">Welcome, {successBooking.guestName}</p>
+                <p className="text-xl sm:text-2xl text-[#e5a930] mb-4 shrink-0">
+                  {lastAction === "check-out" ? "Thank you" : "Welcome"}, {successBooking.guestName}
+                </p>
 
                 <div className="w-full bg-white/80 backdrop-blur-sm rounded-2xl border border-[#f3ede4] p-5 text-left space-y-3 mb-3 shrink-0">
                   <div className="flex justify-between items-center border-b border-[#f3ede4] pb-3">
@@ -607,7 +469,7 @@ export default function KioskPage() {
                       {successBooking.seats.join(", ")}
                     </span>
                   </div>
-                  {mode === "check-in" && (
+                  {lastAction === "check-in" && (
                     <>
                       <div className="flex justify-between text-base sm:text-lg">
                         <span className="text-[#6b5e52]">Time in</span>
@@ -633,7 +495,7 @@ export default function KioskPage() {
                   </div>
                 </div>
 
-                {mode === "check-in" && (
+                {lastAction === "check-in" && (
                   <div className="w-full bg-[#fef3dc]/60 rounded-xl p-4 text-left text-sm sm:text-base space-y-2 shrink-0">
                     <p className="text-[#6b5e52] uppercase tracking-wider text-xs sm:text-sm mb-1 font-medium">
                       Facility info
@@ -799,7 +661,7 @@ export default function KioskPage() {
       {/* Flow strip */}
       <footer className="border-t border-[#f3ede4] bg-white/60 px-5 py-2 shrink-0">
         <p className="text-xs sm:text-sm text-[#6b5e52] text-center truncate">
-          Booking → QR → Arrival → Scan → Check-in → Monitoring → Check-out → Analytics
+          Booking → QR → Camera scan → Automatic check-in or check-out → Analytics
         </p>
       </footer>
     </div>

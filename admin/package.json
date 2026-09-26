@@ -19,6 +19,7 @@
     "lucide-react": "0.487.0",
     "motion": "12.23.24",
     "next": "16.3.4",
+    "qr-scanner": "1.4.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "2.15.2",
