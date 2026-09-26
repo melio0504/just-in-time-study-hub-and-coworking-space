@@ -96,6 +96,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/announcements" className="text-[#6b5e52] hover:text-[#e5a930] transition-colors">
+                  Announcements
+                </Link>
+              </li>
+              <li>
                 <Link href="/reserve" className="text-[#6b5e52] hover:text-[#e5a930] transition-colors">
                   Reserve Now
                 </Link>

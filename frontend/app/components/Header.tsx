@@ -11,6 +11,7 @@ const MOBILE_NAV_LINKS = [
   { href: '/pricing', label: 'Pricing' },
   { href: '/virtual-tour', label: 'Virtual Tour' },
   { href: '/gallery', label: 'Gallery' },
+  { href: '/announcements', label: 'Announcements' },
   { href: '/about', label: 'About Us' },
 ] as const;
 
@@ -128,7 +129,7 @@ export function Header() {
             </Link>
           </div>
 
-          <nav className="hidden items-center gap-8 lg:flex">
+          <nav className="hidden items-center gap-6 lg:flex xl:gap-8">
             <Link href="/pricing" className="text-[#6b5e52] transition-colors hover:text-[#3d3329]">
               Pricing
             </Link>
@@ -137,6 +138,9 @@ export function Header() {
             </Link>
             <Link href="/gallery" className="text-[#6b5e52] transition-colors hover:text-[#3d3329]">
               Gallery
+            </Link>
+            <Link href="/announcements" className="text-[#6b5e52] transition-colors hover:text-[#3d3329]">
+              Announcements
             </Link>
             <Link href="/about" className="text-[#6b5e52] transition-colors hover:text-[#3d3329]">
               About Us

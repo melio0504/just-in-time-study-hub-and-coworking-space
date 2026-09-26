@@ -56,9 +56,16 @@ export default function Home() {
               </div>
               <p className="text-xs text-[#6b5e52] mb-2">{today}</p>
               <p className="text-[#2d2520] text-sm leading-relaxed">
-                We are open during the holiday season! Enjoy extended hours from
-                8:00 AM to 5:00 AM, 7 days a week.
+                Exam season hours are in effect. We&apos;re open from 8:00 AM to
+                5:00 AM daily through October 11.
               </p>
+              <Link
+                href="/announcements"
+                className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#b47b0d] transition-colors hover:text-[#8d5f08]"
+              >
+                View all announcements
+                <ArrowRight className="h-3 w-3" />
+              </Link>
             </div>
           </motion.div>
         )}
