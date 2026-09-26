@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { SeatingPlan } from '@/app/components/SeatingPlan';
 import { allSeatIds, getReservedSeatsForDate } from '@/lib/seats';
 import { createBooking } from '@/lib/supabase/bookings';
+import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 type SeatStatus = 'available' | 'reserved' | 'selected';
@@ -14,6 +15,25 @@ interface Seat {
   id: string;
   status: SeatStatus;
 }
+
+interface MemberIdentity {
+  name: string;
+  email: string;
+}
+
+interface ReservationDraft {
+  date: string;
+  time: string;
+  duration: string;
+  seatIds: string[];
+}
+
+const RESERVATION_DRAFT_KEY = 'jit-reservation-draft';
+const VALID_RESERVATION_TIMES = new Set([
+  '8:00', '9:00', '10:00', '11:00', '12:00', '13:00',
+  '14:00', '15:00', '16:00', '17:00', '18:00',
+]);
+const VALID_RESERVATION_DURATIONS = new Set(['1', '2', '3', '4', '6', '8']);
 
 const getTodayString = () => {
   const today = new Date();
@@ -52,6 +72,59 @@ function ReserveContent() {
   const [hasAppliedSeatParam, setHasAppliedSeatParam] = useState(false);
   const [bookingError, setBookingError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [memberIdentity, setMemberIdentity] = useState<MemberIdentity | null>(null);
+  const [isIdentityLoading, setIsIdentityLoading] = useState(isSupabaseConfigured);
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      return;
+    }
+
+    let cancelled = false;
+    const supabase = createClient();
+
+    const loadMemberIdentity = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        if (!cancelled) {
+          setMemberIdentity(null);
+          setIsIdentityLoading(false);
+        }
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      const email = user.email ?? '';
+      const metadataName = typeof user.user_metadata.full_name === 'string'
+        ? user.user_metadata.full_name.trim()
+        : '';
+      const name = profile?.full_name.trim()
+        || metadataName
+        || email.split('@')[0]
+        || 'Member';
+
+      if (!cancelled) {
+        setMemberIdentity({ name, email });
+        setFormData((current) => ({ ...current, name, email }));
+        setIsIdentityLoading(false);
+      }
+    };
+
+    void loadMemberIdentity();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const closePaymentModal = () => {
     setIsModalOpen(false);
@@ -79,7 +152,65 @@ function ReserveContent() {
   const [seats, setSeats] = useState<Seat[]>(initializeSeats(getTodayString()));
 
   useEffect(() => {
-    if (hasAppliedSeatParam) {
+    const restoreDraft = window.setTimeout(() => {
+      try {
+        const storedDraft = window.localStorage.getItem(RESERVATION_DRAFT_KEY);
+        if (!storedDraft) return;
+
+        const draft = JSON.parse(storedDraft) as Partial<ReservationDraft>;
+        const parsedDate = typeof draft.date === 'string'
+          ? new Date(`${draft.date}T00:00:00`)
+          : null;
+        const date = parsedDate
+          && !Number.isNaN(parsedDate.getTime())
+          && !isPastDate(parsedDate)
+          ? draft.date as string
+          : getTodayString();
+        const time = typeof draft.time === 'string' && VALID_RESERVATION_TIMES.has(draft.time)
+          ? draft.time
+          : '';
+        const duration = typeof draft.duration === 'string'
+          && VALID_RESERVATION_DURATIONS.has(draft.duration)
+          ? draft.duration
+          : '';
+        const seatIds = Array.isArray(draft.seatIds)
+          ? draft.seatIds
+            .filter((seatId): seatId is string => (
+              typeof seatId === 'string' && allSeatIds.includes(seatId)
+            ))
+            .slice(0, 5)
+          : [];
+
+        setFormData((current) => ({ ...current, date, time, duration }));
+        setCurrentMonth(new Date(`${date}T00:00:00`));
+        setSeats(initializeSeats(date, seatIds));
+      } catch {
+        window.localStorage.removeItem(RESERVATION_DRAFT_KEY);
+      } finally {
+        setHasRestoredDraft(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(restoreDraft);
+  }, [initializeSeats]);
+
+  useEffect(() => {
+    if (!hasRestoredDraft) return;
+
+    const draft: ReservationDraft = {
+      date: formData.date,
+      time: formData.time,
+      duration: formData.duration,
+      seatIds: seats
+        .filter((seat) => seat.status === 'selected')
+        .map((seat) => seat.id),
+    };
+
+    window.localStorage.setItem(RESERVATION_DRAFT_KEY, JSON.stringify(draft));
+  }, [formData.date, formData.duration, formData.time, hasRestoredDraft, seats]);
+
+  useEffect(() => {
+    if (!hasRestoredDraft || hasAppliedSeatParam) {
       return;
     }
 
@@ -93,14 +224,20 @@ function ReserveContent() {
       if (allSeatIds.includes(normalizedSeat)) {
         const reservedSeats = getReservedSeatsForDate(formData.date);
         if (!reservedSeats.includes(normalizedSeat)) {
-          setSeats(initializeSeats(formData.date, [normalizedSeat]));
+          setSeats((currentSeats) => {
+            const selectedSeatIds = currentSeats
+              .filter((seat) => seat.status === 'selected')
+              .map((seat) => seat.id);
+            const mergedSeatIds = Array.from(new Set([...selectedSeatIds, normalizedSeat])).slice(0, 5);
+            return initializeSeats(formData.date, mergedSeatIds);
+          });
         }
       }
       setHasAppliedSeatParam(true);
     }, 0);
 
     return () => window.clearTimeout(applySeatParam);
-  }, [formData.date, hasAppliedSeatParam, initializeSeats, searchParams]);
+  }, [formData.date, hasAppliedSeatParam, hasRestoredDraft, initializeSeats, searchParams]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -201,6 +338,10 @@ function ReserveContent() {
     }));
   };
 
+  const handleClearSelectedSeats = () => {
+    setSeats(initializeSeats(formData.date));
+  };
+
   const getSeatStatus = (seatId: string): SeatStatus => {
     return seats.find(s => s.id === seatId)?.status || 'available';
   };
@@ -268,36 +409,36 @@ function ReserveContent() {
   const selectedCount = seats.filter(s => s.status === 'selected').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] to-[#fff8ed] pt-24">
-      <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="mb-12">
-          <h1 className="text-5xl mb-4 text-[#2d2520]">Reserve Your Desk</h1>
-          <p className="text-lg text-[#6b5e52] max-w-xl">
+    <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] to-[#fff8ed] pt-20 sm:pt-24">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 sm:py-16">
+        <div className="mb-8 sm:mb-12">
+          <h1 className="text-3xl sm:text-5xl mb-3 sm:mb-4 text-[#2d2520]">Reserve Your Desk</h1>
+          <p className="text-base sm:text-lg text-[#6b5e52] max-w-xl">
             Select your preferred seat from the floor plan below. You can choose up to 5 seats.
           </p>
         </div>
 
         {/* Seat Plan */}
-        <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-lg mb-8">
-          <div className="mb-6 flex items-start justify-between">
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-lg mb-6 sm:mb-8">
+          <div className="mb-5 sm:mb-6 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex-1">
-              <h2 className="text-3xl mb-2 text-[#2d2520]">Seat Plan</h2>
-              <div className="flex items-center gap-6 text-sm mt-4">
+              <h2 className="text-2xl sm:text-3xl mb-2 text-[#2d2520]">Seat Plan</h2>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs sm:flex sm:flex-wrap sm:items-center sm:gap-6 sm:text-sm sm:mt-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-[#e8e8e8] rounded-lg"></div>
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 shrink-0 bg-[#e8e8e8] rounded-lg"></div>
                   <span className="text-[#6b5e52]">Available</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-[#9ca3af] rounded-lg"></div>
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 shrink-0 bg-[#9ca3af] rounded-lg"></div>
                   <span className="text-[#6b5e52]">Reserved</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-[#3b82f6] rounded-lg"></div>
+                <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 shrink-0 bg-[#3b82f6] rounded-lg"></div>
                   <span className="text-[#6b5e52]">Selected ({selectedCount}/5)</span>
                 </div>
               </div>
             </div>
-            <div className="w-64 relative" ref={calendarRef}>
+            <div className="w-full sm:w-72 lg:w-64 relative" ref={calendarRef}>
               <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
                 <Calendar className="inline w-4 h-4 mr-1" />
                 Select Date
@@ -312,7 +453,7 @@ function ReserveContent() {
               </button>
 
               {isCalendarOpen && (
-                <div className="absolute top-full mt-2 left-0 bg-white rounded-2xl shadow-2xl border border-[#f3ede4] p-4 z-50 w-80">
+                <div className="absolute top-full mt-2 inset-x-0 bg-white rounded-2xl shadow-2xl border border-[#f3ede4] p-3 sm:p-4 z-50 w-full sm:w-80 sm:left-auto sm:right-0">
                   <div className="flex items-center justify-between mb-4">
                     <button
                       type="button"
@@ -352,13 +493,12 @@ function ReserveContent() {
                               type="button"
                               onClick={() => handleDateSelect(day)}
                               disabled={past}
-                              className={`w-full aspect-square rounded-lg text-sm transition-all ${
-                                past
-                                  ? 'text-[#c4b8ab] cursor-not-allowed'
-                                  : isSameDay(day, formData.date)
-                                    ? 'bg-[#e5a930] text-white'
-                                    : 'hover:bg-[#f3ede4] text-[#2d2520]'
-                              }`}
+                              className={`w-full aspect-square rounded-lg text-sm transition-all ${past
+                                ? 'text-[#c4b8ab] cursor-not-allowed'
+                                : isSameDay(day, formData.date)
+                                  ? 'bg-[#e5a930] text-white'
+                                  : 'hover:bg-[#f3ede4] text-[#2d2520]'
+                                }`}
                             >
                               {day.getDate()}
                             </button>
@@ -374,47 +514,31 @@ function ReserveContent() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#e8e0d4] bg-[#f3f0eb] p-4 sm:p-6">
-            <p className="text-sm text-[#6b5e52] mb-4">
+          <div className="rounded-xl sm:rounded-2xl border border-[#e8e0d4] bg-[#f3f0eb] p-2 sm:p-6">
+            <p className="text-sm text-[#6b5e52] mb-1 sm:mb-4 px-1 sm:px-0">
               Layout follows the in-store floor plan — tap a seat to select (up to 5).
+            </p>
+            <p className="text-xs text-[#8b7355] mb-3 px-1 sm:hidden">
+              Swipe sideways to explore the full floor plan.
             </p>
             <SeatingPlan renderSeat={renderSeatButton} />
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-lg">
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all placeholder:text-[#2d2520]/80 text-[#2d2520]"
-                placeholder="Enter your name"
-              />
+        <form onSubmit={handleSubmit} className="bg-white/70 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-lg">
+          {isIdentityLoading ? (
+            <div className="mb-4 h-[74px] animate-pulse rounded-xl bg-[#f3ede4]/70 sm:mb-6">
+              <span className="sr-only">Loading account profile</span>
             </div>
-            <div>
-              <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all placeholder:text-[#2d2520]/80 text-[#2d2520]"
-                placeholder="you@example.com"
-              />
+          ) : memberIdentity ? (
+            <div className="mb-4 rounded-xl border border-[#e8e0d4] bg-[#fffcf7] px-4 py-3 sm:mb-6">
+              <p className="mb-1 text-xs uppercase tracking-wider text-[#8b7355]">Booking as</p>
+              <p className="font-medium text-[#2d2520]">{memberIdentity.name}</p>
+              <p className="break-all text-sm text-[#6b5e52]">{memberIdentity.email}</p>
             </div>
-          </div>
+          ) : null}
 
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
+          <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
             <div>
               <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
                 <Clock className="inline w-4 h-4 mr-1" />
@@ -465,7 +589,16 @@ function ReserveContent() {
 
           {selectedCount > 0 && (
             <div className="mb-6 p-4 bg-[#fef3dc] rounded-xl">
-              <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-2">Selected Seats</p>
+              <div className="mb-2 flex items-center justify-between gap-4">
+                <p className="text-sm text-[#6b5e52] uppercase tracking-wider">Selected Seats</p>
+                <button
+                  type="button"
+                  onClick={handleClearSelectedSeats}
+                  className="rounded-full border border-[#e5a930]/50 bg-white px-3 py-1.5 text-xs font-medium text-[#8b651b] transition-colors hover:border-[#e5a930] hover:bg-[#fff8ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] cursor-pointer"
+                >
+                  Clear
+                </button>
+              </div>
               <p className="text-lg text-[#2d2520]">
                 {seats.filter(s => s.status === 'selected').map(s => s.id).join(', ')}
               </p>
@@ -481,9 +614,8 @@ function ReserveContent() {
           <button
             type="submit"
             disabled={selectedCount === 0 || isSubmitting}
-            className={`w-full bg-[#e5a930] text-white px-8 py-4 rounded-full ${
-              selectedCount === 0 || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            className={`w-full min-h-12 cursor-pointer bg-[#e5a930] text-white px-5 sm:px-8 py-3 sm:py-4 rounded-full transition-[background-color,box-shadow] duration-200 enabled:hover:bg-[#d69520] enabled:hover:shadow-lg ${selectedCount === 0 || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
           >
             {isSubmitting
               ? 'Saving Reservation…'
@@ -494,13 +626,13 @@ function ReserveContent() {
 
       {/* Payment Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#f3ede4] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:my-4 [&::-webkit-scrollbar-thumb]:bg-[#e5a930] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-[#d69520]">
-            <div className="p-8">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#f3ede4] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:my-4 [&::-webkit-scrollbar-thumb]:bg-[#e5a930] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-[#d69520]">
+            <div className="p-5 sm:p-8">
               {paymentStep === 'pending' ? (
                 <>
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-3xl text-[#2d2520]">Complete Payment</h2>
+                    <h2 className="text-2xl sm:text-3xl text-[#2d2520]">Complete Payment</h2>
                     <button
                       type="button"
                       onClick={closePaymentModal}
@@ -520,8 +652,8 @@ function ReserveContent() {
 
                   <div className="mb-6">
                     <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-3">GCash Payment QR Code</p>
-                    <div className="bg-[#f9f9f9] border-2 border-dashed border-[#d1d5db] rounded-2xl p-8 flex flex-col items-center justify-center">
-                      <QrCode className="w-48 h-48 text-[#6b5e52] mb-4" />
+                    <div className="bg-[#f9f9f9] border-2 border-dashed border-[#d1d5db] rounded-2xl p-4 sm:p-8 flex flex-col items-center justify-center">
+                      <QrCode className="w-36 h-36 sm:w-48 sm:h-48 text-[#6b5e52] mb-4" />
                       <p className="text-sm text-[#6b5e52] text-center">Scan this QR code with your GCash app to complete payment</p>
                     </div>
                   </div>
@@ -553,7 +685,7 @@ function ReserveContent() {
                     <button
                       type="button"
                       onClick={handleDemoPaid}
-                      className="w-full bg-[#22c55e] text-white px-8 py-4 rounded-full hover:shadow-xl transition-all duration-300 hover:scale-[1.02] font-medium"
+                      className="w-full bg-[#22c55e] text-white px-8 py-4 rounded-full hover:shadow-xl font-medium cursor-pointer"
                     >
                       I&apos;ve Paid
                       <span className="ml-2 text-xs font-normal opacity-90">(demo)</span>
@@ -561,7 +693,7 @@ function ReserveContent() {
                     <button
                       type="button"
                       onClick={closePaymentModal}
-                      className="w-full border border-[#f3ede4] text-[#6b5e52] px-8 py-3 rounded-full hover:bg-[#f3ede4] transition-colors"
+                      className="w-full border border-[#f3ede4] text-[#6b5e52] px-8 py-3 rounded-full hover:bg-[#f3ede4] transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -570,7 +702,7 @@ function ReserveContent() {
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-3xl text-[#2d2520]">Payment Successful</h2>
+                    <h2 className="text-2xl sm:text-3xl text-[#2d2520]">Payment Successful</h2>
                     <button
                       type="button"
                       onClick={closePaymentModal}
@@ -647,7 +779,7 @@ function ReserveContent() {
                   <button
                     type="button"
                     onClick={closePaymentModal}
-                    className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl transition-all duration-300 hover:scale-105"
+                    className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl cursor-pointer"
                   >
                     Done
                   </button>
