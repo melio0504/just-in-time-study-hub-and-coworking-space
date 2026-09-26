@@ -18,7 +18,6 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,7 +30,6 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
-    setSuccessMessage('');
 
     if (formData.password !== formData.confirmPassword) {
       setErrorMessage('Passwords do not match.');
@@ -49,7 +47,6 @@ export default function Register() {
       email: formData.email,
       password: formData.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/confirm`,
         data: {
           full_name: formData.username,
         },
@@ -62,13 +59,13 @@ export default function Register() {
       return;
     }
 
-    if (data.session) {
-      router.push('/account');
-      router.refresh();
+    if (!data.session) {
+      setErrorMessage('Account created, but automatic sign-in is unavailable. Disable email confirmation in Supabase Auth settings.');
       return;
     }
 
-    setSuccessMessage('Check your email to confirm your account, then sign in.');
+    router.push('/account');
+    router.refresh();
   };
 
   const benefits = [
@@ -119,11 +116,6 @@ export default function Register() {
               {errorMessage && (
                 <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                   {errorMessage}
-                </p>
-              )}
-              {successMessage && (
-                <p role="status" className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                  {successMessage}
                 </p>
               )}
               <div>

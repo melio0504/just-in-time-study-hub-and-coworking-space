@@ -17,8 +17,9 @@ npx supabase status
 Copy `frontend/.env.example` to `frontend/.env.local` and
 `admin/.env.example` to `admin/.env.local`, then copy the local `API_URL` and
 `PUBLISHABLE_KEY` printed by `npx supabase status` into both files. The
-checked-in local Auth configuration requires email confirmation. Test messages
-are available in Mailpit at <http://127.0.0.1:54324>.
+checked-in local Auth configuration creates a session immediately without
+email confirmation. Test messages are available in Mailpit at
+<http://127.0.0.1:54324>.
 
 Useful local URLs:
 
@@ -57,26 +58,19 @@ In the production Supabase Dashboard:
 
 1. Authentication > URL Configuration: set the Site URL to the deployed HTTPS
    URL and allow `http://localhost:3000/**` plus the deployed callback URL.
-2. Authentication > Providers > Email: enable **Confirm email**.
-3. Authentication > Email Templates > Confirm signup: use this link:
-
-   ```html
-   <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email">
-     Confirm your account
-   </a>
-   ```
-
-4. Configure a production SMTP provider before launch. Supabase's default
+2. Authentication > Providers > Email: disable **Confirm email** so successful
+   registration creates a session immediately.
+3. Configure a production SMTP provider before launch. Supabase's default
    email sender is intended only for limited testing.
-5. Put the production URL and publishable key in Vercel as
+4. Put the production URL and publishable key in Vercel as
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and set
    `NEXT_PUBLIC_SITE_URL` to the deployed app URL. Never expose a secret or
    service-role key through a `NEXT_PUBLIC_` variable.
 
 ## First administrator
 
-New accounts are customers. After the intended administrator has registered
-and confirmed their email, promote the account from a trusted SQL session:
+New accounts are customers. After the intended administrator has registered,
+promote the account from a trusted SQL session:
 
 ```sql
 update public.profiles
