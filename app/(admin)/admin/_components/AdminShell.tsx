@@ -107,6 +107,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             alt="Just in Time"
             width={245}
             height={118}
+            loading="eager"
             className="block mx-auto"
             style={{ width: '8rem', height: 'auto' }}
           />

@@ -380,6 +380,7 @@ export default function KioskPage() {
             alt="Just In Time Study Hub"
             width={245}
             height={118}
+            loading="eager"
             className="w-12 h-auto shrink-0"
           />
           <div className="min-w-0">
