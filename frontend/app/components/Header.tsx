@@ -15,6 +15,23 @@ const MOBILE_NAV_LINKS = [
   { href: '/about', label: 'About Us' },
 ] as const;
 
+function DesktopNavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="group px-1 py-2 text-[#6b5e52] hover:text-[#3d3329] focus-visible:text-[#3d3329]"
+    >
+      <span className="relative inline-block">
+        <span className="relative z-10">{children}</span>
+        <span
+          className="absolute -bottom-1 left-0 h-1 w-0 rounded-full bg-[#e5a930]/35 transition-[width] group-hover:w-full group-focus-visible:w-full"
+          aria-hidden="true"
+        />
+      </span>
+    </Link>
+  );
+}
+
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -130,24 +147,12 @@ export function Header() {
           </div>
 
           <nav className="hidden items-center gap-6 lg:flex xl:gap-8">
-            <Link href="/pricing" className="text-[#6b5e52] transition-colors hover:text-[#3d3329]">
-              Pricing
-            </Link>
-            <Link href="/virtual-tour" className="text-[#6b5e52] transition-colors hover:text-[#3d3329]">
-              Virtual Tour
-            </Link>
-            <Link href="/gallery" className="text-[#6b5e52] transition-colors hover:text-[#3d3329]">
-              Gallery
-            </Link>
-            <Link href="/announcements" className="text-[#6b5e52] transition-colors hover:text-[#3d3329]">
-              Announcements
-            </Link>
-            <Link href="/about" className="text-[#6b5e52] transition-colors hover:text-[#3d3329]">
-              About Us
-            </Link>
-            <Link href={isLoggedIn ? '/account' : '/register'} className="text-[#6b5e52] transition-colors hover:text-[#3d3329]">
-              Account
-            </Link>
+            <DesktopNavLink href="/pricing">Pricing</DesktopNavLink>
+            <DesktopNavLink href="/virtual-tour">Virtual Tour</DesktopNavLink>
+            <DesktopNavLink href="/gallery">Gallery</DesktopNavLink>
+            <DesktopNavLink href="/announcements">Announcements</DesktopNavLink>
+            <DesktopNavLink href="/about">About Us</DesktopNavLink>
+            <DesktopNavLink href={isLoggedIn ? '/account' : '/register'}>Account</DesktopNavLink>
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-4">
@@ -193,87 +198,87 @@ export function Header() {
           className={`absolute bottom-0 right-0 top-0 flex min-h-dvh w-full max-w-md flex-col bg-gradient-to-b from-[#fffcf7] via-[#fff8ed] to-[#fef3dc] shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'
             }`}
         >
-            <div className="flex items-center justify-between border-b border-[#f3ede4]/80 px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
-              <Link href="/" onClick={closeMenu} className="shrink-0">
-                <Image
-                  src="/images/logo.png"
-                  alt="Study Hub Logo"
-                  width={245}
-                  height={118}
-                  className="h-8 w-auto object-contain"
-                />
-              </Link>
-              <button
-                ref={closeButtonRef}
-                type="button"
-                onClick={closeMenuAndRestoreFocus}
-                aria-label="Close navigation menu"
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-[#f3ede4] bg-white/90 p-2.5 text-[#6b5e52] transition-colors hover:border-[#e5a930] hover:text-[#3d3329] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5a930]"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+          <div className="flex items-center justify-between border-b border-[#f3ede4]/80 px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
+            <Link href="/" onClick={closeMenu} className="shrink-0">
+              <Image
+                src="/images/logo.png"
+                alt="Study Hub Logo"
+                width={245}
+                height={118}
+                className="h-8 w-auto object-contain"
+              />
+            </Link>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={closeMenuAndRestoreFocus}
+              aria-label="Close navigation menu"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-[#f3ede4] bg-white/90 p-2.5 text-[#6b5e52] transition-colors hover:border-[#e5a930] hover:text-[#3d3329] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5a930]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
 
-            <div className="flex flex-1 flex-col overflow-y-auto px-5 py-8 sm:px-6 sm:py-10">
-              <p
-                className={`mb-6 text-xs font-medium uppercase tracking-[0.2em] text-[#6b5e52] transition-all duration-500 ease-in-out ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
-                  }`}
-              >
-                Menu
-              </p>
+          <div className="flex flex-1 flex-col overflow-y-auto px-5 py-8 sm:px-6 sm:py-10">
+            <p
+              className={`mb-6 text-xs font-medium uppercase tracking-[0.2em] text-[#6b5e52] transition-all duration-500 ease-in-out ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
+                }`}
+            >
+              Menu
+            </p>
 
-              <ul className="space-y-1">
-                {MOBILE_NAV_LINKS.map((item, index) => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={closeMenu}
-                      className={`group flex items-center justify-between border-b border-[#f3ede4]/60 py-4 transition-all duration-500 ease-in-out active:bg-[#fef3dc]/50 ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
-                        }`}
-                      style={{
-                        transitionDelay: isMenuOpen ? `${50 + index * 50}ms` : '0ms',
-                      }}
-                    >
-                      <span className="text-xl font-medium tracking-tight text-[#2d2520] transition-colors duration-500 group-hover:text-[#e5a930] sm:text-2xl">
-                        {item.label}
-                      </span>
-                      <ArrowRight className="h-5 w-5 shrink-0 text-[#e5a930]/0 transition-all duration-500 group-hover:translate-x-0.5 group-hover:text-[#e5a930]/80" />
-                    </Link>
-                  </li>
-                ))}
-                <li>
+            <ul className="space-y-1">
+              {MOBILE_NAV_LINKS.map((item, index) => (
+                <li key={item.href}>
                   <Link
-                    href={isLoggedIn ? '/account' : '/register'}
+                    href={item.href}
                     onClick={closeMenu}
-                    className={`group flex items-center justify-between py-4 transition-all duration-500 ease-in-out active:bg-[#fef3dc]/50 ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
+                    className={`group flex items-center justify-between border-b border-[#f3ede4]/60 py-4 transition-all duration-500 ease-in-out active:bg-[#fef3dc]/50 ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
                       }`}
                     style={{
-                      transitionDelay: isMenuOpen ? `${50 + MOBILE_NAV_LINKS.length * 50}ms` : '0ms',
+                      transitionDelay: isMenuOpen ? `${50 + index * 50}ms` : '0ms',
                     }}
                   >
-                    <span className="text-xl font-medium tracking-tight text-[#6b5e52] transition-colors duration-500 group-hover:text-[#3d3329] sm:text-2xl">
-                      Account
+                    <span className="text-xl font-medium tracking-tight text-[#2d2520] transition-colors duration-500 group-hover:text-[#e5a930] sm:text-2xl">
+                      {item.label}
                     </span>
-                    <ArrowRight className="h-5 w-5 shrink-0 text-[#6b5e52]/40 transition-all duration-500 group-hover:translate-x-0.5 group-hover:text-[#6b5e52]" />
+                    <ArrowRight className="h-5 w-5 shrink-0 text-[#e5a930]/0 transition-all duration-500 group-hover:translate-x-0.5 group-hover:text-[#e5a930]/80" />
                   </Link>
                 </li>
-              </ul>
-            </div>
+              ))}
+              <li>
+                <Link
+                  href={isLoggedIn ? '/account' : '/register'}
+                  onClick={closeMenu}
+                  className={`group flex items-center justify-between py-4 transition-all duration-500 ease-in-out active:bg-[#fef3dc]/50 ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
+                    }`}
+                  style={{
+                    transitionDelay: isMenuOpen ? `${50 + MOBILE_NAV_LINKS.length * 50}ms` : '0ms',
+                  }}
+                >
+                  <span className="text-xl font-medium tracking-tight text-[#6b5e52] transition-colors duration-500 group-hover:text-[#3d3329] sm:text-2xl">
+                    Account
+                  </span>
+                  <ArrowRight className="h-5 w-5 shrink-0 text-[#6b5e52]/40 transition-all duration-500 group-hover:translate-x-0.5 group-hover:text-[#6b5e52]" />
+                </Link>
+              </li>
+            </ul>
+          </div>
 
-            <div
-              className={`border-t border-[#f3ede4]/80 bg-[#fffcf7]/80 px-5 py-5 backdrop-blur-sm transition-all duration-500 ease-in-out sm:px-6 sm:py-6 ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-                }`}
-              style={{ transitionDelay: isMenuOpen ? '300ms' : '0ms' }}
+          <div
+            className={`border-t border-[#f3ede4]/80 bg-[#fffcf7]/80 px-5 py-5 backdrop-blur-sm transition-all duration-500 ease-in-out sm:px-6 sm:py-6 ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+              }`}
+            style={{ transitionDelay: isMenuOpen ? '300ms' : '0ms' }}
+          >
+            <Link
+              href="/reserve"
+              onClick={closeMenu}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3.5 text-base font-medium text-white shadow-[0_8px_24px_rgba(229,169,48,0.35)] transition-all duration-500 hover:bg-[#d49a28] active:scale-[0.99]"
             >
-              <Link
-                href="/reserve"
-                onClick={closeMenu}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3.5 text-base font-medium text-white shadow-[0_8px_24px_rgba(229,169,48,0.35)] transition-all duration-500 hover:bg-[#d49a28] active:scale-[0.99]"
-              >
-                Reserve a desk
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+              Reserve a desk
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </nav>
     </>
