@@ -10,7 +10,7 @@ import { isSupabaseConfigured } from '@/lib/supabase/config';
 export default function Register() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    fullName: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -51,7 +51,7 @@ export default function Register() {
       options: {
         emailRedirectTo: `${window.location.origin}/auth/confirm`,
         data: {
-          full_name: formData.fullName,
+          full_name: formData.username,
         },
       },
     });
@@ -129,16 +129,17 @@ export default function Register() {
               <div>
                 <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
                   <User className="inline w-4 h-4 mr-1" />
-                  Full Name
+                  Username
                 </label>
                 <input
                   type="text"
-                  name="fullName"
-                  value={formData.fullName}
+                  name="username"
+                  value={formData.username}
                   onChange={handleChange}
+                  autoComplete="nickname"
                   required
                   className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all placeholder:text-[#2d2520]/80 text-[#2d2520]"
-                  placeholder="Enter your full name"
+                  placeholder="Enter a username"
                 />
               </div>
 
