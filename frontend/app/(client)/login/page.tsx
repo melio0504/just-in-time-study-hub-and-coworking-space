@@ -99,15 +99,15 @@ export default function Login() {
                   <Mail className="inline w-4 h-4 mr-1" />
                   Email Address
                 </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all placeholder:text-[#2d2520]/80 text-[#2d2520]"
-                    placeholder="you@example.com"
-                  />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all placeholder:text-[#2d2520]/80 text-[#2d2520]"
+                  placeholder="you@example.com"
+                />
               </div>
 
               <div>
@@ -115,15 +115,15 @@ export default function Login() {
                   <Lock className="inline w-4 h-4 mr-1" />
                   Password
                 </label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all placeholder:text-[#2d2520]/80 text-[#2d2520]"
-                    placeholder="Enter your password"
-                  />
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all placeholder:text-[#2d2520]/80 text-[#2d2520]"
+                  placeholder="Enter your password"
+                />
               </div>
 
               <div className="flex items-center justify-between text-sm">
@@ -139,7 +139,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? 'Signing In…' : 'Sign In'}
               </button>
