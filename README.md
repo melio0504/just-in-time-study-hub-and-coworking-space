@@ -41,7 +41,7 @@ dashboard remains available at `/admin/dashboard` and the kiosk at `/kiosk`.
 
 ### Prerequisites
 
-- Node.js 20.9 or newer
+- Node.js 22 or newer
 - npm
 
 ### Install Dependencies
@@ -52,11 +52,10 @@ npm install
 
 ### Configure Supabase
 
-Copy `.env.example` to `.env`, then add the project URL and publishable key from
-the Supabase project dashboard. Apply the SQL migration in
-`supabase/migrations/20260925000000_auth_and_bookings.sql` before using account
-or booking features. See `supabase/README.md` for the authentication email
-template and admin-role setup.
+Start the local Supabase stack with `npm run supabase:start`, then use
+`npm run supabase:reset` to apply the database, RLS, Auth, facility seat, and
+Study Helper schema. See `supabase/README.md` for local and production setup,
+the authentication email template, and administrator promotion.
 
 ### Run the Development Server
 
