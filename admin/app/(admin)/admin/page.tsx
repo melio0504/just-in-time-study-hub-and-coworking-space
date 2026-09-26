@@ -156,7 +156,7 @@ export default function AdminLogin() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
               >
                 {isSubmitting ? 'Signing In…' : 'Sign In to Admin Portal'}
               </button>

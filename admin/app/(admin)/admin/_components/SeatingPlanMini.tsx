@@ -1,4 +1,8 @@
-type SeatStatus = 'available' | 'reserved';
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+
+type SeatStatus = "available" | "reserved";
 
 interface Seat {
   id: string;
@@ -9,152 +13,187 @@ interface SeatingPlanMiniProps {
   seats: Seat[];
 }
 
-interface MiniSeatProps {
-  id: string;
-  status: SeatStatus;
-}
-
-function MiniSeat({ id, status }: MiniSeatProps) {
-  const colors = {
-    available: 'bg-[#e8e8e8]',
-    reserved: 'bg-[#9ca3af]',
-  };
-
-  return (
-    <div className={`w-6 h-6 rounded ${colors[status]} text-[6px] flex items-center justify-center`}>
-      {id}
-    </div>
-  );
-}
+const DESIGN_WIDTH = 1100;
+const DESIGN_HEIGHT = 560;
+const MIN_MOBILE_SCALE = 0.8;
 
 export function SeatingPlanMini({ seats }: SeatingPlanMiniProps) {
-  const getSeatStatus = (seatId: string): SeatStatus => {
-    return seats.find(s => s.id === seatId)?.status || 'available';
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(MIN_MOBILE_SCALE);
+  const seatStatuses = useMemo(
+    () => new Map(seats.map((seat) => [seat.id, seat.status])),
+    [seats],
+  );
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    const updateScale = () => {
+      setScale(Math.max(element.clientWidth / DESIGN_WIDTH, MIN_MOBILE_SCALE));
+    };
+
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  const renderSeat = (id: string) => {
+    const status = seatStatuses.get(id) ?? "available";
+    const colors = {
+      available: "bg-[#e8e8e8] text-[#2d2520]",
+      reserved: "bg-[#9ca3af] text-white",
+    };
+
+    return (
+      <div
+        key={id}
+        className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xs font-medium ${colors[status]}`}
+        aria-label={`${id}, ${status}`}
+        title={`${id} — ${status}`}
+      >
+        {id}
+      </div>
+    );
   };
 
+  const scaledHeight = DESIGN_HEIGHT * scale;
+  const scaledWidth = DESIGN_WIDTH * scale;
+
   return (
-    <div className="bg-[#f9f9f9] rounded-xl p-4 overflow-x-auto">
-      <div className="relative min-w-200">
-        {/* Left Area */}
-        <div className="absolute left-0 top-0 flex flex-col gap-1">
-          <div className="flex gap-1">
-            <MiniSeat id="LA01" status={getSeatStatus("LA01")} />
-            <MiniSeat id="LA02" status={getSeatStatus("LA02")} />
-            <MiniSeat id="LA03" status={getSeatStatus("LA03")} />
-            <MiniSeat id="LA04" status={getSeatStatus("LA04")} />
+    <div
+      ref={containerRef}
+      className="w-full overflow-x-auto overscroll-x-contain pb-2 [scrollbar-color:#c4b5a3_transparent] [scrollbar-width:thin]"
+      style={{ height: scaledHeight + 8 }}
+      role="region"
+      aria-label="Current seating plan"
+      tabIndex={0}
+    >
+      <div className="relative" style={{ width: scaledWidth, height: scaledHeight }}>
+        <div
+          className="relative origin-top-left"
+          style={{
+            width: DESIGN_WIDTH,
+            height: DESIGN_HEIGHT,
+            transform: `scale(${scale})`,
+          }}
+        >
+          <div
+            className="absolute inset-2 rounded-2xl border-[3px] border-[#8b7355] bg-linear-to-br from-[#faf8f5] via-[#f5f0e8] to-[#ebe4d8] shadow-[inset_0_2px_12px_rgba(45,37,32,0.06)]"
+            aria-hidden
+          >
+            <div className="pointer-events-none absolute inset-1.5 rounded-xl border border-[#c4b5a3]/60" />
+            <div className="pointer-events-none absolute top-2 left-2 h-7 w-7 rounded-tl-sm border-t-2 border-l-2 border-[#6b5e52]/40" />
+            <div className="pointer-events-none absolute top-2 right-2 h-7 w-7 rounded-tr-sm border-t-2 border-r-2 border-[#6b5e52]/40" />
+            <div className="pointer-events-none absolute bottom-2 left-2 h-7 w-7 rounded-bl-sm border-b-2 border-l-2 border-[#6b5e52]/40" />
+            <div className="pointer-events-none absolute right-2 bottom-2 h-7 w-7 rounded-br-sm border-r-2 border-b-2 border-[#6b5e52]/40" />
+            <div className="pointer-events-none absolute bottom-0 left-[26%] h-1.5 w-[11%] rounded-t-sm bg-[#d1d5db]" />
           </div>
-          <div className="flex gap-1">
-            <MiniSeat id="LA05" status={getSeatStatus("LA05")} />
-            <MiniSeat id="LA06" status={getSeatStatus("LA06")} />
-            <MiniSeat id="LA07" status={getSeatStatus("LA07")} />
-            <MiniSeat id="LA08" status={getSeatStatus("LA08")} />
-          </div>
-        </div>
 
-        {/* Cashier */}
-        <div className="absolute left-37.5 top-0 w-24 h-12 border border-[#6b5e52] rounded-lg flex items-center justify-center">
-          <span className="text-[8px] text-[#2d2520]">CASHIER</span>
-        </div>
-
-        {/* Upper Area */}
-        <div className="absolute left-70 top-0 flex flex-col gap-1">
-          <div className="flex gap-1">
-            <MiniSeat id="UA01" status={getSeatStatus("UA01")} />
-            <MiniSeat id="UA02" status={getSeatStatus("UA02")} />
-            <MiniSeat id="UA03" status={getSeatStatus("UA03")} />
-            <MiniSeat id="UA04" status={getSeatStatus("UA04")} />
-          </div>
-          <div className="flex gap-1">
-            <MiniSeat id="UA05" status={getSeatStatus("UA05")} />
-            <MiniSeat id="UA06" status={getSeatStatus("UA06")} />
-            <MiniSeat id="UA07" status={getSeatStatus("UA07")} />
-            <MiniSeat id="UA08" status={getSeatStatus("UA08")} />
-          </div>
-          <div className="flex gap-1 justify-end mt-1">
-            <MiniSeat id="UB01" status={getSeatStatus("UB01")} />
-            <MiniSeat id="UB02" status={getSeatStatus("UB02")} />
-          </div>
-        </div>
-
-        {/* Left Bottom */}
-        <div className="absolute left-0 top-22.5 flex gap-1">
-          <MiniSeat id="LB01" status={getSeatStatus("LB01")} />
-          <MiniSeat id="LB02" status={getSeatStatus("LB02")} />
-          <MiniSeat id="LB03" status={getSeatStatus("LB03")} />
-          <MiniSeat id="LB04" status={getSeatStatus("LB04")} />
-        </div>
-
-        {/* Doorway */}
-        <div className="absolute left-37.5 top-32.5">
-          <div className="w-24 h-6 bg-[#d1d5db] rounded flex items-center justify-center">
-            <span className="text-[6px] text-[#2d2520]">DOORWAY</span>
-          </div>
-        </div>
-
-        {/* Left Wall */}
-        <div className="absolute left-85 top-32.5 flex flex-col gap-1.5">
-          <MiniSeat id="LW01" status={getSeatStatus("LW01")} />
-          <MiniSeat id="LW02" status={getSeatStatus("LW02")} />
-          <MiniSeat id="LW03" status={getSeatStatus("LW03")} />
-          <MiniSeat id="LW04" status={getSeatStatus("LW04")} />
-        </div>
-
-        {/* Right Area */}
-        <div className="absolute left-100 top-30 flex gap-8">
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-1">
-              <MiniSeat id="RA01" status={getSeatStatus("RA01")} />
-              <MiniSeat id="RA02" status={getSeatStatus("RA02")} />
+          <div className="absolute top-[4%] left-[2.5%] flex flex-col gap-2">
+            <div className="flex gap-2">
+              {renderSeat("LA01")}
+              {renderSeat("LA02")}
+              {renderSeat("LA03")}
+              {renderSeat("LA04")}
             </div>
-            <div className="flex gap-1">
-              <MiniSeat id="RA03" status={getSeatStatus("RA03")} />
-              <MiniSeat id="RA04" status={getSeatStatus("RA04")} />
+            <div className="flex gap-2">
+              {renderSeat("LA05")}
+              {renderSeat("LA06")}
+              {renderSeat("LA07")}
+              {renderSeat("LA08")}
             </div>
           </div>
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-1">
-              <MiniSeat id="RB01" status={getSeatStatus("RB01")} />
-              <MiniSeat id="RB02" status={getSeatStatus("RB02")} />
-            </div>
-            <div className="flex gap-1">
-              <MiniSeat id="RB03" status={getSeatStatus("RB03")} />
-              <MiniSeat id="RB04" status={getSeatStatus("RB04")} />
+
+          <div className="absolute top-[22%] left-[27%] flex h-[15%] w-[11%] items-center justify-center rounded-xl border-2 border-dashed border-[#8b7355]/70 bg-white/50">
+            <span className="text-sm font-medium tracking-wide text-[#6b5e52]">CASHIER</span>
+          </div>
+
+          <div className="absolute top-[4%] left-[38%] grid grid-cols-4 gap-x-2 gap-y-2">
+            {renderSeat("UA01")}
+            {renderSeat("UA02")}
+            {renderSeat("UA03")}
+            {renderSeat("UA04")}
+            {renderSeat("UA05")}
+            {renderSeat("UA06")}
+            {renderSeat("UA07")}
+            {renderSeat("UA08")}
+            <div className="col-start-3">{renderSeat("UB01")}</div>
+            <div className="col-start-4">{renderSeat("UB02")}</div>
+          </div>
+
+          <div className="absolute top-[38%] left-[2.5%] flex gap-2">
+            {renderSeat("LB01")}
+            {renderSeat("LB02")}
+            {renderSeat("LB03")}
+            {renderSeat("LB04")}
+          </div>
+
+          <div className="absolute top-[54%] left-[27%] w-[11%]">
+            <div className="flex h-12 items-center justify-center rounded-lg border border-[#9ca3af]/50 bg-[#d1d5db]/90 shadow-sm">
+              <span className="text-xs font-medium tracking-wider text-[#4b5563]">ENTRANCE</span>
             </div>
           </div>
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-1">
-              <MiniSeat id="RC01" status={getSeatStatus("RC01")} />
-              <MiniSeat id="RC02" status={getSeatStatus("RC02")} />
+
+          <div className="absolute top-[47%] left-[40%] flex flex-col gap-2.5 border-l-2 border-[#c4b5a3]/50 pl-2">
+            {renderSeat("LW01")}
+            {renderSeat("LW02")}
+            {renderSeat("LW03")}
+            {renderSeat("LW04")}
+          </div>
+
+          <div className="absolute top-[44%] right-[9%] left-[50%] flex justify-between">
+            <div className="flex flex-col gap-5">
+              <div className="flex gap-2">
+                {renderSeat("RA01")}
+                {renderSeat("RA02")}
+              </div>
+              <div className="flex gap-2">
+                {renderSeat("RA03")}
+                {renderSeat("RA04")}
+              </div>
             </div>
-            <div className="flex gap-1">
-              <MiniSeat id="RC03" status={getSeatStatus("RC03")} />
-              <MiniSeat id="RC04" status={getSeatStatus("RC04")} />
+            <div className="flex flex-col gap-5">
+              <div className="flex gap-2">
+                {renderSeat("RB01")}
+                {renderSeat("RB02")}
+              </div>
+              <div className="flex gap-2">
+                {renderSeat("RB03")}
+                {renderSeat("RB04")}
+              </div>
+            </div>
+            <div className="flex flex-col gap-5">
+              <div className="flex gap-2">
+                {renderSeat("RC01")}
+                {renderSeat("RC02")}
+              </div>
+              <div className="flex gap-2">
+                {renderSeat("RC03")}
+                {renderSeat("RC04")}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Wall */}
-        <div className="absolute left-170 top-32.5 flex flex-col gap-1.5">
-          <MiniSeat id="RW01" status={getSeatStatus("RW01")} />
-          <MiniSeat id="RW02" status={getSeatStatus("RW02")} />
-          <MiniSeat id="RW03" status={getSeatStatus("RW03")} />
-          <MiniSeat id="RW04" status={getSeatStatus("RW04")} />
-        </div>
+          <div className="absolute top-[50%] right-[2.5%] flex flex-col gap-2.5 border-r-2 border-[#c4b5a3]/50 pr-2">
+            {renderSeat("RW01")}
+            {renderSeat("RW02")}
+            {renderSeat("RW03")}
+            {renderSeat("RW04")}
+          </div>
 
-        {/* Bottom Row */}
-        <div className="absolute left-100 top-60 flex gap-1">
-          <MiniSeat id="BR01" status={getSeatStatus("BR01")} />
-          <MiniSeat id="BR02" status={getSeatStatus("BR02")} />
-          <MiniSeat id="BR03" status={getSeatStatus("BR03")} />
-          <MiniSeat id="BR04" status={getSeatStatus("BR04")} />
-          <MiniSeat id="BR05" status={getSeatStatus("BR05")} />
-          <MiniSeat id="BR06" status={getSeatStatus("BR06")} />
-          <MiniSeat id="BR07" status={getSeatStatus("BR07")} />
-          <MiniSeat id="BR08" status={getSeatStatus("BR08")} />
+          <div className="absolute top-[82%] right-[3%] left-[47%] flex justify-between border-t-2 border-dashed border-[#c4b5a3]/40 pt-2">
+            {renderSeat("BR01")}
+            {renderSeat("BR02")}
+            {renderSeat("BR03")}
+            {renderSeat("BR04")}
+            {renderSeat("BR05")}
+            {renderSeat("BR06")}
+            {renderSeat("BR07")}
+            {renderSeat("BR08")}
+          </div>
         </div>
-
-        {/* Spacer */}
-        <div className="h-62.5"></div>
       </div>
     </div>
   );
