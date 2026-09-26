@@ -2,14 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Calendar, Award, Clock, LogOut, TrendingUp, BookOpen, Play, Pause, RotateCcw, Plus, X, Settings } from 'lucide-react';
+import { User, Calendar, Award, Clock, LogOut, TrendingUp, BookOpen, Play, Pause, RotateCcw, Plus, X, Settings, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
+
+const STUDY_HISTORY_DAYS = 364;
+const STUDY_HISTORY_WEEKS = STUDY_HISTORY_DAYS / 7;
+const WELCOME_LOYALTY_POINTS = 500;
+const NEXT_REWARD_POINTS = 1000;
 
 export default function Account() {
   const router = useRouter();
   const [userName, setUserName] = useState('User');
   const [userEmail, setUserEmail] = useState('');
+  const [loyaltyPoints, setLoyaltyPoints] = useState(WELCOME_LOYALTY_POINTS);
   const [recentBookings, setRecentBookings] = useState<
     Array<{
       id: string;
@@ -32,12 +38,11 @@ export default function Account() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isCardFlipped, setIsCardFlipped] = useState(false);
   const [showAddCard, setShowAddCard] = useState(false);
+  const [showDeleteCardModal, setShowDeleteCardModal] = useState(false);
   const [newCard, setNewCard] = useState({ question: '', answer: '' });
-  const [flashcards, setFlashcards] = useState([
-    { id: 1, question: 'What is React?', answer: 'A JavaScript library for building user interfaces' },
-    { id: 2, question: 'What is a hook?', answer: 'Functions that let you use state and other React features' },
-    { id: 3, question: 'What is JSX?', answer: 'A syntax extension for JavaScript that looks similar to HTML' },
-  ]);
+  const [flashcards, setFlashcards] = useState<
+    Array<{ id: number; question: string; answer: string }>
+  >([]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -60,7 +65,7 @@ export default function Account() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name')
+        .select('full_name, loyalty_points')
         .eq('id', user.id)
         .single();
 
@@ -74,6 +79,7 @@ export default function Account() {
       if (!cancelled) {
         setUserName(profile?.full_name || user.user_metadata.full_name || 'User');
         setUserEmail(user.email || '');
+        setLoyaltyPoints(profile?.loyalty_points ?? WELCOME_LOYALTY_POINTS);
         setRecentBookings(
           (bookings ?? []).map((booking) => ({
             id: booking.reservation_code,
@@ -112,6 +118,23 @@ export default function Account() {
     return () => clearInterval(interval);
   }, [isTimerRunning, timerMinutes, timerSeconds]);
 
+  useEffect(() => {
+    if (!showDeleteCardModal) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowDeleteCardModal(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [showDeleteCardModal]);
+
   const handleLogout = async () => {
     if (isSupabaseConfigured) {
       const supabase = createClient();
@@ -146,25 +169,31 @@ export default function Account() {
   const timerUnitShortLabel = timerUnit === 'seconds' ? 'sec' : 'min';
 
   const flipCard = () => {
+    if (flashcards.length === 0) return;
     setIsCardFlipped(!isCardFlipped);
   };
 
   const nextCard = () => {
+    if (flashcards.length === 0) return;
     setCurrentCardIndex((prev) => (prev + 1) % flashcards.length);
     setIsCardFlipped(false);
   };
 
   const previousCard = () => {
+    if (flashcards.length === 0) return;
     setCurrentCardIndex((prev) => (prev - 1 + flashcards.length) % flashcards.length);
     setIsCardFlipped(false);
   };
 
   const addFlashcard = () => {
-    if (newCard.question && newCard.answer) {
+    const question = newCard.question.trim();
+    const answer = newCard.answer.trim();
+
+    if (question && answer) {
       setFlashcards([...flashcards, {
         id: Date.now(),
-        question: newCard.question,
-        answer: newCard.answer,
+        question,
+        answer,
       }]);
       setNewCard({ question: '', answer: '' });
       setShowAddCard(false);
@@ -173,20 +202,30 @@ export default function Account() {
     }
   };
 
+  const deleteCurrentFlashcard = () => {
+    const cardToDelete = flashcards[currentCardIndex];
+    if (!cardToDelete) return;
+
+    const remainingCards = flashcards.filter((card) => card.id !== cardToDelete.id);
+    setFlashcards(remainingCards);
+    setCurrentCardIndex(Math.max(0, Math.min(currentCardIndex, remainingCards.length - 1)));
+    setIsCardFlipped(false);
+    setShowDeleteCardModal(false);
+  };
+
   // Generate study activity data (GitHub-style contributions)
   const [studyData, setStudyData] = useState(() => [] as { date: string; hours: number; level: number }[]);
 
   useEffect(() => {
     const data: { date: string; hours: number; level: number }[] = [];
     const today = new Date();
-    for (let i = 119; i >= 0; i--) {
+    for (let i = STUDY_HISTORY_DAYS - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      const hours = Math.floor(Math.random() * 9);
       data.push({
         date: date.toISOString().split('T')[0],
-        hours,
-        level: hours === 0 ? 0 : hours < 2 ? 1 : hours < 4 ? 2 : hours < 6 ? 3 : 4,
+        hours: 0,
+        level: 0,
       });
     }
     // Defer setState to avoid synchronous state update within effect
@@ -203,7 +242,10 @@ export default function Account() {
   };
 
   const totalHours = studyData.reduce((sum, day) => sum + day.hours, 0);
-  const averageHours = (totalHours / 120).toFixed(1);
+  const averageHours = (totalHours / STUDY_HISTORY_DAYS).toFixed(1);
+  const loyaltyProgress = Math.min((loyaltyPoints / NEXT_REWARD_POINTS) * 100, 100);
+  const pointsUntilReward = Math.max(NEXT_REWARD_POINTS - loyaltyPoints, 0);
+  const currentFlashcard = flashcards[currentCardIndex];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] to-[#fff8ed] pt-24">
@@ -216,7 +258,7 @@ export default function Account() {
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 bg-white text-[#2d2520] px-6 py-3 rounded-full border border-[#f3ede4] hover:shadow-lg transition-all duration-300 hover:scale-105"
+            className="flex items-center gap-2 bg-white text-[#2d2520] px-6 py-3 rounded-full border border-[#f3ede4] hover:shadow-lg cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             Logout
@@ -225,120 +267,125 @@ export default function Account() {
 
         {/* Study History Dashboard */}
         <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-[#f3ede4] mb-8">
-          <div className="flex items-start justify-between mb-6 gap-8">
-            <div className="flex-1">
-              <h2 className="text-3xl text-[#2d2520] mb-6">Study History</h2>
-
-              <div className="overflow-x-auto">
-            {/* Month labels */}
-            <div className="flex items-center gap-1 mb-2">
-              <span className="text-xs text-[#6b5e52] w-8"></span>
-              <div className="flex gap-4 text-xs text-[#6b5e52]">
-                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, idx) => (
-                  <span key={month} className={idx % 3 === 0 ? '' : 'hidden md:inline'}>{month}</span>
-                ))}
+          <div className="mb-8">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-6">
+              <div>
+                <h2 className="text-3xl text-[#2d2520]">Study History</h2>
+                <p className="mt-2 text-sm text-[#6b5e52]">Your focused study activity over the last 52 weeks.</p>
               </div>
             </div>
 
-            <div className="inline-flex flex-col gap-1">
-              {[null, 'Mon', null, 'Wed', null, 'Fri', null].map((day, rowIndex) => (
-                <div key={rowIndex} className="flex items-center gap-1">
-                  <span className="text-xs text-[#6b5e52] w-8">{day || ''}</span>
-                  <div className="flex gap-1">
-                    {Array.from({ length: 17 }).map((_, weekIndex) => {
-                      const weekData = getWeekData(weekIndex);
-                      const dayData = weekData[rowIndex];
-
-                      return (
-                        <div
-                          key={weekIndex}
-                          className="w-3 h-3 rounded-sm transition-all hover:scale-150 cursor-pointer"
-                          style={{ backgroundColor: dayData ? getLevelColor(dayData.level) : '#f3ede4' }}
-                          title={dayData ? `${dayData.date}: ${dayData.hours} hours` : ''}
-                        />
-                      );
-                    })}
-                  </div>
+            <div className="overflow-x-auto rounded-2xl border border-[#f3ede4] bg-white p-5">
+              <div className="min-w-[900px]">
+                <div className="mb-3 grid grid-cols-12 pl-10 text-xs text-[#6b5e52]">
+                  {['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'].map((month) => (
+                    <span key={month}>{month}</span>
+                  ))}
                 </div>
-              ))}
+
+                <div className="flex flex-col gap-1.5">
+                  {[null, 'Mon', null, 'Wed', null, 'Fri', null].map((day, rowIndex) => (
+                    <div key={rowIndex} className="flex items-center gap-2">
+                      <span className="w-8 shrink-0 text-xs text-[#6b5e52]">{day || ''}</span>
+                      <div
+                        className="grid flex-1 gap-1.5"
+                        style={{ gridTemplateColumns: `repeat(${STUDY_HISTORY_WEEKS}, minmax(0, 1fr))` }}
+                      >
+                        {Array.from({ length: STUDY_HISTORY_WEEKS }).map((_, weekIndex) => {
+                          const weekData = getWeekData(weekIndex);
+                          const dayData = weekData[rowIndex];
+
+                          return (
+                            <div
+                              key={weekIndex}
+                              className="aspect-square w-full rounded-[3px] transition-transform hover:scale-120 cursor-pointer"
+                              style={{ backgroundColor: dayData ? getLevelColor(dayData.level) : '#f3ede4' }}
+                              title={dayData ? `${dayData.date}: ${dayData.hours} hours` : 'No study data'}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
-              <div className="flex items-center gap-2 mt-6 text-xs text-[#6b5e52]">
-                <span>Less</span>
-                {[0, 1, 2, 3, 4].map(level => (
-                  <div
-                    key={level}
-                    className="w-3 h-3 rounded-sm"
-                    style={{ backgroundColor: getLevelColor(level) }}
-                  />
-                ))}
-                <span>More</span>
+          {/* Stats Cards */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="bg-white rounded-2xl p-4 border border-[#f3ede4]">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 bg-[#fef3dc] rounded-lg flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-[#e5a930]" />
+                </div>
+                <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Total Hours</p>
               </div>
+              <p className="text-2xl text-[#2d2520]">{totalHours}h</p>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white rounded-2xl p-4 border border-[#f3ede4]">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-[#fef3dc] rounded-lg flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-[#e5a930]" />
-                  </div>
-                  <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Total Hours</p>
+            <div className="bg-white rounded-2xl p-4 border border-[#f3ede4]">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 bg-[#fef3dc] rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-[#e5a930]" />
                 </div>
-                <p className="text-2xl text-[#2d2520]">{totalHours}h</p>
+                <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Avg/Day</p>
               </div>
+              <p className="text-2xl text-[#2d2520]">{averageHours}h</p>
+            </div>
 
-              <div className="bg-white rounded-2xl p-4 border border-[#f3ede4]">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-[#fef3dc] rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-[#e5a930]" />
-                  </div>
-                  <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Avg/Day</p>
+            <div className="bg-white rounded-2xl p-4 border border-[#f3ede4]">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 bg-[#fef3dc] rounded-lg flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-[#e5a930]" />
                 </div>
-                <p className="text-2xl text-[#2d2520]">{averageHours}h</p>
+                <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Bookings</p>
               </div>
+              <p className="text-2xl text-[#2d2520]">{recentBookings.length}</p>
+            </div>
 
-              <div className="bg-white rounded-2xl p-4 border border-[#f3ede4]">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-[#fef3dc] rounded-lg flex items-center justify-center">
-                    <Calendar className="w-4 h-4 text-[#e5a930]" />
-                  </div>
-                  <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Bookings</p>
+            <div className="bg-white rounded-2xl p-4 border border-[#f3ede4]">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 bg-[#fef3dc] rounded-lg flex items-center justify-center">
+                  <Award className="w-4 h-4 text-[#e5a930]" />
                 </div>
-                <p className="text-2xl text-[#2d2520]">{recentBookings.length}</p>
+                <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Loyalty Points</p>
               </div>
-
-              <div className="bg-white rounded-2xl p-4 border border-[#f3ede4]">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-[#fef3dc] rounded-lg flex items-center justify-center">
-                    <Award className="w-4 h-4 text-[#e5a930]" />
-                  </div>
-                  <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Loyalty Points</p>
-                </div>
-                <p className="text-2xl text-[#2d2520]">1,250</p>
-              </div>
+              <p className="text-2xl text-[#2d2520]">{loyaltyPoints.toLocaleString()}</p>
             </div>
           </div>
         </div>
 
         {/* Study Helper Module */}
         <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-[#f3ede4] mb-8">
-          <h2 className="text-3xl mb-6 text-[#2d2520]">Study Helper</h2>
+          <div className="mb-8">
+            <p className="mb-2 text-sm font-medium uppercase tracking-[0.2em] text-[#e5a930]">Focus toolkit</p>
+            <h2 className="text-3xl text-[#2d2520]">Study Helper</h2>
+            <p className="mt-2 max-w-2xl text-[#6b5e52]">
+              Stay focused with a timed work session, then reinforce what you learned with your own flashcards.
+            </p>
+          </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid items-start gap-8 md:grid-cols-2">
             {/* Pomodoro Timer */}
-            <div className="bg-[#fef3dc] rounded-2xl p-6 border border-[#e5a930]">
+            <div className="rounded-3xl border border-[#e5a930]/60 bg-gradient-to-br from-[#fff9ec] to-[#fef3dc] p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <Clock className="w-6 h-6 text-[#e5a930]" />
-                  <h3 className="text-2xl text-[#2d2520]">Pomodoro Timer</h3>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e5a930] text-white shadow-sm">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl text-[#2d2520]">Pomodoro Timer</h3>
+                    <p className="text-sm text-[#6b5e52]">One task. One focused session.</p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setShowTimerSettings(!showTimerSettings)}
-                  className="w-8 h-8 bg-white text-[#2d2520] rounded-full flex items-center justify-center hover:bg-[#f3ede4] transition-colors border border-[#e5a930]"
+                  aria-label="Timer settings"
+                  aria-expanded={showTimerSettings}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e5a930] bg-white text-[#2d2520] transition-colors hover:bg-[#f3ede4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] cursor-pointer"
                 >
-                  <Settings className="w-4 h-4" />
+                  <Settings className="w-5 h-5" />
                 </button>
               </div>
 
@@ -376,7 +423,7 @@ export default function Account() {
                           setCustomTimerValue(preset);
                           applyTimerSettings(preset, timerUnit);
                         }}
-                        className="px-3 py-2 rounded-full border border-[#e5a930] bg-[#fef3dc] text-[#2d2520] text-sm hover:bg-[#f3ede4] transition-colors"
+                        className="px-3 py-2 rounded-full border border-[#e5a930] bg-[#fef3dc] text-[#2d2520] text-sm hover:bg-[#f3ede4] transition-colors cursor-pointer"
                       >
                         {preset} {timerUnitShortLabel}
                       </button>
@@ -384,126 +431,258 @@ export default function Account() {
                   </div>
                   <button
                     onClick={() => applyTimerSettings()}
-                    className="w-full bg-[#e5a930] text-white px-4 py-2 rounded-lg hover:bg-[#d69520] transition-colors text-sm"
+                    className="w-full bg-[#e5a930] text-white px-4 py-2 rounded-lg hover:bg-[#d69520] transition-colors text-sm cursor-pointer"
                   >
                     Apply {timerUnitLabel} setting
                   </button>
                 </div>
               )}
 
-              <div className="text-center mb-6">
-                <div className="text-6xl text-[#2d2520] mb-4 font-mono">
+              <div className="rounded-2xl border border-white/80 bg-white/75 px-5 py-8 text-center shadow-inner">
+                <span className="inline-flex rounded-full bg-[#fef3dc] px-3 py-1 text-xs font-medium uppercase tracking-wider text-[#8b6518]">
+                  {isTimerRunning ? 'Focus in progress' : 'Ready to focus'}
+                </span>
+                <div className="my-5 text-6xl font-mono tabular-nums text-[#2d2520] sm:text-7xl">
                   {String(timerMinutes).padStart(2, '0')}:{String(timerSeconds).padStart(2, '0')}
                 </div>
-                <div className="flex items-center justify-center gap-4">
+                <div className="flex flex-wrap items-center justify-center gap-3">
                   <button
                     onClick={toggleTimer}
-                    className="w-12 h-12 bg-[#e5a930] text-white rounded-full flex items-center justify-center hover:bg-[#d69520] transition-colors"
+                    className="inline-flex min-w-32 items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white shadow-sm transition-all hover:bg-[#d69520] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d69520] focus-visible:ring-offset-2 cursor-pointer"
                   >
-                    {isTimerRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                    {isTimerRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                    {isTimerRunning ? 'Pause' : 'Start focus'}
                   </button>
                   <button
                     onClick={resetTimer}
-                    className="w-12 h-12 bg-white text-[#2d2520] rounded-full flex items-center justify-center hover:bg-[#f3ede4] transition-colors border border-[#e5a930]"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#e5a930] bg-white px-5 py-3 text-[#2d2520] transition-colors hover:bg-[#f3ede4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] cursor-pointer"
                   >
                     <RotateCcw className="w-5 h-5" />
+                    Reset
                   </button>
                 </div>
               </div>
 
-              <div className="space-y-2 text-sm text-[#6b5e52]">
-                <p>• {customTimerValue} {timerUnitLabel} of focused work</p>
-                <p>• 5 minutes break</p>
-                <p>• Track your productivity sessions</p>
+              <div className="mt-5 grid grid-cols-2 gap-3 text-center text-sm">
+                <div className="rounded-xl bg-white/70 p-3">
+                  <p className="text-xs uppercase tracking-wider text-[#6b5e52]">Focus</p>
+                  <p className="mt-1 font-medium text-[#2d2520]">{customTimerValue} {timerUnitShortLabel}</p>
+                </div>
+                <div className="rounded-xl bg-white/70 p-3">
+                  <p className="text-xs uppercase tracking-wider text-[#6b5e52]">Suggested break</p>
+                  <p className="mt-1 font-medium text-[#2d2520]">5 min</p>
+                </div>
               </div>
             </div>
 
             {/* Flashcards */}
-            <div className="bg-white rounded-2xl p-6 border border-[#f3ede4]">
+            <div className="rounded-3xl border border-[#f3ede4] bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <BookOpen className="w-6 h-6 text-[#e5a930]" />
-                  <h3 className="text-2xl text-[#2d2520]">Flashcards</h3>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fef3dc] text-[#e5a930]">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl text-[#2d2520]">Flashcards</h3>
+                    <p className="text-sm text-[#6b5e52]">Practice active recall at your pace.</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-[#6b5e52]">
-                    {currentCardIndex + 1} / {flashcards.length}
-                  </span>
-                  <button
-                    onClick={() => setShowAddCard(!showAddCard)}
-                    className="w-8 h-8 bg-[#e5a930] text-white rounded-full flex items-center justify-center hover:bg-[#d69520] transition-colors"
-                  >
-                    {showAddCard ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  </button>
-                </div>
+                <span className="rounded-full bg-[#f3ede4] px-3 py-1 text-sm text-[#6b5e52]">
+                  {flashcards.length === 0 ? '0 cards' : `${currentCardIndex + 1} of ${flashcards.length}`}
+                </span>
               </div>
 
               {/* Add Card Form */}
               {showAddCard && (
-                <div className="mb-4 space-y-3 bg-white rounded-xl p-4 border border-[#e5a930]">
-                  <input
-                    type="text"
-                    placeholder="Question"
+                <div className="mb-5 rounded-2xl border border-[#e5a930]/60 bg-[#fffaf0] p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="font-medium text-[#2d2520]">Create a flashcard</h4>
+                        <span className="rounded-full bg-[#e5a930] px-2.5 py-1 text-xs font-medium text-white">
+                          Card #{flashcards.length + 1}
+                        </span>
+                      </div>
+                      <p className="text-sm text-[#6b5e52]">Keep each prompt focused on one idea.</p>
+                    </div>
+                    <button
+                      onClick={() => setShowAddCard(false)}
+                      aria-label="Close flashcard form"
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-[#6b5e52] hover:bg-white hover:text-[#2d2520] cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <label htmlFor="flashcard-question" className="mb-1.5 block text-sm font-medium text-[#2d2520]">
+                    Question or prompt
+                  </label>
+                  <textarea
+                    id="flashcard-question"
+                    rows={2}
+                    placeholder="Example: What is active recall?"
                     value={newCard.question}
                     onChange={(e) => setNewCard({ ...newCard, question: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] text-sm placeholder:text-[#2d2520]/80 text-[#2d2520]"
+                    className="mb-4 w-full resize-none rounded-xl border border-[#f3ede4] bg-white px-3 py-2.5 text-sm text-[#2d2520] placeholder:text-[#6b5e52]/70 focus:outline-none focus:ring-2 focus:ring-[#e5a930]"
                   />
-                  <input
-                    type="text"
-                    placeholder="Answer"
+                  <label htmlFor="flashcard-answer" className="mb-1.5 block text-sm font-medium text-[#2d2520]">
+                    Answer
+                  </label>
+                  <textarea
+                    id="flashcard-answer"
+                    rows={3}
+                    placeholder="Write the answer you want to remember."
                     value={newCard.answer}
                     onChange={(e) => setNewCard({ ...newCard, answer: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] text-sm placeholder:text-[#2d2520]/80 text-[#2d2520]"
+                    className="mb-4 w-full resize-none rounded-xl border border-[#f3ede4] bg-white px-3 py-2.5 text-sm text-[#2d2520] placeholder:text-[#6b5e52]/70 focus:outline-none focus:ring-2 focus:ring-[#e5a930]"
                   />
                   <button
                     onClick={addFlashcard}
-                    className="w-full bg-[#e5a930] text-white px-4 py-2 rounded-lg hover:bg-[#d69520] transition-colors text-sm"
+                    disabled={!newCard.question.trim() || !newCard.answer.trim()}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#e5a930] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#d69520] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                   >
+                    <Plus className="h-4 w-4" />
                     Add Card
                   </button>
                 </div>
               )}
 
-              {/* Single Flashcard */}
-              <div
-                onClick={flipCard}
-                className="bg-[#fef3dc] rounded-2xl p-8 cursor-pointer hover:bg-[#f4d98d] transition-all min-h-48 flex items-center justify-center text-center mb-6 border-2 border-[#e5a930]"
-              >
-                <p className="text-xl text-[#2d2520]">
-                  {isCardFlipped
-                    ? flashcards[currentCardIndex].answer
-                    : flashcards[currentCardIndex].question}
-                </p>
-              </div>
+              {currentFlashcard ? (
+                <>
+                  <button
+                    onClick={flipCard}
+                    className="mb-5 flex min-h-56 w-full flex-col items-center justify-center rounded-2xl border-2 border-[#e5a930] bg-[#fef3dc] p-8 text-center transition-all hover:-translate-y-0.5 hover:bg-[#f4d98d] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] focus-visible:ring-offset-2 cursor-pointer"
+                  >
+                    <span className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-[#8b6518]">
+                      {isCardFlipped ? 'Answer' : 'Question'}
+                    </span>
+                    <span className="text-xl text-[#2d2520]">
+                      {isCardFlipped ? currentFlashcard.answer : currentFlashcard.question}
+                    </span>
+                    <span className="mt-5 text-xs text-[#6b5e52]">Tap to {isCardFlipped ? 'see the question' : 'reveal the answer'}</span>
+                  </button>
 
-              {/* Navigation */}
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={previousCard}
-                  className="bg-[#e5a930] text-white px-6 py-2 rounded-full hover:bg-[#d69520] transition-colors text-sm"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={flipCard}
-                  className="bg-white text-[#2d2520] px-6 py-2 rounded-full border border-[#e5a930] hover:bg-[#f3ede4] transition-colors text-sm"
-                >
-                  Flip Card
-                </button>
-                <button
-                  onClick={nextCard}
-                  className="bg-[#e5a930] text-white px-6 py-2 rounded-full hover:bg-[#d69520] transition-colors text-sm"
-                >
-                  Next
-                </button>
-              </div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={previousCard}
+                        disabled={flashcards.length <= 1}
+                        className="rounded-full border border-[#f3ede4] bg-white px-4 py-2 text-sm text-[#2d2520] hover:border-[#e5a930] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={nextCard}
+                        disabled={flashcards.length <= 1}
+                        className="rounded-full border border-[#f3ede4] bg-white px-4 py-2 text-sm text-[#2d2520] hover:border-[#e5a930] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Next
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setShowDeleteCardModal(true)}
+                        className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete card
+                      </button>
+                      <button
+                        onClick={() => setShowAddCard(true)}
+                        className="inline-flex items-center gap-2 rounded-full bg-[#e5a930] px-4 py-2 text-sm text-white hover:bg-[#d69520] cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4" />
+                        New card
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : !showAddCard ? (
+                <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#e5a930]/50 bg-[#fffaf0] px-6 py-10 text-center">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#fef3dc] text-[#e5a930]">
+                    <BookOpen className="h-6 w-6" />
+                  </div>
+                  <h4 className="text-xl text-[#2d2520]">No flashcards yet</h4>
+                  <p className="mt-2 max-w-sm text-sm text-[#6b5e52]">
+                    Create your first question-and-answer card to begin a quick review session.
+                  </p>
+                  <button
+                    onClick={() => setShowAddCard(true)}
+                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#e5a930] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#d69520] cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create first card
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
 
-              <p className="text-xs text-[#6b5e52] text-center mt-4">
-                Click the card or tap Flip Card to reveal the answer
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-[#f3ede4] bg-white/80 p-5">
+              <h3 className="flex items-center gap-2 font-medium text-[#2d2520]">
+                <Clock className="h-4 w-4 text-[#e5a930]" />
+                How the Pomodoro Timer works
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-[#6b5e52]">
+                Choose a focus length, start the timer, and work on one task until time is up. Take a short five-minute break, then begin another focused session when you are ready.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#f3ede4] bg-white/80 p-5">
+              <h3 className="flex items-center gap-2 font-medium text-[#2d2520]">
+                <BookOpen className="h-4 w-4 text-[#e5a930]" />
+                How Flashcards work
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-[#6b5e52]">
+                Add a question on the front and its answer on the back. Try to recall the answer before revealing it, then move through your cards and repeat the ones that need more practice.
               </p>
             </div>
           </div>
         </div>
+
+        {showDeleteCardModal && currentFlashcard && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) setShowDeleteCardModal(false);
+            }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-flashcard-title"
+              aria-describedby="delete-flashcard-description"
+              className="w-full max-w-md rounded-3xl border border-red-100 bg-white p-6 shadow-2xl"
+            >
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <h2 id="delete-flashcard-title" className="text-2xl text-[#2d2520]">
+                Delete flashcard #{currentCardIndex + 1}?
+              </h2>
+              <p id="delete-flashcard-description" className="mt-2 text-sm leading-6 text-[#6b5e52]">
+                This will permanently remove “{currentFlashcard.question}” from your flashcards. This action cannot be undone.
+              </p>
+              <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteCardModal(false)}
+                  autoFocus
+                  className="rounded-full border border-[#f3ede4] bg-white px-5 py-2.5 text-sm text-[#2d2520] transition-colors hover:border-[#e5a930] hover:bg-[#fffaf0] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteCurrentFlashcard}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete card
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid md:grid-cols-3 gap-8">
           {/* Recent Bookings */}
@@ -562,7 +741,7 @@ export default function Account() {
                 <div className="flex items-center gap-3">
                   <User className="w-5 h-5 text-[#6b5e52]" />
                   <div>
-                    <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Name</p>
+                    <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Username</p>
                     <p className="text-[#2d2520]">{userName}</p>
                   </div>
                 </div>
@@ -582,12 +761,12 @@ export default function Account() {
                 <Award className="w-8 h-8" />
                 <h2 className="text-2xl">Loyalty Rewards</h2>
               </div>
-              <p className="text-4xl mb-2">1,250 Points</p>
+              <p className="text-4xl mb-2">{loyaltyPoints.toLocaleString()} Points</p>
               <p className="text-white/90 text-sm mb-4">
-                 You&apos;re 250 points away from your next reward!
+                You&apos;re {pointsUntilReward.toLocaleString()} points away from your next reward!
               </p>
               <div className="bg-white/20 rounded-full h-2 mb-4">
-                <div className="bg-white rounded-full h-2" style={{ width: '83%' }}></div>
+                <div className="bg-white rounded-full h-2" style={{ width: `${loyaltyProgress}%` }}></div>
               </div>
               <p className="text-xs text-white/80">
                 Earn 10 points per hour of study time
