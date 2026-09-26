@@ -6,7 +6,7 @@ This guide explains how to set up your work, name branches, use git, and open a 
 
 - Make sure you have Node.js 20.9 or newer installed.
 - Install dependencies with `npm install`.
-- Run the app locally with `npm run dev` before making changes.
+- Run the affected app with `npm run dev:frontend` or `npm run dev:admin` before making changes.
 - Review the README to understand the app structure and available routes.
 
 ## Branch Naming
@@ -106,8 +106,9 @@ Before submitting, confirm the following:
 ## Project Notes
 
 - This app uses the Next.js App Router.
-- Reusable UI components live in `app/components/`.
-- Static images are stored in `public/images/`.
+- Public application code and assets live in `frontend/`.
+- Local administrator and kiosk code lives in `admin/`.
+- Shared database migrations and configuration live in `supabase/`.
 - Keep changes consistent with the existing design and component patterns.
 
 ## Need Help?

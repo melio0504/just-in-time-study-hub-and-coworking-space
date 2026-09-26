@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Facility Kiosk | Just In Time Study Hub",
+  title: "Kiosk | Just In Time Study Hub",
   description:
     "QR check-in and check-out kiosk for Just In Time Study Hub and Coworking Space.",
 };

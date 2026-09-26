@@ -1,47 +1,30 @@
 {
   "name": "just-in-time-study-hub-and-coworking-space",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "frontend",
+    "admin"
+  ],
   "engines": {
     "node": ">=22.0.0"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
+    "dev:frontend": "npm run dev --workspace @jit-studyhub/frontend",
+    "dev:admin": "npm run dev --workspace @jit-studyhub/admin",
+    "build": "npm run build --workspaces --if-present",
+    "build:frontend": "npm run build --workspace @jit-studyhub/frontend",
+    "build:admin": "npm run build --workspace @jit-studyhub/admin",
+    "start:frontend": "npm run start --workspace @jit-studyhub/frontend",
+    "start:admin": "npm run start --workspace @jit-studyhub/admin",
+    "start:admin:lan": "npm run start:lan --workspace @jit-studyhub/admin",
+    "lint": "npm run lint --workspaces --if-present",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:reset": "supabase db reset",
-    "supabase:types": "supabase gen types typescript --local > lib/supabase/database.types.ts"
-  },
-  "dependencies": {
-    "@radix-ui/react-dialog": "1.1.6",
-    "@radix-ui/react-slot": "1.1.2",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.1",
-    "@supabase/ssr": "0.12.7",
-    "@supabase/supabase-js": "2.117.1",
-    "class-variance-authority": "0.7.1",
-    "clsx": "2.1.1",
-    "lucide-react": "0.487.0",
-    "motion": "12.23.24",
-    "next": "16.3.4",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "recharts": "2.15.2",
-    "tailwind-merge": "3.2.0",
-    "three": "0.182.0"
+    "supabase:types": "supabase gen types typescript --local > frontend/lib/supabase/database.types.ts && cp frontend/lib/supabase/database.types.ts admin/lib/supabase/database.types.ts"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.4",
-    "supabase": "2.117.0",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "supabase": "2.117.0"
   }
 }

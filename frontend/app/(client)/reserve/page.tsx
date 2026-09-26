@@ -2,7 +2,6 @@
 
 import { Suspense, useCallback, useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, ChevronLeft, ChevronRight, X, QrCode, AlertCircle, CheckCircle2, Mail } from 'lucide-react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { SeatingPlan } from '@/app/components/SeatingPlan';
 import { allSeatIds, getReservedSeatsForDate } from '@/lib/seats';
@@ -641,10 +640,7 @@ function ReserveContent() {
                       <li>When you leave, scan the same QR at the kiosk under <strong>Check-Out</strong>.</li>
                     </ol>
                     <p className="text-xs text-[#6b5e52] mt-3">
-                      Try the kiosk demo:{' '}
-                      <Link href="/kiosk" className="text-[#e5a930] underline hover:text-[#d69520]">
-                        /kiosk
-                      </Link>
+                      The check-in kiosk is available inside the facility.
                     </p>
                   </div>
 

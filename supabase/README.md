@@ -14,14 +14,16 @@ npm run supabase:reset
 npx supabase status
 ```
 
-Copy `.env.example` to `.env.local`, then copy the local `API_URL` and
-`PUBLISHABLE_KEY` printed by `npx supabase status`. The checked-in local Auth
-configuration requires email confirmation. Test messages are available in
-Mailpit at <http://127.0.0.1:54324>.
+Copy `frontend/.env.example` to `frontend/.env.local` and
+`admin/.env.example` to `admin/.env.local`, then copy the local `API_URL` and
+`PUBLISHABLE_KEY` printed by `npx supabase status` into both files. The
+checked-in local Auth configuration requires email confirmation. Test messages
+are available in Mailpit at <http://127.0.0.1:54324>.
 
 Useful local URLs:
 
-- Application: <http://localhost:3000>
+- Public application: <http://localhost:3000>
+- Facility operations: <http://127.0.0.1:3001>
 - Supabase Studio: <http://127.0.0.1:54323>
 - Mailpit: <http://127.0.0.1:54324>
 
