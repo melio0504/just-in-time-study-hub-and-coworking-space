@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Menu, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
@@ -14,25 +14,19 @@ const MOBILE_NAV_LINKS = [
   { href: '/about', label: 'About Us' },
 ] as const;
 
-const MOBILE_MENU_TRANSITION_MS = 500;
-
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMenuMounted, setIsMenuMounted] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const mobileNavRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  const toggleMenu = () => {
-    if (!isMenuOpen) {
-      // ensure menu is mounted before opening so transitions run correctly
-      setIsMenuMounted(true);
-      setIsMenuOpen(true);
-      return;
-    }
-
-    setIsMenuOpen(false);
-  };
-  const closeMenu = () => setIsMenuOpen(false);
+  const closeMenu = useCallback(() => setIsMenuOpen(false), []);
+  const closeMenuAndRestoreFocus = useCallback(() => {
+    closeMenu();
+    menuButtonRef.current?.focus();
+  }, [closeMenu]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -56,48 +50,68 @@ export function Header() {
       setIsScrolled(window.scrollY > 20);
     };
 
+    handleScroll();
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
     if (!isMenuOpen) {
-      document.body.style.overflow = '';
       return;
     }
 
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        closeMenuAndRestoreFocus();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        const focusableElements = mobileNavRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled])',
+        );
+
+        if (!focusableElements?.length) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        } else if (!event.shiftKey && document.activeElement === lastElement) {
+          event.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    const handleDesktopResize = (event: MediaQueryListEvent) => {
+      if (event.matches) {
         closeMenu();
       }
     };
 
+    const desktopQuery = window.matchMedia('(min-width: 1024px)');
+
     window.addEventListener('keydown', handleKeyDown);
+    desktopQuery.addEventListener('change', handleDesktopResize);
 
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
+      desktopQuery.removeEventListener('change', handleDesktopResize);
     };
-  }, [isMenuOpen]);
-
-  useEffect(() => {
-    if (isMenuOpen) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setIsMenuMounted(false);
-    }, MOBILE_MENU_TRANSITION_MS);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [isMenuOpen]);
+  }, [isMenuOpen, closeMenu, closeMenuAndRestoreFocus]);
 
   return (
     <>
       <header className={`fixed top-0 left-0 right-0 z-50 border-b border-[#f3ede4] bg-[#fffcf7]/90 backdrop-blur-md transition-all duration-300 ${isScrolled
-        ? 'mx-3 mt-1.5 rounded-2xl border border-[#f3ede4] shadow-lg sm:mx-50 sm:mt-1.5 sm:top-1.5 sm:rounded-3xl sm:border sm:shadow-lg'
+        ? 'mx-3 mt-1.5 rounded-2xl border border-[#f3ede4] shadow-lg sm:mx-6 sm:rounded-3xl xl:mx-auto xl:w-[calc(100%-3rem)] xl:max-w-7xl'
         : ''
         }`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
@@ -141,36 +155,40 @@ export function Header() {
             </Link>
 
             <button
-              onClick={toggleMenu}
-              className="inline-flex items-center justify-center rounded-full border border-[#f3ede4] bg-white/80 p-2 text-[#6b5e52] transition-colors hover:text-[#3d3329] lg:hidden"
-              aria-label="Toggle menu"
+              ref={menuButtonRef}
+              type="button"
+              onClick={() => setIsMenuOpen(true)}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-[#f3ede4] bg-white/80 p-2 text-[#6b5e52] transition-colors hover:border-[#e5a930] hover:text-[#3d3329] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5a930] lg:hidden"
+              aria-label="Open navigation menu"
               aria-expanded={isMenuOpen}
               aria-controls="mobile-navigation"
             >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              <Menu className="h-6 w-6" />
             </button>
           </div>
         </div>
       </header>
 
-      {isMenuMounted && (
-        <nav
-          id="mobile-navigation"
-          className={`fixed inset-0 z-[60] min-h-dvh lg:hidden ${isMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'
+      <nav
+        ref={mobileNavRef}
+        id="mobile-navigation"
+        className={`fixed inset-0 z-[60] min-h-dvh transition-[visibility] duration-300 lg:hidden ${isMenuOpen ? 'visible pointer-events-auto' : 'invisible pointer-events-none'
+          }`}
+        aria-label="Mobile navigation"
+        aria-hidden={!isMenuOpen}
+        inert={isMenuOpen ? undefined : true}
+      >
+        <div
+          className={`absolute inset-0 bg-[#2d2520]/40 backdrop-blur-[2px] transition-opacity duration-300 motion-reduce:transition-none ${isMenuOpen ? 'opacity-100' : 'opacity-0'
             }`}
-          aria-hidden={!isMenuOpen}
-        >
-          <div
-            className={`absolute inset-0 bg-[#2d2520]/20 backdrop-blur-[2px] transition-opacity duration-500 ease-in-out ${isMenuOpen ? 'opacity-100' : 'opacity-0'
-              }`}
-            onClick={closeMenu}
-            aria-hidden
-          />
+          onClick={closeMenuAndRestoreFocus}
+          aria-hidden
+        />
 
-          <div
-            className={`absolute inset-x-0 bottom-0 top-0 flex min-h-dvh flex-col bg-gradient-to-b from-[#fffcf7] via-[#fff8ed] to-[#fef3dc] transition-transform duration-500 ease-in-out ${isMenuOpen ? 'translate-y-0' : '-translate-y-4'
-              }`}
-          >
+        <div
+          className={`absolute bottom-0 right-0 top-0 flex min-h-dvh w-full max-w-md flex-col bg-gradient-to-b from-[#fffcf7] via-[#fff8ed] to-[#fef3dc] shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
+        >
             <div className="flex items-center justify-between border-b border-[#f3ede4]/80 px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
               <Link href="/" onClick={closeMenu} className="shrink-0">
                 <Image
@@ -182,10 +200,11 @@ export function Header() {
                 />
               </Link>
               <button
+                ref={closeButtonRef}
                 type="button"
-                onClick={closeMenu}
+                onClick={closeMenuAndRestoreFocus}
                 aria-label="Close navigation menu"
-                className="inline-flex items-center justify-center rounded-full border border-[#f3ede4] bg-white/90 p-2.5 text-[#6b5e52] transition-colors duration-500 hover:border-[#e5a930] hover:text-[#3d3329]"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-[#f3ede4] bg-white/90 p-2.5 text-[#6b5e52] transition-colors hover:border-[#e5a930] hover:text-[#3d3329] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5a930]"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -208,7 +227,7 @@ export function Header() {
                       className={`group flex items-center justify-between border-b border-[#f3ede4]/60 py-4 transition-all duration-500 ease-in-out active:bg-[#fef3dc]/50 ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
                         }`}
                       style={{
-                        transitionDelay: isMenuOpen ? `${80 + index * 60}ms` : '0ms',
+                        transitionDelay: isMenuOpen ? `${50 + index * 50}ms` : '0ms',
                       }}
                     >
                       <span className="text-xl font-medium tracking-tight text-[#2d2520] transition-colors duration-500 group-hover:text-[#e5a930] sm:text-2xl">
@@ -225,7 +244,7 @@ export function Header() {
                     className={`group flex items-center justify-between py-4 transition-all duration-500 ease-in-out active:bg-[#fef3dc]/50 ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
                       }`}
                     style={{
-                      transitionDelay: isMenuOpen ? `${80 + MOBILE_NAV_LINKS.length * 60}ms` : '0ms',
+                      transitionDelay: isMenuOpen ? `${50 + MOBILE_NAV_LINKS.length * 50}ms` : '0ms',
                     }}
                   >
                     <span className="text-xl font-medium tracking-tight text-[#6b5e52] transition-colors duration-500 group-hover:text-[#3d3329] sm:text-2xl">
@@ -240,7 +259,7 @@ export function Header() {
             <div
               className={`border-t border-[#f3ede4]/80 bg-[#fffcf7]/80 px-5 py-5 backdrop-blur-sm transition-all duration-500 ease-in-out sm:px-6 sm:py-6 ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
                 }`}
-              style={{ transitionDelay: isMenuOpen ? '380ms' : '0ms' }}
+              style={{ transitionDelay: isMenuOpen ? '300ms' : '0ms' }}
             >
               <Link
                 href="/reserve"
@@ -251,9 +270,8 @@ export function Header() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-          </div>
-        </nav>
-      )}
+        </div>
+      </nav>
     </>
   );
 }

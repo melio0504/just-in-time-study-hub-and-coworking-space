@@ -216,19 +216,17 @@ function ReserveContent() {
     }
 
     const selectedSeats = seats.filter(s => s.status === 'selected').map(s => s.id);
-    const generatedId = `RES-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
     setIsSubmitting(true);
     try {
       const booking = await createBooking({
-        reservation_code: generatedId,
-        guest_name: formData.name,
-        guest_email: formData.email,
-        booking_date: formData.date,
-        start_time: formData.time,
-        duration_hours: Number(formData.duration),
+        guestName: formData.name,
+        guestEmail: formData.email,
+        bookingDate: formData.date,
+        startTime: formData.time,
+        durationHours: Number(formData.duration),
         space: formData.space || 'study-seat',
-        seat_ids: selectedSeats,
+        seatCodes: selectedSeats,
       });
       setReservationId(booking.reservation_code);
     } catch (error) {
