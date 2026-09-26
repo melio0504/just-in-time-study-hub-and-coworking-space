@@ -158,7 +158,7 @@ export function Header() {
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/reserve"
-              className="hidden rounded-full bg-[#e5a930] px-4 py-2 text-sm text-white transition-all duration-300 hover:scale-105 hover:shadow-lg sm:inline-block sm:px-6 sm:py-2.5 sm:text-base"
+              className="hidden rounded-full bg-[#e5a930] px-4 py-2 text-sm text-white hover:shadow-lg sm:inline-block sm:px-6 sm:py-2.5 sm:text-base"
             >
               Reserve
             </Link>
