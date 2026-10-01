@@ -71,14 +71,24 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <section className="pt-24 sm:pt-32 pb-20 sm:pb-32 px-4 sm:px-6 relative overflow-hidden">
+      <section className="pt-10 sm:pt-24 pb-20 sm:pb-32 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-20 right-20 w-96 h-96 bg-[#fef3dc] rounded-full blur-3xl"></div>
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-[#fff8ed] rounded-full blur-3xl"></div>
         </div>
 
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
+          <div className="relative isolate -mx-4 mb-16 grid items-center gap-12 overflow-hidden px-4 py-16 sm:-mx-6 sm:rounded-3xl sm:px-6 md:mx-0 md:grid-cols-2 md:overflow-visible md:rounded-none md:p-0">
+            <Image
+              src="/images/solo-learner.jpg"
+              alt=""
+              fill
+              priority
+              sizes="(max-width: 767px) 100vw, 1px"
+              className="-z-20 object-cover object-center md:hidden"
+            />
+            <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#fffcf7]/90 via-[#fffcf7]/80 to-[#fff8ed]/95 md:hidden" />
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -158,12 +168,12 @@ export default function Home() {
             </motion.div>
 
             <motion.div
-              className="relative flex items-center justify-center mt-12 md:mt-0"
+              className="relative hidden items-center justify-center md:flex"
               initial={{ x: 200, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ duration: 1.2, ease: "easeOut" }}
             >
-              <div className="w-80 h-80 sm:w-96 sm:h-96 md:w-[500px] md:h-[500px] lg:w-[600px] lg:h-[600px] rounded-3xl overflow-hidden shadow-2xl">
+              <div className="w-80 h-80 sm:w-96 sm:h-96 md:w-[500px] md:h-[500px] lg:w-[900px] lg:h-[600px] rounded-3xl overflow-hidden shadow-2xl">
                 <Image
                   src="/images/solo-learner.jpg"
                   alt="Study Hub Interior"
