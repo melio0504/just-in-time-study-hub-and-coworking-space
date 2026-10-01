@@ -122,9 +122,9 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-[#6b5e52] hover:text-[#e5a930] transition-colors">
+                <Link href="/privacy-policy" className="text-[#6b5e52] hover:text-[#e5a930] transition-colors">
                   Privacy Policy
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
