@@ -4,7 +4,7 @@ import { Suspense, useCallback, useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, ChevronLeft, ChevronRight, X, QrCode, AlertCircle, CheckCircle2, Mail } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { SeatingPlan } from '@/app/components/SeatingPlan';
-import { allSeatIds, getReservedSeatsForDate } from '@/lib/seats';
+import { allSeatIds } from '@/lib/seats';
 import { createBooking } from '@/lib/supabase/bookings';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
@@ -141,15 +141,35 @@ function ReserveContent() {
     return `${hour - 12}:00 PM`;
   };
 
-  const initializeSeats = useCallback((date: string, selectedSeats: string[] = []): Seat[] => {
-    const reservedSeats = getReservedSeatsForDate(date);
+  const initializeSeats = useCallback((_date: string, selectedSeats: string[] = []): Seat[] => {
     return allSeatIds.map(id => ({
       id,
-      status: reservedSeats.includes(id) ? 'reserved' : (selectedSeats.includes(id) ? 'selected' : 'available')
+      status: selectedSeats.includes(id) ? 'selected' : 'available'
     }));
   }, []);
 
   const [seats, setSeats] = useState<Seat[]>(initializeSeats(getTodayString()));
+
+  useEffect(() => {
+    if (!hasRestoredDraft || !formData.date) return;
+    let cancelled = false;
+    const loadAvailability = async () => {
+      const selected = seats.filter((seat) => seat.status === 'selected').map((seat) => seat.id);
+      const normalizedTime = formData.time ? formData.time.padStart(5, '0') : '00:00';
+      const start = new Date(`${formData.date}T${normalizedTime}:00+08:00`);
+      const end = new Date(start);
+      end.setHours(end.getHours() + (Number(formData.duration) || 24));
+      const { data, error } = await createClient().rpc('get_available_seats', { p_starts_at: start.toISOString(), p_ends_at: end.toISOString() });
+      if (cancelled) return;
+      if (error) { setBookingError(error.message); return; }
+      const available = new Set((data ?? []).map((seat) => seat.code));
+      setSeats(allSeatIds.map((id) => ({ id, status: available.has(id) ? (selected.includes(id) ? 'selected' : 'available') : 'reserved' })));
+    };
+    void loadAvailability();
+    return () => { cancelled = true; };
+    // Selected seats are intentionally read once when the requested interval changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.date, formData.duration, formData.time, hasRestoredDraft]);
 
   useEffect(() => {
     const restoreDraft = window.setTimeout(() => {
@@ -222,8 +242,8 @@ function ReserveContent() {
     const applySeatParam = window.setTimeout(() => {
       const normalizedSeat = seatParam.trim().toUpperCase();
       if (allSeatIds.includes(normalizedSeat)) {
-        const reservedSeats = getReservedSeatsForDate(formData.date);
-        if (!reservedSeats.includes(normalizedSeat)) {
+        const targetSeat = seats.find((seat) => seat.id === normalizedSeat);
+        if (targetSeat?.status !== 'reserved') {
           setSeats((currentSeats) => {
             const selectedSeatIds = currentSeats
               .filter((seat) => seat.status === 'selected')
@@ -237,7 +257,7 @@ function ReserveContent() {
     }, 0);
 
     return () => window.clearTimeout(applySeatParam);
-  }, [formData.date, hasAppliedSeatParam, hasRestoredDraft, initializeSeats, searchParams]);
+  }, [formData.date, hasAppliedSeatParam, hasRestoredDraft, initializeSeats, searchParams, seats]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
