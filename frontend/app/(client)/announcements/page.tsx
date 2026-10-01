@@ -117,10 +117,7 @@ function AnnouncementMeta({ date, category }: { date: string; category: string }
 export default function AnnouncementsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] via-[#fffaf2] to-[#fff8ed] pt-24 text-[#2d2520]">
-      <section className="relative overflow-hidden px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-24">
-        <div className="absolute -right-32 top-6 h-96 w-96 rounded-full bg-[#f6dfae]/35 blur-3xl" aria-hidden="true" />
-        <div className="absolute -left-32 bottom-0 h-72 w-72 rounded-full bg-white/80 blur-3xl" aria-hidden="true" />
-
+      <section className="relative overflow-hidden bg-[#fffcf7] px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-24">
         <div className="relative mx-auto max-w-5xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#f1dfbc] bg-[#fef3dc] px-4 py-2 text-sm font-medium uppercase tracking-[0.16em] text-[#b47b0d]">
             <Megaphone className="h-4 w-4" aria-hidden="true" />
