@@ -44,6 +44,9 @@ Network isolation is an additional control. Admin authentication and Supabase RL
 
 ## Setup
 
+Complete setup, environment, architecture, and operational guidance is
+available in the [project documentation](docs/README.md).
+
 Requirements: Node.js 22 or newer, npm, and Docker for local Supabase.
 
 Install all workspace dependencies once from the repository root:
