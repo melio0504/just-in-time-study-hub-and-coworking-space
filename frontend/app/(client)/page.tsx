@@ -527,13 +527,13 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative">
               <div className="aspect-[4/3] rounded-3xl overflow-hidden shadow-xl">
-                <Image
-                  src="/images/maps.png"
-                  alt="Location Map"
-                  width={957}
-                  height={730}
-                  sizes="(min-width: 768px) 50vw, 100vw"
-                  className="w-full h-full object-cover"
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3860.975495779928!2d120.98793797510618!3d14.600471785885835!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c9a81a0f8499%3A0x859c0de05fd302ec!2sJUST-IN-TIME%20STUDY%20HUB%20AND%20COWORKING%20SPACE!5e0!3m2!1sen!2sph!4v1790880465851!5m2!1sen!2sph"
+                  title="Just-In-Time Study Hub and Coworking Space location"
+                  className="h-full w-full border-0"
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
                 />
               </div>
             </div>
