@@ -15,21 +15,31 @@ import {
   X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import type { Tables } from "@/lib/supabase/database.types";
 
 export default function Home() {
-  const [showAnnouncement, setShowAnnouncement] = useState(true);
-  const today = new Date().toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const [announcement, setAnnouncement] = useState<Tables<"announcements"> | null>(null);
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const loadLatest = async () => {
+      const { data } = await supabase.from("announcements").select().eq("status", "published").order("starts_at", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      setAnnouncement(data);
+      setShowAnnouncement(Boolean(data));
+    };
+    void loadLatest();
+    const channel = supabase.channel("public-announcements").on("postgres_changes", { event: "*", schema: "public", table: "announcements" }, () => void loadLatest()).subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] to-[#fff8ed]">
       {/* Announcement Banner */}
       <AnimatePresence>
-        {showAnnouncement && (
+        {showAnnouncement && announcement && (
           <motion.div
             initial={{ x: 400, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -43,9 +53,7 @@ export default function Home() {
                   <div className="w-8 h-8 bg-[#fef3dc] rounded-full flex items-center justify-center flex-shrink-0">
                     <Megaphone className="w-4 h-4 text-[#e5a930]" />
                   </div>
-                  <h3 className="text-[#2d2520] font-semibold text-sm">
-                    Announcement
-                  </h3>
+                  <h3 className="text-[#2d2520] font-semibold text-sm">{announcement.title}</h3>
                 </div>
                 <button
                   onClick={() => setShowAnnouncement(false)}
@@ -54,11 +62,8 @@ export default function Home() {
                   <X className="w-3 h-3 text-[#6b5e52]" />
                 </button>
               </div>
-              <p className="text-xs text-[#6b5e52] mb-2">{today}</p>
-              <p className="text-[#2d2520] text-sm leading-relaxed">
-                Exam season hours are in effect. We&apos;re open from 8:00 AM to
-                5:00 AM daily through October 11.
-              </p>
+              <p className="text-xs text-[#6b5e52] mb-2">{new Date(announcement.starts_at || announcement.created_at).toLocaleDateString("en-PH", { dateStyle: "long", timeZone: "Asia/Manila" })}</p>
+              <p className="text-[#2d2520] text-sm leading-relaxed">{announcement.body}</p>
               <Link
                 href="/announcements"
                 className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#b47b0d] transition-colors hover:text-[#8d5f08]"
@@ -571,17 +576,22 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <button className="mt-8 flex items-center gap-2 text-[#e5a930] hover:text-[#d69520] transition-colors">
+              <a
+                href="https://www.google.com/maps/dir//''/data=!4m7!4m6!1m1!4e2!1m2!1m1!1s0x3397c9a81a0f8499:0x859c0de05fd302ec!3e0?g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAMYASAF"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-8 flex items-center gap-2 text-[#e5a930] hover:text-[#d69520] transition-colors"
+              >
                 Get Directions
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </a>
             </div>
           </div>
         </div>
       </section>
 
       {/* Want to Know More */}
-      <section className="py-20 px-6 bg-gradient-to-br from-[#fef3dc] via-[#fff8ed] to-[#fffcf7]">
+      <section className="bg-[#fff8ed] px-6 py-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl mb-6 text-[#2d2520]">
