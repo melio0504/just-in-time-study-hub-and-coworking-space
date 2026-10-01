@@ -10,12 +10,7 @@ const quickLinks = [
 
 export default function NotFound() {
   return (
-    <main className="relative overflow-hidden bg-linear-to-b from-[#fffcf7] via-[#fff8ed] to-[#fff4e3]">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-24 right-0 h-80 w-80 rounded-full bg-[#fef3dc] blur-3xl opacity-80" />
-        <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-[#fff1d6] blur-3xl opacity-70" />
-      </div>
-
+    <main className="relative overflow-hidden bg-[#fffcf7]">
       <section className="relative mx-auto flex min-h-[calc(100vh-6rem)] max-w-7xl items-center px-4 py-24 sm:px-6 lg:px-8">
         <div className="grid w-full items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="max-w-2xl">
