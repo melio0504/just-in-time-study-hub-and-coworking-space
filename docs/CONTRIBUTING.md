@@ -4,7 +4,7 @@ This guide explains how to set up your work, name branches, use git, and open a 
 
 ## Before You Start
 
-- Make sure you have Node.js 20.9 or newer installed.
+- Make sure you have Node.js 22 or newer installed.
 - Install dependencies with `npm install`.
 - Run the affected app with `npm run dev:frontend` or `npm run dev:admin` before making changes.
 - Review the README to understand the app structure and available routes.
