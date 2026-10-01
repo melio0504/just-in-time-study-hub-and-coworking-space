@@ -48,13 +48,14 @@ export default function AdminLogin() {
       .eq('id', data.user.id)
       .single();
 
-    if (profileError || profile?.role !== 'admin') {
+    if (profileError || !profile || !['admin', 'staff'].includes(profile.role)) {
       await supabase.auth.signOut();
       setIsSubmitting(false);
       setErrorMessage('This account does not have administrator access.');
       return;
     }
 
+    await supabase.rpc('log_admin_access', { p_action: 'Signed in to admin dashboard' });
     router.push('/admin/dashboard');
     router.refresh();
   };
@@ -112,6 +113,9 @@ export default function AdminLogin() {
             <div className="bg-[#fef3dc] rounded-xl p-4 mb-6 border border-[#e5a930]/30">
               <p className="text-sm text-[#6b5e52]">
                 <strong>Note:</strong> This portal is for authorized administrators only. All access attempts are logged.
+              </p>
+              <p className="mt-2 text-sm text-[#6b5e52]">
+                Need an employee account? Contact your manager so they can create and authorize one for you.
               </p>
             </div>
 

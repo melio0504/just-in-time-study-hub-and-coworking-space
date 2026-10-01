@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type SeatStatus = "available" | "reserved";
+type SeatStatus = "available" | "reserved" | "occupied" | "maintenance";
 
 interface Seat {
   id: string;
@@ -11,13 +11,15 @@ interface Seat {
 
 interface SeatingPlanMiniProps {
   seats: Seat[];
+  onSeatClick?: (seatId: string) => void;
+  busySeatId?: string | null;
 }
 
 const DESIGN_WIDTH = 1100;
 const DESIGN_HEIGHT = 560;
 const MIN_MOBILE_SCALE = 0.8;
 
-export function SeatingPlanMini({ seats }: SeatingPlanMiniProps) {
+export function SeatingPlanMini({ seats, onSeatClick, busySeatId }: SeatingPlanMiniProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(MIN_MOBILE_SCALE);
   const seatStatuses = useMemo(
@@ -44,17 +46,22 @@ export function SeatingPlanMini({ seats }: SeatingPlanMiniProps) {
     const colors = {
       available: "bg-[#e8e8e8] text-[#2d2520]",
       reserved: "bg-[#9ca3af] text-white",
+      occupied: "bg-[#e5a930] text-white shadow-md ring-2 ring-[#e5a930]/25",
+      maintenance: "bg-red-100 text-red-700",
     };
 
     return (
-      <div
+      <button
+        type="button"
         key={id}
-        className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xs font-medium ${colors[status]}`}
+        onClick={() => onSeatClick?.(id)}
+        disabled={!onSeatClick || status === "reserved" || status === "maintenance" || busySeatId === id}
+        className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xs font-medium transition-all ${colors[status]} ${onSeatClick && status !== "reserved" && status !== "maintenance" ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-lg" : "cursor-default"}`}
         aria-label={`${id}, ${status}`}
         title={`${id} — ${status}`}
       >
-        {id}
-      </div>
+        {busySeatId === id ? "…" : id}
+      </button>
     );
   };
 
