@@ -331,6 +331,51 @@ export type Database = {
           },
         ]
       }
+      daily_business_metrics: {
+        Row: {
+          active_members: number
+          available_seat_hours: number
+          bookings_count: number
+          checkins_count: number
+          created_at: string
+          daily_pass_revenue_cents: number
+          hourly_revenue_cents: number
+          metric_date: string
+          monthly_revenue_cents: number
+          occupied_seat_hours: number
+          revenue_cents: number
+          updated_at: string
+        }
+        Insert: {
+          active_members?: number
+          available_seat_hours?: number
+          bookings_count?: number
+          checkins_count?: number
+          created_at?: string
+          daily_pass_revenue_cents?: number
+          hourly_revenue_cents?: number
+          metric_date: string
+          monthly_revenue_cents?: number
+          occupied_seat_hours?: number
+          revenue_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          active_members?: number
+          available_seat_hours?: number
+          bookings_count?: number
+          checkins_count?: number
+          created_at?: string
+          daily_pass_revenue_cents?: number
+          hourly_revenue_cents?: number
+          metric_date?: string
+          monthly_revenue_cents?: number
+          occupied_seat_hours?: number
+          revenue_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flashcard_decks: {
         Row: {
           created_at: string
@@ -590,6 +635,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          email: string | null
           full_name: string
           id: string
           is_active: boolean
@@ -601,6 +647,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string
           id: string
           is_active?: boolean
@@ -612,6 +659,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string
           id?: string
           is_active?: boolean
@@ -743,11 +791,70 @@ export type Database = {
           },
         ]
       }
+      walk_in_occupancies: {
+        Row: {
+          created_at: string
+          created_by: string
+          ended_at: string | null
+          ended_by: string | null
+          guest_name: string | null
+          id: string
+          seat_id: string
+          started_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          ended_at?: string | null
+          ended_by?: string | null
+          guest_name?: string | null
+          id?: string
+          seat_id: string
+          started_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          ended_at?: string | null
+          ended_by?: string | null
+          guest_name?: string | null
+          id?: string
+          seat_id?: string
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "walk_in_occupancies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "walk_in_occupancies_ended_by_fkey"
+            columns: ["ended_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "walk_in_occupancies_seat_id_fkey"
+            columns: ["seat_id"]
+            isOneToOne: false
+            referencedRelation: "seats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_cancel_booking: {
+        Args: { p_booking_id: string; p_reason?: string }
+        Returns: undefined
+      }
       cancel_booking: { Args: { p_booking_id: string }; Returns: undefined }
       create_booking: {
         Args: {
@@ -808,6 +915,11 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      log_admin_access: { Args: { p_action?: string }; Returns: undefined }
+      toggle_walk_in_occupancy: {
+        Args: { p_guest_name?: string; p_seat_code: string }
+        Returns: boolean
       }
     }
     Enums: {
