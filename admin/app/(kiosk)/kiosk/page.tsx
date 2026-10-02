@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { CameraQrScanner } from "./CameraQrScanner";
+import { createClient } from "@/lib/supabase/client";
 
 type KioskAction = "check-in" | "check-out";
 type ScanState = "idle" | "scanning" | "success" | "error";
@@ -57,69 +58,8 @@ type ValidationError =
   | "invalid"
   | "expired"
   | "not_yet_scheduled"
-  | "payment_pending";
-
-const STORAGE_SESSIONS = "jit_kiosk_active_sessions";
-const STORAGE_ACTIVITY = "jit_kiosk_activity_log";
-
-function buildDemoBookings(): Record<string, Booking> {
-  const now = new Date();
-  const today = now.toISOString().split("T")[0];
-  const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-  const inFourHours = new Date(now.getTime() + 4 * 60 * 60 * 1000);
-  const inTwoHours = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-  const expiredEnd = new Date(now.getTime() - 30 * 60 * 1000);
-  const expiredStart = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-  const futureStart = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-  const futureEnd = new Date(now.getTime() + 5 * 60 * 60 * 1000);
-
-  return {
-    "RES-DEMO-VALID": {
-      id: "RES-DEMO-VALID",
-      guestName: "Maria Santos",
-      seats: ["UA03"],
-      date: today,
-      timeIn: formatTime(now),
-      durationHours: 4,
-      paymentConfirmed: true,
-      scheduledStart: hourAgo,
-      scheduledEnd: inFourHours,
-    },
-    "RES-DEMO-EARLY": {
-      id: "RES-DEMO-EARLY",
-      guestName: "Juan Dela Cruz",
-      seats: ["LA02"],
-      date: today,
-      timeIn: formatTime(futureStart),
-      durationHours: 2,
-      paymentConfirmed: true,
-      scheduledStart: futureStart,
-      scheduledEnd: futureEnd,
-    },
-    "RES-DEMO-EXPIRED": {
-      id: "RES-DEMO-EXPIRED",
-      guestName: "Expired Booking",
-      seats: ["BR01"],
-      date: today,
-      timeIn: formatTime(expiredStart),
-      durationHours: 1,
-      paymentConfirmed: true,
-      scheduledStart: expiredStart,
-      scheduledEnd: expiredEnd,
-    },
-    "RES-DEMO-UNPAID": {
-      id: "RES-DEMO-UNPAID",
-      guestName: "Pending Payment",
-      seats: ["RC02"],
-      date: today,
-      timeIn: formatTime(now),
-      durationHours: 3,
-      paymentConfirmed: false,
-      scheduledStart: hourAgo,
-      scheduledEnd: inTwoHours,
-    },
-  };
-}
+  | "confirmation_pending"
+  | "server";
 
 const ERROR_MESSAGES: Record<ValidationError, { title: string; description: string }> = {
   invalid: {
@@ -134,31 +74,15 @@ const ERROR_MESSAGES: Record<ValidationError, { title: string; description: stri
     title: "Not Yet Scheduled",
     description: "Your booking is not active yet. Please return within 15 minutes of your start time.",
   },
-  payment_pending: {
-    title: "Payment Not Confirmed",
-    description: "Complete payment first, then scan your QR again to check in.",
+  confirmation_pending: {
+    title: "Reservation Not Confirmed",
+    description: "Confirm the reservation first, then scan the access QR again to check in.",
+  },
+  server: {
+    title: "Pass could not be processed",
+    description: "Ask a staff member to verify this reservation.",
   },
 };
-
-function loadSessions(): ActiveSession[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_SESSIONS);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function loadActivity(): ActivityEntry[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_ACTIVITY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString("en-US", {
@@ -183,61 +107,53 @@ function getRemainingMinutes(endIso: string) {
   return Math.max(0, Math.floor((end - now) / 60000));
 }
 
-function resolveBooking(code: string): Booking | null {
-  const normalized = code.trim().toUpperCase();
-  const demoBookings = buildDemoBookings();
-  if (demoBookings[normalized]) return demoBookings[normalized];
-  if (normalized.startsWith("RES-")) {
-    const now = new Date();
-    const end = new Date(now.getTime() + 4 * 60 * 60 * 1000);
-    return {
-      id: normalized,
-      guestName: "Walk-in Guest",
-      seats: ["UA01"],
-      date: now.toISOString().split("T")[0],
-      timeIn: formatTime(now),
-      durationHours: 4,
-      paymentConfirmed: true,
-      scheduledStart: new Date(now.getTime() - 30 * 60 * 1000),
-      scheduledEnd: end,
-    };
-  }
-  return null;
-}
-
 export default function KioskPage() {
-  const [now, setNow] = useState(() => new Date());
+  // Keep the server render and the first client render identical. The live
+  // value is filled in after hydration so crossing a second boundary cannot
+  // produce different text on the server and client.
+  const [now, setNow] = useState<Date | null>(null);
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [errorType, setErrorType] = useState<ValidationError>("invalid");
   const [successBooking, setSuccessBooking] = useState<Booking | null>(null);
   const [lastAction, setLastAction] = useState<KioskAction | null>(null);
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
+  const [serverError, setServerError] = useState('');
 
-  const totalSeats = 52;
-  const occupiedCount = sessions.length;
+  const totalSeats = 50;
+  const occupiedCount = sessions.reduce((count, session) => count + session.seats.length, 0);
 
   useEffect(() => {
-    const hydrateKiosk = window.setTimeout(() => {
-      setSessions(loadSessions());
-      setActivity(loadActivity());
-    }, 0);
+    const initialTick = window.setTimeout(() => setNow(new Date()), 0);
     const tick = setInterval(() => setNow(new Date()), 1000);
     return () => {
-      window.clearTimeout(hydrateKiosk);
+      window.clearTimeout(initialTick);
       clearInterval(tick);
     };
   }, []);
 
-  const persistSessions = useCallback((next: ActiveSession[]) => {
-    setSessions(next);
-    localStorage.setItem(STORAGE_SESSIONS, JSON.stringify(next));
-  }, []);
-
-  const persistActivity = useCallback((next: ActivityEntry[]) => {
-    const trimmed = next.slice(0, 12);
-    setActivity(trimmed);
-    localStorage.setItem(STORAGE_ACTIVITY, JSON.stringify(trimmed));
+  useEffect(() => {
+    let cancelled = false;
+    const loadActiveSessions = async () => {
+      const { data } = await createClient()
+        .from('check_in_sessions')
+        .select('booking_id, checked_in_at, scheduled_end_at, booking:bookings(reservation_code, guest_name, seat_ids)')
+        .eq('status', 'checked_in')
+        .order('checked_in_at', { ascending: false });
+      if (cancelled || !data) return;
+      setSessions(data.flatMap((row) => {
+        const booking = row.booking as unknown as { reservation_code: string; guest_name: string; seat_ids: string[] } | null;
+        return booking ? [{
+          bookingId: booking.reservation_code,
+          guestName: booking.guest_name,
+          seats: booking.seat_ids,
+          checkedInAt: row.checked_in_at,
+          scheduledEnd: row.scheduled_end_at,
+        }] : [];
+      }));
+    };
+    void loadActiveSessions();
+    return () => { cancelled = true; };
   }, []);
 
   const addActivity = useCallback(
@@ -247,9 +163,9 @@ export default function KioskPage() {
         id: `${Date.now()}`,
         timestamp: new Date().toISOString(),
       };
-      persistActivity([item, ...loadActivity()]);
+      setActivity((current) => [item, ...current].slice(0, 12));
     },
-    [persistActivity]
+    []
   );
 
   const resetToIdle = useCallback(() => {
@@ -258,83 +174,79 @@ export default function KioskPage() {
     setLastAction(null);
   }, []);
 
-  const validateCheckIn = useCallback(
-    (booking: Booking): ValidationError | null => {
-      if (!booking.paymentConfirmed) return "payment_pending";
-      const nowMs = Date.now();
-      if (nowMs > booking.scheduledEnd.getTime()) return "expired";
-      if (nowMs < booking.scheduledStart.getTime() - 15 * 60 * 1000) return "not_yet_scheduled";
-      return null;
-    },
-    []
-  );
-
   const processScan = useCallback(
     async (rawCode: string) => {
-      const code = rawCode.trim().toUpperCase();
+      const code = rawCode.trim();
       if (!code) return;
 
       setScanState("scanning");
-      await new Promise((r) => setTimeout(r, 900));
+      setServerError('');
 
-      const booking = resolveBooking(code);
-      if (!booking) {
-        setErrorType("invalid");
-        setScanState("error");
+      const supabase = createClient();
+      const { data, error } = await supabase.functions.invoke('scan-booking-pass', { body: { code } });
+      if (error || data?.error || !data?.result) {
+        let message = typeof data?.error === 'string' ? data.error : error?.message ?? 'The QR pass could not be processed.';
+        const response = (error as { context?: Response } | null)?.context;
+        if (response) {
+          const payload = await response.clone().json().catch(() => null);
+          if (typeof payload?.error === 'string') message = payload.error;
+        }
+        const lower = message.toLowerCase();
+        setErrorType(lower.includes('not been confirmed') ? 'confirmation_pending' : lower.includes('expired') ? 'expired' : lower.includes('not ready') ? 'not_yet_scheduled' : lower.includes('invalid') || lower.includes('used') ? 'invalid' : 'server');
+        setServerError(message);
+        setScanState('error');
         return;
       }
 
-      const existing = sessions.find((session) => session.bookingId === booking.id);
-      if (existing) {
-        persistSessions(sessions.filter((session) => session.bookingId !== booking.id));
-        addActivity({
-          type: "check-out",
+      const result = data.result as {
+        action: KioskAction;
+        reservation_code: string;
+        guest_name: string;
+        seat_ids: string[];
+        scheduled_start: string;
+        scheduled_end: string;
+        scanned_at: string;
+      };
+      const booking: Booking = {
+        id: result.reservation_code,
+        guestName: result.guest_name,
+        seats: result.seat_ids,
+        date: result.scheduled_start.slice(0, 10),
+        timeIn: formatTime(new Date(result.scheduled_start)),
+        durationHours: Math.max(1, Math.round((new Date(result.scheduled_end).getTime() - new Date(result.scheduled_start).getTime()) / 3_600_000)),
+        paymentConfirmed: true,
+        scheduledStart: new Date(result.scheduled_start),
+        scheduledEnd: new Date(result.scheduled_end),
+      };
+
+      if (result.action === 'check-in') {
+        setSessions((current) => [...current.filter((session) => session.bookingId !== booking.id), {
+          bookingId: booking.id,
           guestName: booking.guestName,
           seats: booking.seats,
-        });
-        setLastAction("check-out");
-        setSuccessBooking(booking);
-        setScanState("success");
-        window.setTimeout(resetToIdle, 6000);
-        return;
+          checkedInAt: result.scanned_at,
+          scheduledEnd: result.scheduled_end,
+        }]);
+      } else {
+        setSessions((current) => current.filter((session) => session.bookingId !== booking.id));
       }
-
-      const error = validateCheckIn(booking);
-      if (error) {
-        setErrorType(error);
-        setScanState("error");
-        return;
-      }
-
-      const session: ActiveSession = {
-        bookingId: booking.id,
-        guestName: booking.guestName,
-        seats: booking.seats,
-        checkedInAt: new Date().toISOString(),
-        scheduledEnd: booking.scheduledEnd.toISOString(),
-      };
-      persistSessions([...sessions, session]);
-      addActivity({
-        type: "check-in",
-        guestName: booking.guestName,
-        seats: booking.seats,
-      });
-      setLastAction("check-in");
+      addActivity({ type: result.action, guestName: booking.guestName, seats: booking.seats });
+      setLastAction(result.action);
       setSuccessBooking(booking);
-      setScanState("success");
-      window.setTimeout(resetToIdle, 8000);
+      setScanState('success');
+      window.setTimeout(resetToIdle, result.action === 'check-in' ? 8000 : 6000);
     },
-    [sessions, validateCheckIn, persistSessions, addActivity, resetToIdle]
+    [addActivity, resetToIdle]
   );
 
   const todayLabel = useMemo(
     () =>
-      now.toLocaleDateString("en-US", {
+      now?.toLocaleDateString("en-US", {
         weekday: "long",
         month: "long",
         day: "numeric",
         year: "numeric",
-      }),
+      }) ?? "",
     [now]
   );
 
@@ -382,9 +294,11 @@ export default function KioskPage() {
 
         <div className="text-right shrink-0">
           <p className="text-3xl sm:text-4xl font-mono text-[#2d2520] tabular-nums leading-tight">
-            {formatClock(now)}
+            {now ? formatClock(now) : "--:--:-- --"}
           </p>
-          <p className="text-xs sm:text-sm text-[#6b5e52] hidden sm:block">{todayLabel}</p>
+          <p className="min-h-[1.25rem] text-xs sm:text-sm text-[#6b5e52] hidden sm:block">
+            {todayLabel}
+          </p>
         </div>
       </header>
 
@@ -532,7 +446,7 @@ export default function KioskPage() {
                 </div>
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl text-[#2d2520] mb-3 shrink-0">{ERROR_MESSAGES[errorType].title}</h2>
                 <p className="text-base sm:text-lg text-[#6b5e52] mb-6 leading-relaxed shrink-0 max-w-md">
-                  {ERROR_MESSAGES[errorType].description}
+                  {serverError || ERROR_MESSAGES[errorType].description}
                 </p>
                 <button
                   type="button"

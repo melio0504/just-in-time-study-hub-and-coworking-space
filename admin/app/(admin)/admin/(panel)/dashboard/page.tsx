@@ -95,14 +95,15 @@ function DashboardContent() {
   const seatCodeById = useMemo(() => new Map(seats.map((seat) => [seat.id, seat.code])), [seats]);
   const activeWalkInCodes = useMemo(() => new Set(walkIns.map((walkIn) => seatCodeById.get(walkIn.seat_id)).filter(Boolean)), [walkIns, seatCodeById]);
   const selectedBookings = useMemo(() => bookings.filter((booking) => booking.booking_date === selectedDate && !terminalStatuses.has(booking.status)), [bookings, selectedDate]);
-  const reservedCodes = useMemo(() => new Set(selectedBookings.flatMap((booking) => booking.seat_ids)), [selectedBookings]);
+  const checkedInCodes = useMemo(() => new Set(bookings.filter((booking) => booking.status === 'checked_in').flatMap((booking) => booking.seat_ids)), [bookings]);
+  const reservedCodes = useMemo(() => new Set(selectedBookings.filter((booking) => booking.status !== 'checked_in').flatMap((booking) => booking.seat_ids)), [selectedBookings]);
   const seatPlan = useMemo(() => allSeatIds.map((id) => {
     const databaseSeat = seats.find((seat) => seat.code === id);
     const status = databaseSeat?.status === 'maintenance' ? 'maintenance' as const
-      : selectedDate === today() && activeWalkInCodes.has(id) ? 'occupied' as const
+      : selectedDate === today() && (activeWalkInCodes.has(id) || checkedInCodes.has(id)) ? 'occupied' as const
       : reservedCodes.has(id) ? 'reserved' as const : 'available' as const;
     return { id, status };
-  }), [activeWalkInCodes, reservedCodes, seats, selectedDate]);
+  }), [activeWalkInCodes, checkedInCodes, reservedCodes, seats, selectedDate]);
 
   const seatSummary = useMemo(() => seatPlan.reduce((result, seat) => ({ ...result, [seat.status]: (result[seat.status] || 0) + 1 }), {} as Record<string, number>), [seatPlan]);
   const filteredBookings = useMemo(() => bookings.filter((booking) => {
@@ -187,7 +188,7 @@ function DashboardContent() {
     {section === 'dashboard' && <>
       <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-emerald-700"><Radio className="h-3.5 w-3.5" />Live operations</p><h1 className="text-3xl font-semibold tracking-tight text-[#2d2520] sm:text-4xl">Seating overview</h1><p className="mt-2 text-[#5f5248]">Reservations and walk-ins update automatically from the shared database.</p></div><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]">Viewing date <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="ml-3 bg-transparent font-semibold text-[#2d2520] outline-none" /></label></div>
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
-        ['Available', seatSummary.available || 0, 'bg-emerald-50 text-emerald-700'], ['Reserved', seatSummary.reserved || 0, 'bg-slate-100 text-slate-700'], ['Walk-ins now', activeWalkInCodes.size, 'bg-amber-50 text-amber-700'], ['Total active seats', seats.filter((seat) => seat.is_active).length, 'bg-white text-[#2d2520]'],
+        ['Available', seatSummary.available || 0, 'bg-emerald-50 text-emerald-700'], ['Reserved', seatSummary.reserved || 0, 'bg-slate-100 text-slate-700'], ['Occupied now', seatSummary.occupied || 0, 'bg-amber-50 text-amber-700'], ['Total active seats', seats.filter((seat) => seat.is_active).length, 'bg-white text-[#2d2520]'],
       ].map(([label, value, color]) => <div key={String(label)} className={`rounded-3xl border border-[#e8dfd4] p-5 shadow-sm ${color}`}><p className="text-xs font-semibold uppercase tracking-[.14em] opacity-70">{label}</p><p className="mt-2 text-4xl font-semibold">{value}</p></div>)}</div>
       <div className="rounded-3xl border border-[#e8dfd4] bg-white p-4 shadow-sm sm:p-6"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold text-[#2d2520]">Live floor plan</h2><p className="mt-1 text-sm text-[#5f5248]">{selectedDate === today() ? 'Click an available or occupied seat to check a walk-in in or out.' : 'Return to today to manage live walk-in occupancy.'}</p></div><div className="flex flex-wrap gap-3 text-xs text-[#6b5e52]"><span>● <b className="text-emerald-600">Available</b></span><span>● Reserved</span><span className="text-amber-600">● Occupied</span></div></div><SeatingPlanMini seats={seatPlan} onSeatClick={selectedDate === today() ? toggleWalkIn : undefined} busySeatId={busySeat} /></div>
       <div className="mt-6 rounded-3xl border border-[#e8dfd4] bg-white p-5 shadow-sm"><h2 className="mb-4 text-xl font-semibold text-[#2d2520]">Recent reservations</h2><BookingTable bookings={bookings.slice(0, 8)} onView={setSelectedBooking} onCancel={canManageReservations ? requestCancellation : undefined} /></div>
