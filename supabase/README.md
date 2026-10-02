@@ -11,6 +11,7 @@ Prerequisites: Docker and Node.js 22 or newer.
 npm install
 npm run supabase:start
 npm run supabase:reset
+npm run supabase:functions # keep running in a second terminal
 npx supabase status
 ```
 
@@ -47,6 +48,7 @@ export SUPABASE_DB_PASSWORD=your_project_database_password
 npx supabase link --project-ref your_project_ref
 npx supabase db push --dry-run
 npx supabase db push
+npx supabase functions deploy create-staff-account --use-api
 npx supabase migration list
 npx supabase db advisors --linked --type all --level warn --fail-on warn
 ```
@@ -69,16 +71,19 @@ In the production Supabase Dashboard:
 
 ## First administrator
 
-New accounts are customers. After the intended administrator has registered,
-promote the account from a trusted SQL session:
+New accounts are customers. The single owner account must use
+`admin@jit-studyhub.com`. After that account has registered, promote it from a
+trusted SQL session:
 
 ```sql
 update public.profiles
 set role = 'admin'
 where id = (
-  select id from auth.users where email = 'owner@example.com'
+  select id from auth.users where email = 'admin@jit-studyhub.com'
 );
 ```
 
-Authorization is stored in `profiles.role`; user-editable Auth metadata is
-never used for access control.
+The owner can then create employee accounts at `/admin/staff`. Authorization is
+stored in `profiles.role` and `profiles.staff_permissions`; user-editable Auth
+metadata is never used for access control. New employee accounts remain blocked
+from staff data until they replace their temporary password.

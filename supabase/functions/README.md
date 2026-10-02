@@ -1,3 +1,18 @@
 # Supabase Edge Functions
 
-Place shared Supabase Edge Functions in this directory. Neither Next.js application currently requires an Edge Function; the directory is reserved so database and backend infrastructure remain under the root `supabase/` project.
+`create-staff-account` is the owner-only backend for creating employee Auth
+users. It verifies the caller's JWT and owner profile before using the
+server-side admin client. Never move this operation or any secret/service-role
+key into either Next.js browser application.
+
+Serve it locally with:
+
+```bash
+npm run supabase:functions
+```
+
+Deploy it after linking the Supabase project:
+
+```bash
+npx supabase functions deploy create-staff-account --use-api
+```
