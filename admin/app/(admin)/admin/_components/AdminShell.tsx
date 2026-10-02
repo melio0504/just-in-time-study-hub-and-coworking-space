@@ -65,7 +65,7 @@ export function AdminShell({ children, access, profile }: { children: React.Reac
   return <AdminAccessContext.Provider value={access}><div className="min-h-screen bg-[#f8f5f0]">
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-[#eee5da] bg-white lg:block">{sidebar}</aside>
     {mobileOpen && <><button aria-label="Close navigation" className="fixed inset-0 z-40 bg-[#2d2520]/35 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} /><aside className="fixed inset-y-0 left-0 z-50 w-[min(19rem,88vw)] bg-white shadow-2xl lg:hidden">{sidebar}</aside></>}
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#eee5da] bg-white/90 px-4 backdrop-blur lg:hidden"><button type="button" onClick={() => setMobileOpen(true)} className="rounded-xl border border-[#eee5da] p-2.5"><Menu className="h-5 w-5" /></button><span className="text-sm font-semibold">Operations Console</span><span className="h-10 w-10" /></header>
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#eee5da] bg-white/90 px-4 text-[#2d2520] backdrop-blur lg:hidden"><button type="button" onClick={() => setMobileOpen(true)} className="rounded-xl border border-[#eee5da] p-2.5"><Menu className="h-5 w-5" /></button><span className="text-sm font-semibold">Operations Console</span><span className="h-10 w-10" /></header>
     <main className="min-w-0 p-4 sm:p-6 lg:ml-72 lg:p-8 xl:p-10">{children}</main>
   </div></AdminAccessContext.Provider>;
 }
