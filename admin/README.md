@@ -18,3 +18,8 @@ from the repository root, accept the development certificate on that device,
 and open `https://<facility-computer-ip>:3001/kiosk`. A production LAN setup
 must terminate HTTPS with a certificate trusted by every kiosk device; plain
 HTTP on a LAN IP cannot request camera access.
+
+The kiosk requires an administrator or employee account with the **Seating
+status** permission. Opening `/kiosk` while signed out sends the operator to
+the admin sign-in page and returns them to the scanner after a successful
+authorized sign-in.

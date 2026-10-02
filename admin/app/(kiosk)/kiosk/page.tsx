@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   QrCode,
   Clock,
@@ -55,6 +56,7 @@ interface ActivityEntry {
 }
 
 type ValidationError =
+  | "access"
   | "invalid"
   | "expired"
   | "not_yet_scheduled"
@@ -62,6 +64,10 @@ type ValidationError =
   | "server";
 
 const ERROR_MESSAGES: Record<ValidationError, { title: string; description: string }> = {
+  access: {
+    title: "Kiosk sign-in required",
+    description: "Sign in with a staff account that has seating access, then scan the pass again.",
+  },
   invalid: {
     title: "Invalid QR Code",
     description: "This code is not recognized. Please use the QR from your booking confirmation email.",
@@ -192,8 +198,9 @@ export default function KioskPage() {
           if (typeof payload?.error === 'string') message = payload.error;
         }
         const lower = message.toLowerCase();
-        setErrorType(lower.includes('not been confirmed') ? 'confirmation_pending' : lower.includes('expired') ? 'expired' : lower.includes('not ready') ? 'not_yet_scheduled' : lower.includes('invalid') || lower.includes('used') ? 'invalid' : 'server');
-        setServerError(message);
+        const accessError = lower.includes('seating access') || lower.includes('not signed in');
+        setErrorType(accessError ? 'access' : lower.includes('not been confirmed') ? 'confirmation_pending' : lower.includes('expired') ? 'expired' : lower.includes('not ready') ? 'not_yet_scheduled' : lower.includes('invalid') || lower.includes('used') ? 'invalid' : 'server');
+        setServerError(accessError ? '' : message);
         setScanState('error');
         return;
       }
@@ -448,13 +455,22 @@ export default function KioskPage() {
                 <p className="text-base sm:text-lg text-[#6b5e52] mb-6 leading-relaxed shrink-0 max-w-md">
                   {serverError || ERROR_MESSAGES[errorType].description}
                 </p>
-                <button
-                  type="button"
-                  onClick={resetToIdle}
-                  className="px-8 py-4 bg-[#2d2520] text-white rounded-full hover:shadow-lg transition-all text-lg font-medium shrink-0"
-                >
-                  Try again
-                </button>
+                {errorType === "access" ? (
+                  <Link
+                    href="/admin?next=%2Fkiosk"
+                    className="px-8 py-4 bg-[#2d2520] text-white rounded-full hover:shadow-lg transition-all text-lg font-medium shrink-0"
+                  >
+                    Sign in to kiosk
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={resetToIdle}
+                    className="px-8 py-4 bg-[#2d2520] text-white rounded-full hover:shadow-lg transition-all text-lg font-medium shrink-0"
+                  >
+                    Try again
+                  </button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
