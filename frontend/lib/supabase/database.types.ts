@@ -148,6 +148,38 @@ export type Database = {
           },
         ]
       }
+      booking_confirmation_tokens: {
+        Row: {
+          booking_id: string
+          confirmed_at: string | null
+          created_at: string
+          expires_at: string
+          token_hash: string
+        }
+        Insert: {
+          booking_id: string
+          confirmed_at?: string | null
+          created_at?: string
+          expires_at: string
+          token_hash: string
+        }
+        Update: {
+          booking_id?: string
+          confirmed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_confirmation_tokens_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_seats: {
         Row: {
           active: boolean
@@ -192,6 +224,8 @@ export type Database = {
           booking_date: string
           cancellation_reason: string | null
           cancelled_at: string | null
+          confirmation_email_error: string | null
+          confirmation_email_sent_at: string | null
           created_at: string
           duration_hours: number
           ends_at: string
@@ -214,6 +248,8 @@ export type Database = {
           booking_date: string
           cancellation_reason?: string | null
           cancelled_at?: string | null
+          confirmation_email_error?: string | null
+          confirmation_email_sent_at?: string | null
           created_at?: string
           duration_hours: number
           ends_at: string
@@ -236,6 +272,8 @@ export type Database = {
           booking_date?: string
           cancellation_reason?: string | null
           cancelled_at?: string | null
+          confirmation_email_error?: string | null
+          confirmation_email_sent_at?: string | null
           created_at?: string
           duration_hours?: number
           ends_at?: string
@@ -682,6 +720,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          last_scanned_at: string | null
           revoked_at: string | null
           token_hash: string
         }
@@ -690,6 +729,7 @@ export type Database = {
           created_at?: string
           expires_at: string
           id?: string
+          last_scanned_at?: string | null
           revoked_at?: string | null
           token_hash: string
         }
@@ -698,6 +738,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          last_scanned_at?: string | null
           revoked_at?: string | null
           token_hash?: string
         }
@@ -862,6 +903,21 @@ export type Database = {
         Returns: undefined
       }
       cancel_booking: { Args: { p_booking_id: string }; Returns: undefined }
+      confirm_booking_from_token: {
+        Args: { p_access_token_hash: string; p_token_hash: string }
+        Returns: {
+          booking_id: string
+          confirmation_email_sent_at: string
+          ends_at: string
+          guest_email: string
+          guest_name: string
+          newly_confirmed: boolean
+          reservation_code: string
+          seat_ids: string[]
+          starts_at: string
+          subtotal_cents: number
+        }[]
+      }
       create_booking: {
         Args: {
           p_booking_date: string
@@ -876,6 +932,8 @@ export type Database = {
           booking_date: string
           cancellation_reason: string | null
           cancelled_at: string | null
+          confirmation_email_error: string | null
+          confirmation_email_sent_at: string | null
           created_at: string
           duration_hours: number
           ends_at: string
@@ -901,6 +959,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_booking_confirmation_token: {
+        Args: { p_booking_id: string; p_token_hash: string; p_user_id: string }
+        Returns: undefined
+      }
       get_available_seats: {
         Args: { p_ends_at: string; p_starts_at: string }
         Returns: {
@@ -922,7 +984,42 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_booking_confirmation_preview: {
+        Args: { p_token_hash: string }
+        Returns: {
+          confirmed: boolean
+          ends_at: string
+          expires_at: string
+          guest_email: string
+          guest_name: string
+          reservation_code: string
+          seat_ids: string[]
+          starts_at: string
+          subtotal_cents: number
+        }[]
+      }
       log_admin_access: { Args: { p_action?: string }; Returns: undefined }
+      mark_booking_confirmation_email: {
+        Args: { p_booking_id: string; p_error?: string }
+        Returns: undefined
+      }
+      process_kiosk_scan: {
+        Args: { p_token_hash: string }
+        Returns: {
+          action: string
+          booking_id: string
+          guest_name: string
+          reservation_code: string
+          scanned_at: string
+          scheduled_end: string
+          scheduled_start: string
+          seat_ids: string[]
+        }[]
+      }
+      sync_booking_account_email: {
+        Args: { p_booking_id: string; p_user_id: string }
+        Returns: string
+      }
       toggle_walk_in_occupancy: {
         Args: { p_guest_name?: string; p_seat_code: string }
         Returns: boolean
@@ -941,7 +1038,13 @@ export type Database = {
       content_status: "draft" | "published" | "archived"
       flashcard_rating: "learned" | "needs_review"
       payment_method: "gcash" | "qrph"
-      payment_status: "pending" | "processing" | "paid" | "failed" | "refunded"
+      payment_status:
+        | "pending"
+        | "processing"
+        | "paid"
+        | "failed"
+        | "refunded"
+        | "not_required"
       profile_role: "customer" | "staff" | "admin"
       seat_status: "available" | "reserved" | "occupied" | "maintenance"
       staff_permission: "seating" | "reservations" | "announcements"
@@ -1088,7 +1191,14 @@ export const Constants = {
       content_status: ["draft", "published", "archived"],
       flashcard_rating: ["learned", "needs_review"],
       payment_method: ["gcash", "qrph"],
-      payment_status: ["pending", "processing", "paid", "failed", "refunded"],
+      payment_status: [
+        "pending",
+        "processing",
+        "paid",
+        "failed",
+        "refunded",
+        "not_required",
+      ],
       profile_role: ["customer", "staff", "admin"],
       seat_status: ["available", "reserved", "occupied", "maintenance"],
       staff_permission: ["seating", "reservations", "announcements"],

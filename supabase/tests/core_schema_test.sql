@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(30);
+SELECT plan(41);
 
 SELECT has_table('public', 'profiles', 'profiles table exists');
 SELECT has_table('public', 'seats', 'seats table exists');
@@ -13,6 +13,23 @@ SELECT has_function('public', 'create_booking', ARRAY['text', 'text', 'date', 't
 SELECT has_function('public', 'toggle_walk_in_occupancy', ARRAY['text', 'text'], 'walk-in toggle RPC exists');
 SELECT has_function('public', 'admin_cancel_booking', ARRAY['uuid', 'text'], 'admin cancellation RPC exists');
 SELECT has_function('public', 'log_admin_access', ARRAY['text'], 'admin access audit RPC exists');
+SELECT has_function('public', 'process_kiosk_scan', ARRAY['text'], 'kiosk scan RPC exists');
+SELECT has_table('public', 'booking_confirmation_tokens', 'local QR confirmation token table exists');
+SELECT has_function('public', 'create_booking_confirmation_token', ARRAY['uuid', 'uuid', 'text'], 'confirmation token creation RPC exists');
+SELECT has_function('public', 'confirm_booking_from_token', ARRAY['text', 'text'], 'local QR confirmation RPC exists');
+SELECT has_function('public', 'get_booking_confirmation_preview', ARRAY['text'], 'payment preview RPC exists');
+SELECT has_function('public', 'sync_booking_account_email', ARRAY['uuid', 'uuid'], 'account email synchronization RPC exists');
+SELECT has_column('public', 'bookings', 'confirmation_email_sent_at', 'bookings track confirmation email delivery');
+SELECT has_column('public', 'qr_access_passes', 'last_scanned_at', 'QR passes track their last scan');
+SELECT ok(
+  NOT has_function_privilege('authenticated', 'public.confirm_booking_from_token(text,text)', 'execute'),
+  'customers cannot invoke the trusted local confirmation transition directly'
+);
+SELECT ok(
+  NOT has_function_privilege('authenticated', 'public.get_booking_confirmation_preview(text)', 'execute'),
+  'customers cannot bypass the token-checking Edge Function to preview bookings'
+);
+SELECT ok('not_required' = ANY(enum_range(NULL::public.payment_status)::text[]), 'payment status supports bookings with no payment');
 
 SELECT is(
   (SELECT count(*)::integer FROM public.seats),
