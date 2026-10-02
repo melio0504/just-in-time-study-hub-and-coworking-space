@@ -52,7 +52,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   };
 
   const sidebar = <div className="flex h-full flex-col p-5">
-    <div className="mb-7 flex items-center justify-between px-2"><Image src="/images/logo.png" alt="Just in Time" width={245} height={118} priority className="h-auto w-28" /><button type="button" onClick={() => setMobileOpen(false)} className="rounded-xl p-2 text-[#6b5e52] hover:bg-[#f7f1e8] lg:hidden"><X className="h-5 w-5" /></button></div>
+    <div className="mb-7 flex items-center justify-between px-2"><Image src="/images/logo.png" alt="Just in Time" width={245} height={118} priority className="h-auto w-28 mx-auto" /><button type="button" onClick={() => setMobileOpen(false)} className="rounded-xl p-2 text-[#6b5e52] hover:bg-[#f7f1e8] lg:hidden"><X className="h-5 w-5" /></button></div>
     <div className="mb-5 flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700"><Radio className="h-3.5 w-3.5 animate-pulse" />Realtime operations connected</div>
     <Suspense fallback={<div className="flex-1 animate-pulse rounded-2xl bg-[#f7f1e8]" />}><AdminNav onNavigate={() => setMobileOpen(false)} /></Suspense>
     <div className="mt-5 border-t border-[#eee5da] pt-5"><div className="mb-3 rounded-2xl bg-[#fffbf5] p-3"><p className="truncate text-sm font-semibold text-[#2d2520]">{profile.name}</p><p className="truncate text-xs text-[#5f5248]">{profile.email}</p></div><button type="button" onClick={handleLogout} className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50"><LogOut className="h-4 w-4" />Sign out</button></div>
