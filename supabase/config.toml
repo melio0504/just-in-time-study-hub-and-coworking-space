@@ -257,6 +257,12 @@ otp_expiry = 3600
 subject = "Confirm your Just In Time Study Hub account"
 content_path = "./supabase/templates/confirmation.html"
 
+[functions.confirm-booking]
+verify_jwt = false
+
+[functions.create-booking-confirmation]
+verify_jwt = true
+
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
 enable_signup = false
