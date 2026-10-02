@@ -3,6 +3,8 @@
 import { Suspense, useCallback, useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, ChevronLeft, ChevronRight, X, QrCode, AlertCircle, CheckCircle2, Mail } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { SeatingPlan } from '@/app/components/SeatingPlan';
 import { allSeatIds } from '@/lib/seats';
 import { createBooking } from '@/lib/supabase/bookings';
@@ -29,11 +31,50 @@ interface ReservationDraft {
 }
 
 const RESERVATION_DRAFT_KEY = 'jit-reservation-draft';
-const VALID_RESERVATION_TIMES = new Set([
-  '8:00', '9:00', '10:00', '11:00', '12:00', '13:00',
-  '14:00', '15:00', '16:00', '17:00', '18:00',
-]);
-const VALID_RESERVATION_DURATIONS = new Set(['1', '2', '3', '4', '6', '8']);
+const TIME_GROUPS = [
+  {
+    label: 'Morning',
+    options: [
+      ['08:00', '8:00 AM'], ['09:00', '9:00 AM'], ['10:00', '10:00 AM'],
+      ['11:00', '11:00 AM'],
+    ],
+  },
+  {
+    label: 'Afternoon',
+    options: [
+      ['12:00', '12:00 PM'], ['13:00', '1:00 PM'], ['14:00', '2:00 PM'],
+      ['15:00', '3:00 PM'], ['16:00', '4:00 PM'], ['17:00', '5:00 PM'],
+    ],
+  },
+  {
+    label: 'Evening',
+    options: [
+      ['18:00', '6:00 PM'], ['19:00', '7:00 PM'], ['20:00', '8:00 PM'],
+      ['21:00', '9:00 PM'], ['22:00', '10:00 PM'], ['23:00', '11:00 PM'],
+    ],
+  },
+  {
+    label: 'After midnight',
+    options: [
+      ['00:00', '12:00 AM'], ['01:00', '1:00 AM'], ['02:00', '2:00 AM'],
+      ['03:00', '3:00 AM'], ['04:00', '4:00 AM'],
+    ],
+  },
+] as const;
+const DURATION_OPTIONS = [
+  ['1', '1 hour'], ['2', '2 hours'], ['3', '3 hours'], ['4', '4 hours'],
+  ['6', '6 hours'], ['8', 'Full day (8 hours)'],
+] as const;
+const VALID_RESERVATION_TIMES = new Set<string>(TIME_GROUPS.flatMap((group) => group.options.map(([value]) => value)));
+const VALID_RESERVATION_DURATIONS = new Set<string>(DURATION_OPTIONS.map(([value]) => value));
+
+const getHoursUntilClosing = (time: string) => {
+  const hour = Number(time.split(':')[0]);
+  if (!Number.isInteger(hour)) return 0;
+  if (hour >= 8 && hour <= 23) return 29 - hour;
+  if (hour >= 0 && hour < 5) return 5 - hour;
+  return 0;
+};
 
 const getTodayString = () => {
   const today = new Date();
@@ -66,8 +107,16 @@ function ReserveContent() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const calendarRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [paymentStep, setPaymentStep] = useState<'pending' | 'success'>('pending');
+  const [confirmationStep, setConfirmationStep] = useState<'pending' | 'success'>('pending');
   const [reservationId, setReservationId] = useState('');
+  const [bookingId, setBookingId] = useState('');
+  const [subtotalCents, setSubtotalCents] = useState(0);
+  const [confirmationQr, setConfirmationQr] = useState('');
+  const [confirmationUrl, setConfirmationUrl] = useState('');
+  const [confirmationError, setConfirmationError] = useState('');
+  const [isConfirmationLoading, setIsConfirmationLoading] = useState(false);
+  const [isConfirmationEmailSent, setIsConfirmationEmailSent] = useState(false);
+  const [emailDeliveryError, setEmailDeliveryError] = useState('');
   const [lastSelectedSeats, setLastSelectedSeats] = useState<string[]>([]);
   const [hasAppliedSeatParam, setHasAppliedSeatParam] = useState(false);
   const [bookingError, setBookingError] = useState('');
@@ -75,6 +124,15 @@ function ReserveContent() {
   const [memberIdentity, setMemberIdentity] = useState<MemberIdentity | null>(null);
   const [isIdentityLoading, setIsIdentityLoading] = useState(isSupabaseConfigured);
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+
+  const initializeSeats = useCallback((_date: string, selectedSeats: string[] = []): Seat[] => {
+    return allSeatIds.map(id => ({
+      id,
+      status: selectedSeats.includes(id) ? 'selected' : 'available'
+    }));
+  }, []);
+
+  const [seats, setSeats] = useState<Seat[]>(initializeSeats(getTodayString()));
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -128,7 +186,79 @@ function ReserveContent() {
 
   const closePaymentModal = () => {
     setIsModalOpen(false);
-    setPaymentStep('pending');
+    setConfirmationStep('pending');
+  };
+
+  useEffect(() => {
+    if (!bookingId || !isModalOpen) return;
+
+    const supabase = createClient();
+    const handleBooking = (booking: { status?: string; confirmation_email_sent_at?: string | null; confirmation_email_error?: string | null }) => {
+      if (booking.status === 'confirmed') {
+        setConfirmationStep('success');
+        setConfirmationError('');
+        setSeats((currentSeats) => currentSeats.map((seat) => (
+          seat.status === 'selected' ? { ...seat, status: 'reserved' } : seat
+        )));
+        window.localStorage.removeItem(RESERVATION_DRAFT_KEY);
+      } else if (booking.status === 'declined') {
+        setConfirmationError('The confirmation QR code expired. Please create a new reservation.');
+      }
+      setIsConfirmationEmailSent(Boolean(booking.confirmation_email_sent_at));
+      setEmailDeliveryError(booking.confirmation_email_error ?? '');
+    };
+
+    const channel = supabase
+      .channel(`booking-confirmation-${bookingId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'bookings', filter: `id=eq.${bookingId}` },
+        (payload) => handleBooking(payload.new as { status?: string; confirmation_email_sent_at?: string | null; confirmation_email_error?: string | null }),
+      )
+      .subscribe();
+
+    void supabase
+      .from('bookings')
+      .select('status, confirmation_email_sent_at, confirmation_email_error')
+      .eq('id', bookingId)
+      .single()
+      .then(({ data }) => { if (data) handleBooking(data); });
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [bookingId, isModalOpen]);
+
+  const createLocalConfirmation = async (id: string) => {
+    setIsConfirmationLoading(true);
+    setConfirmationError('');
+    setConfirmationQr('');
+    setConfirmationUrl('');
+    setIsConfirmationEmailSent(false);
+    setEmailDeliveryError('');
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.functions.invoke('create-booking-confirmation', {
+        body: { bookingId: id, confirmationBaseUrl: window.location.origin },
+      });
+      if (error) {
+        let message = error.message;
+        if (error instanceof FunctionsHttpError) {
+          const payload = await error.context.json().catch(() => null);
+          if (typeof payload?.error === 'string') message = payload.error;
+        }
+        throw new Error(message);
+      }
+      if (data?.error) throw new Error(data.error);
+      if (typeof data?.qrDataUrl !== 'string' || typeof data?.confirmationUrl !== 'string') {
+        throw new Error('The server did not return a confirmation QR code.');
+      }
+      setConfirmationQr(data.qrDataUrl);
+      setConfirmationUrl(data.confirmationUrl);
+    } catch (error) {
+      setConfirmationError(error instanceof Error ? error.message : 'Unable to prepare confirmation.');
+    } finally {
+      setIsConfirmationLoading(false);
+    }
   };
 
   const formatTimeLabel = (time: string) => {
@@ -141,14 +271,10 @@ function ReserveContent() {
     return `${hour - 12}:00 PM`;
   };
 
-  const initializeSeats = useCallback((_date: string, selectedSeats: string[] = []): Seat[] => {
-    return allSeatIds.map(id => ({
-      id,
-      status: selectedSeats.includes(id) ? 'selected' : 'available'
-    }));
-  }, []);
-
-  const [seats, setSeats] = useState<Seat[]>(initializeSeats(getTodayString()));
+  const formatPrice = (cents: number) => new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+  }).format(cents / 100);
 
   useEffect(() => {
     if (!hasRestoredDraft || !formData.date) return;
@@ -272,9 +398,13 @@ function ReserveContent() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
+    setFormData((current) => {
+      if (name === 'time') {
+        const hoursUntilClosing = getHoursUntilClosing(value);
+        const duration = Number(current.duration) <= hoursUntilClosing ? current.duration : '';
+        return { ...current, time: value, duration };
+      }
+      return { ...current, [name]: value };
     });
 
     if (name === 'date') {
@@ -389,6 +519,12 @@ function ReserveContent() {
         seatCodes: selectedSeats,
       });
       setReservationId(booking.reservation_code);
+      setBookingId(booking.id);
+      setSubtotalCents(booking.subtotal_cents);
+      setLastSelectedSeats(selectedSeats);
+      setConfirmationStep('pending');
+      setIsModalOpen(true);
+      await createLocalConfirmation(booking.id);
     } catch (error) {
       setBookingError(error instanceof Error ? error.message : 'Unable to create booking.');
       setIsSubmitting(false);
@@ -396,13 +532,6 @@ function ReserveContent() {
     }
 
     setIsSubmitting(false);
-    setLastSelectedSeats(selectedSeats);
-    setPaymentStep('pending');
-    setIsModalOpen(true);
-  };
-
-  const handleDemoPaid = () => {
-    setPaymentStep('success');
   };
 
   const renderSeatButton = (id: string) => {
@@ -427,6 +556,8 @@ function ReserveContent() {
   };
 
   const selectedCount = seats.filter(s => s.status === 'selected').length;
+  const hoursUntilClosing = getHoursUntilClosing(formData.time);
+  const availableDurationOptions = DURATION_OPTIONS.filter(([value]) => Number(value) <= hoursUntilClosing);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] to-[#fff8ed] pt-20 sm:pt-24">
@@ -572,18 +703,15 @@ function ReserveContent() {
                 className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-[#2d2520]"
               >
                 <option value="">Select time</option>
-                <option value="8:00">8:00 AM</option>
-                <option value="9:00">9:00 AM</option>
-                <option value="10:00">10:00 AM</option>
-                <option value="11:00">11:00 AM</option>
-                <option value="12:00">12:00 PM</option>
-                <option value="13:00">1:00 PM</option>
-                <option value="14:00">2:00 PM</option>
-                <option value="15:00">3:00 PM</option>
-                <option value="16:00">4:00 PM</option>
-                <option value="17:00">5:00 PM</option>
-                <option value="18:00">6:00 PM</option>
+                {TIME_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
+              <p className="mt-2 text-xs text-[#8b7355]">Open 8:00 AM–5:00 AM · Closed 5:00–8:00 AM</p>
             </div>
             <div>
               <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
@@ -594,16 +722,19 @@ function ReserveContent() {
                 value={formData.duration}
                 onChange={handleChange}
                 required
+                disabled={!formData.time}
                 className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-[#2d2520]"
               >
-                <option value="">Select duration</option>
-                <option value="1">1 hour</option>
-                <option value="2">2 hours</option>
-                <option value="3">3 hours</option>
-                <option value="4">4 hours</option>
-                <option value="6">6 hours</option>
-                <option value="8">Full day (8 hours)</option>
+                <option value="">{formData.time ? 'Select duration' : 'Select a time first'}</option>
+                {availableDurationOptions.map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
               </select>
+              {formData.time && (
+                <p className="mt-2 text-xs text-[#8b7355]">
+                  Available until the 5:00 AM closing time.
+                </p>
+              )}
             </div>
           </div>
 
@@ -644,15 +775,15 @@ function ReserveContent() {
         </form>
       </div>
 
-      {/* Payment Modal */}
+      {/* Local QR confirmation modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-2 sm:p-4">
           <div className="bg-white rounded-t-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#f3ede4] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:my-4 [&::-webkit-scrollbar-thumb]:bg-[#e5a930] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-[#d69520]">
             <div className="p-5 sm:p-8">
-              {paymentStep === 'pending' ? (
+              {confirmationStep === 'pending' ? (
                 <>
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl sm:text-3xl text-[#2d2520]">Complete Payment</h2>
+                    <h2 className="text-2xl sm:text-3xl text-[#2d2520]">Scan to Pay</h2>
                     <button
                       type="button"
                       onClick={closePaymentModal}
@@ -663,20 +794,60 @@ function ReserveContent() {
                   </div>
 
                   <div className="mb-4">
-                    <p className="text-sm text-[#6b5e52] mb-1">Reservation ID</p>
-                    <p className="text-lg text-[#2d2520] mb-2">{reservationId}</p>
+                    <div className="grid gap-3 rounded-2xl border border-[#eadfce] bg-[#fff8ed] p-4 sm:grid-cols-2">
+                      <div>
+                        <p className="mb-1 text-xs uppercase tracking-wider text-[#6b5e52]">Reservation ID</p>
+                        <p className="text-lg font-semibold text-[#2d2520]">{reservationId}</p>
+                      </div>
+                      <div className="sm:text-right">
+                        <p className="mb-1 text-xs uppercase tracking-wider text-[#6b5e52]">Overall payment</p>
+                        <p className="text-2xl font-semibold text-[#9b6810]">{formatPrice(subtotalCents)}</p>
+                      </div>
+                    </div>
                     {lastSelectedSeats.length > 0 && (
-                      <p className="text-sm text-[#6b5e52]">Seats: {lastSelectedSeats.join(', ')}</p>
+                      <p className="mt-2 text-sm text-[#6b5e52]">Seats: {lastSelectedSeats.join(', ')}</p>
                     )}
                   </div>
 
                   <div className="mb-6">
-                    <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-3">GCash Payment QR Code</p>
+                    <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-3">Simulated GCash Payment QR</p>
                     <div className="bg-[#f9f9f9] border-2 border-dashed border-[#d1d5db] rounded-2xl p-4 sm:p-8 flex flex-col items-center justify-center">
-                      <QrCode className="w-36 h-36 sm:w-48 sm:h-48 text-[#6b5e52] mb-4" />
-                      <p className="text-sm text-[#6b5e52] text-center">Scan this QR code with your GCash app to complete payment</p>
+                      {isConfirmationLoading ? (
+                        <div className="flex h-48 items-center justify-center text-sm text-[#6b5e52]">Generating secure QR code…</div>
+                      ) : confirmationQr ? (
+                        <Image src={confirmationQr} alt="Reservation confirmation QR code" width={240} height={240} unoptimized className="h-48 w-48 sm:h-60 sm:w-60" />
+                      ) : (
+                        <QrCode className="w-36 h-36 sm:w-48 sm:h-48 text-[#9ca3af] mb-4" />
+                      )}
+                      <p className="mt-4 text-sm text-[#6b5e52] text-center">Scan with your phone&apos;s camera, review the exact amount, then tap Pay in the GCash simulator.</p>
                     </div>
                   </div>
+
+                  {confirmationError && (
+                    <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                      <p>{confirmationError}</p>
+                      {bookingId && (
+                        <button
+                          type="button"
+                          onClick={() => void createLocalConfirmation(bookingId)}
+                          disabled={isConfirmationLoading}
+                          className="mt-3 rounded-full bg-red-700 px-4 py-2 font-medium text-white transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isConfirmationLoading ? 'Trying again…' : 'Try generating QR again'}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {confirmationUrl && (
+                    <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                      <p className="font-semibold">Testing on this device?</p>
+                      <p className="mt-1">You can open the same simulated payment link directly instead of scanning.</p>
+                      <a href={confirmationUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex rounded-full bg-blue-700 px-5 py-2.5 font-medium text-white hover:bg-blue-800">
+                        Open payment simulator
+                      </a>
+                    </div>
+                  )}
 
                   <div className="mb-6 border-l-4 border-[#e5a930] bg-[#fef3dc]/30 p-4 rounded-r-xl">
                     <div className="flex items-start gap-2 mb-3">
@@ -688,7 +859,7 @@ function ReserveContent() {
                     <ul className="space-y-2 text-sm text-[#6b5e52] ml-7">
                       <li className="flex items-start gap-2">
                         <span className="text-[#e5a930] mt-1">•</span>
-                        <span><strong>No Refund:</strong> All reservations are non-refundable once confirmed.</span>
+                        <span><strong>One-time link:</strong> The QR expires with the 15-minute seat hold.</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#e5a930] mt-1">•</span>
@@ -696,33 +867,17 @@ function ReserveContent() {
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#e5a930] mt-1">•</span>
-                        <span><strong>Email Confirmation:</strong> Payment confirmation will be sent to <strong>{formData.email}</strong> with your Reservation ID.</span>
+                        <span><strong>Email Confirmation:</strong> Your kiosk access QR will be sent to <strong>{formData.email}</strong> after confirmation.</span>
                       </li>
                     </ul>
                   </div>
 
-                  <div className="flex flex-col gap-3">
-                    <button
-                      type="button"
-                      onClick={handleDemoPaid}
-                      className="w-full bg-[#22c55e] text-white px-8 py-4 rounded-full hover:shadow-xl font-medium cursor-pointer"
-                    >
-                      I&apos;ve Paid
-                      <span className="ml-2 text-xs font-normal opacity-90">(demo)</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={closePaymentModal}
-                      className="w-full border border-[#f3ede4] text-[#6b5e52] px-8 py-3 rounded-full hover:bg-[#f3ede4] transition-colors cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+                  <p className="text-center text-sm text-[#6b5e52]">Waiting for the simulated payment to complete…</p>
                 </>
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl sm:text-3xl text-[#2d2520]">Payment Successful</h2>
+                    <h2 className="text-2xl sm:text-3xl text-[#2d2520]">Reservation Confirmed</h2>
                     <button
                       type="button"
                       onClick={closePaymentModal}
@@ -737,10 +892,13 @@ function ReserveContent() {
                       <CheckCircle2 className="w-12 h-12 text-[#22c55e]" />
                     </div>
                     <p className="text-lg text-[#2d2520] mb-2">
-                      Thank you! Your GCash payment has been recorded.
+                      Thank you! Your reservation has been confirmed.
                     </p>
                     <p className="text-sm text-[#6b5e52]">
                       Reservation <strong className="text-[#2d2520]">{reservationId}</strong> is confirmed.
+                    </p>
+                    <p className="mt-2 text-base font-semibold text-[#9b6810]">
+                      Overall payment: {formatPrice(subtotalCents)}
                     </p>
                   </div>
 
@@ -748,19 +906,22 @@ function ReserveContent() {
                     <div className="flex items-start gap-3 mb-4">
                       <Mail className="w-5 h-5 text-[#e5a930] flex-shrink-0 mt-0.5" />
                       <div className="text-left">
-                        <p className="text-sm font-semibold text-[#2d2520] mb-1">Check your email</p>
+                        <p className="text-sm font-semibold text-[#2d2520] mb-1">{isConfirmationEmailSent ? 'Check your email' : 'Preparing your email'}</p>
                         <p className="text-sm text-[#6b5e52]">
-                          We sent a booking confirmation to{' '}
+                          {isConfirmationEmailSent ? 'We sent' : 'We are sending'} a booking confirmation to{' '}
                           <strong className="text-[#2d2520]">{formData.email}</strong>.
                           Open it on your phone when you arrive — you will need it for self check-in.
                         </p>
+                        {emailDeliveryError && (
+                          <p className="mt-2 text-sm text-red-700">The reservation is confirmed, but email delivery failed. Please contact staff if it does not arrive.</p>
+                        )}
                       </div>
                     </div>
                     <p className="text-xs text-[#6b5e52] uppercase tracking-wider mb-2 text-left">Your email includes</p>
                     <ul className="space-y-2 text-sm text-[#6b5e52] text-left">
                       <li className="flex items-start gap-2">
                         <span className="text-[#e5a930] mt-0.5">•</span>
-                        <span><strong className="text-[#2d2520]">Official receipt number</strong> for your GCash payment</span>
+                        <span><strong className="text-[#2d2520]">Reservation reference</strong> for your confirmed booking</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#e5a930] mt-0.5">•</span>
