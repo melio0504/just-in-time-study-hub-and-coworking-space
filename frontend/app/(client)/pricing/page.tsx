@@ -31,7 +31,7 @@ export default function Pricing() {
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+          initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
@@ -52,7 +52,7 @@ export default function Pricing() {
       <section className="py-12 px-6">
         <div className="max-w-4xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+          initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
@@ -75,7 +75,7 @@ export default function Pricing() {
           </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+          initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
@@ -131,7 +131,7 @@ export default function Pricing() {
             {packageRates.map((pkg, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 30 }}
+          initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -170,7 +170,7 @@ export default function Pricing() {
 
           <div className="grid md:grid-cols-3 gap-6">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+          initial={false}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
@@ -193,7 +193,7 @@ export default function Pricing() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+          initial={false}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
@@ -216,7 +216,7 @@ export default function Pricing() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+          initial={false}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -265,7 +265,7 @@ export default function Pricing() {
             ].map((item, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, x: -20 }}
+          initial={false}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
@@ -285,7 +285,7 @@ export default function Pricing() {
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+          initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}

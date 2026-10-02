@@ -41,7 +41,7 @@ export default function Home() {
       <AnimatePresence>
         {showAnnouncement && announcement && (
           <motion.div
-            initial={{ x: 400, opacity: 0 }}
+          initial={false}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 400, opacity: 0 }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
@@ -95,19 +95,19 @@ export default function Home() {
             <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#fffcf7]/90 via-[#fffcf7]/80 to-[#fff8ed]/95 md:hidden" />
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               <motion.h1
                 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6 text-[#2d2520] leading-[1.1]"
-                initial={{ opacity: 0, y: 20 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
                 <motion.span
                   className="inline-block"
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={false}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 0.6 }}
                 >
@@ -115,7 +115,7 @@ export default function Home() {
                 </motion.span>{" "}
                 <motion.span
                   className="inline-block relative"
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={false}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 0.8 }}
                 >
@@ -124,14 +124,14 @@ export default function Home() {
                   </span>
                   <motion.div
                     className="absolute -bottom-2 left-0 right-0 h-3 bg-[#e5a930] opacity-20 rounded-full"
-                    initial={{ scaleX: 0 }}
+                    initial={false}
                     animate={{ scaleX: 1 }}
                     transition={{ duration: 0.8, delay: 1.2 }}
                   />
                 </motion.span>
                 <br />
                 <motion.span
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 1 }}
                 >
@@ -141,7 +141,7 @@ export default function Home() {
 
               <motion.p
                 className="text-lg sm:text-xl text-[#6b5e52] mb-8 leading-relaxed"
-                initial={{ opacity: 0 }}
+                initial={false}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, delay: 1.4 }}
               >
@@ -152,7 +152,7 @@ export default function Home() {
 
               <motion.div
                 className="flex flex-col sm:flex-row items-start gap-4"
-                initial={{ opacity: 0, y: 20 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 1.6 }}
               >
@@ -174,7 +174,7 @@ export default function Home() {
 
             <motion.div
               className="relative hidden items-center justify-center md:flex"
-              initial={{ x: 200, opacity: 0 }}
+          initial={false}
               animate={{ x: 0, opacity: 1 }}
               transition={{ duration: 1.2, ease: "easeOut" }}
             >
@@ -194,7 +194,7 @@ export default function Home() {
 
           <motion.div
             className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto"
-            initial={{ opacity: 0, y: 40 }}
+          initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 2 }}
           >
@@ -385,7 +385,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-8">
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+          initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
@@ -409,7 +409,7 @@ export default function Home() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+          initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
@@ -435,7 +435,7 @@ export default function Home() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+          initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -475,7 +475,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 gap-8 mb-16">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+          initial={false}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
@@ -500,7 +500,7 @@ export default function Home() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+          initial={false}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
