@@ -14,8 +14,16 @@ function isAllowedSupabaseUrl(value: string | undefined) {
       url.hostname === "localhost" ||
       url.hostname === "127.0.0.1" ||
       url.hostname === "[::1]";
+    const octets = url.hostname.split(".").map(Number);
+    const isPrivateIpv4 = octets.length === 4 && octets.every((part) => Number.isInteger(part) && part >= 0 && part <= 255) && (
+      octets[0] === 10 ||
+      (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
+      (octets[0] === 192 && octets[1] === 168)
+    );
+    const allowInsecureLan = process.env.NEXT_PUBLIC_ALLOW_INSECURE_LAN === "true";
 
-    return url.protocol === "https:" || (url.protocol === "http:" && isLoopbackHost);
+    return url.protocol === "https:" ||
+      (url.protocol === "http:" && (isLoopbackHost || (allowInsecureLan && isPrivateIpv4)));
   } catch {
     return false;
   }
