@@ -35,11 +35,31 @@ export default function Login() {
 
     setIsSubmitting(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword(formData);
-    setIsSubmitting(false);
+    const { data, error } = await supabase.auth.signInWithPassword(formData);
 
-    if (error) {
-      setErrorMessage(error.message);
+    if (error || !data.user) {
+      setIsSubmitting(false);
+      setErrorMessage(error?.message ?? 'Unable to sign in.');
+      return;
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError || !profile) {
+      await supabase.auth.signOut({ scope: 'local' });
+      setIsSubmitting(false);
+      setErrorMessage('Unable to verify account access. Please try again.');
+      return;
+    }
+
+    if (['admin', 'staff'].includes(profile.role)) {
+      await supabase.auth.signOut({ scope: 'local' });
+      setIsSubmitting(false);
+      setErrorMessage('Administrator accounts must sign in through the admin portal.');
       return;
     }
 

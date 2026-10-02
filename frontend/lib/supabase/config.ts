@@ -1,6 +1,10 @@
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
+// Cookies are shared by hostname, not port. Use an app-specific name so a
+// session created by the local admin app on :3001 is not visible on :3000.
+export const SUPABASE_AUTH_COOKIE_NAME = "jit-frontend-auth";
+
 function isAllowedSupabaseUrl(value: string | undefined) {
   if (!value) return false;
 
