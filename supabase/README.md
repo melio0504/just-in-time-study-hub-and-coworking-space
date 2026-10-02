@@ -62,7 +62,8 @@ Wi-Fi, and the OS firewall must allow TCP ports `3000` and `54321`.
 2. In `supabase/functions/.env`, set:
 
    ```dotenv
-   BOOKING_CONFIRMATION_URL=http://192.168.1.20:3000
+   # Leave empty locally; the frontend detects the computer's LAN address.
+   BOOKING_CONFIRMATION_URL=
    ```
 
 3. Restart the local functions and start the customer app on all interfaces:

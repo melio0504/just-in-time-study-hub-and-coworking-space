@@ -227,6 +227,23 @@ function ReserveContent() {
     return () => { void supabase.removeChannel(channel); };
   }, [bookingId, isModalOpen]);
 
+  const getConfirmationBaseUrl = async () => {
+    const currentUrl = new URL(window.location.href);
+    const isLoopback = currentUrl.hostname === 'localhost' ||
+      currentUrl.hostname === '127.0.0.1' || currentUrl.hostname === '[::1]';
+    if (!isLoopback) return currentUrl.origin;
+
+    try {
+      const response = await fetch('/api/network/lan-origin', { cache: 'no-store' });
+      const payload = await response.json();
+      if (response.ok && typeof payload?.origin === 'string') return payload.origin;
+    } catch (error) {
+      console.warn('LAN address discovery failed; using the current origin.', error);
+    }
+
+    return currentUrl.origin;
+  };
+
   const createLocalConfirmation = async (id: string) => {
     setIsConfirmationLoading(true);
     setConfirmationError('');
@@ -237,8 +254,9 @@ function ReserveContent() {
 
     try {
       const supabase = createClient();
+      const confirmationBaseUrl = await getConfirmationBaseUrl();
       const { data, error } = await supabase.functions.invoke('create-booking-confirmation', {
-        body: { bookingId: id, confirmationBaseUrl: window.location.origin },
+        body: { bookingId: id, confirmationBaseUrl },
       });
       if (error) {
         let message = error.message;
