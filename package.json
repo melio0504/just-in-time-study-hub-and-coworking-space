@@ -62,6 +62,7 @@
     "start:admin:lan": "npm run start:lan --workspace @jit-studyhub/admin",
     "lint": "npm run lint --workspaces --if-present",
     "supabase:start": "supabase start",
+    "supabase:functions": "supabase functions serve create-staff-account",
     "supabase:stop": "supabase stop",
     "supabase:reset": "supabase db reset",
     "supabase:types": "supabase gen types typescript --local > frontend/lib/supabase/database.types.ts && cp frontend/lib/supabase/database.types.ts admin/lib/supabase/database.types.ts"
