@@ -150,11 +150,6 @@ export default {
   fetch: withSupabase({ auth: "none" }, async (request, context) => {
     if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
-    const accessSecret = Deno.env.get("QR_ACCESS_TOKEN_SECRET");
-    if (!accessSecret || accessSecret.length < 32) {
-      return json({ error: "QR access passes are not configured." }, 503);
-    }
-
     let body: { token?: unknown; action?: unknown };
     try {
       body = await request.json();
@@ -192,6 +187,11 @@ export default {
         expiresAt: booking.expires_at,
         confirmed: booking.confirmed,
       });
+    }
+
+    const accessSecret = Deno.env.get("QR_ACCESS_TOKEN_SECRET");
+    if (!accessSecret || accessSecret.length < 32) {
+      return json({ error: "QR access passes are not configured." }, 503);
     }
 
     const accessToken = base64Url(await hmac(`${token}:access-pass`, accessSecret));
