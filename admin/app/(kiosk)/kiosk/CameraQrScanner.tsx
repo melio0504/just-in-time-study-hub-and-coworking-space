@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, Camera, ScanLine } from "lucide-react";
+import { AlertCircle, ScanLine } from "lucide-react";
 import { motion } from "motion/react";
 import QrScanner from "qr-scanner";
 

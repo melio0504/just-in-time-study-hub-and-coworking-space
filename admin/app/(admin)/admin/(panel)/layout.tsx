@@ -1,6 +1,7 @@
 import { AdminShell } from "../_components/AdminShell";
 import { redirect } from "next/navigation";
 
+import type { AdminAccess, StaffPermission } from "@/lib/admin-access";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,13 +25,32 @@ export default async function AdminPanelLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, full_name, email, is_active, must_change_password, staff_permissions")
     .eq("id", user.id)
     .single();
 
-  if (!profile || !["admin", "staff"].includes(profile.role)) {
+  if (!profile || !profile.is_active || !["admin", "staff"].includes(profile.role)) {
     redirect("/");
   }
 
-  return <AdminShell>{children}</AdminShell>;
+  if (profile.must_change_password) {
+    redirect("/admin/change-password");
+  }
+
+  const access: AdminAccess = {
+    role: profile.role as AdminAccess["role"],
+    permissions: profile.staff_permissions as StaffPermission[],
+  };
+
+  return (
+    <AdminShell
+      access={access}
+      profile={{
+        name: profile.full_name || "Staff member",
+        email: profile.email || user.email || "",
+      }}
+    >
+      {children}
+    </AdminShell>
+  );
 }

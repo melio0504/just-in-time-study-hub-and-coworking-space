@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Shield, Check } from 'lucide-react';
+import { defaultAdminPath, type AdminAccess, type StaffPermission } from '@/lib/admin-access';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
@@ -44,19 +45,29 @@ export default function AdminLogin() {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, is_active, must_change_password, staff_permissions')
       .eq('id', data.user.id)
       .single();
 
-    if (profileError || !profile || !['admin', 'staff'].includes(profile.role)) {
-      await supabase.auth.signOut();
+    if (profileError || !profile || !profile.is_active || !['admin', 'staff'].includes(profile.role)) {
+      await supabase.auth.signOut({ scope: 'local' });
       setIsSubmitting(false);
       setErrorMessage('This account does not have administrator access.');
       return;
     }
 
+    if (profile.must_change_password) {
+      router.push('/admin/change-password');
+      router.refresh();
+      return;
+    }
+
     await supabase.rpc('log_admin_access', { p_action: 'Signed in to admin dashboard' });
-    router.push('/admin/dashboard');
+    const access: AdminAccess = {
+      role: profile.role as AdminAccess['role'],
+      permissions: profile.staff_permissions as StaffPermission[],
+    };
+    router.push(defaultAdminPath(access));
     router.refresh();
   };
 

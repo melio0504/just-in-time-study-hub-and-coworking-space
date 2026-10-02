@@ -640,8 +640,10 @@ export type Database = {
           id: string
           is_active: boolean
           loyalty_points: number
+          must_change_password: boolean
           phone: string | null
           role: Database["public"]["Enums"]["profile_role"]
+          staff_permissions: Database["public"]["Enums"]["staff_permission"][]
           updated_at: string
         }
         Insert: {
@@ -652,8 +654,10 @@ export type Database = {
           id: string
           is_active?: boolean
           loyalty_points?: number
+          must_change_password?: boolean
           phone?: string | null
           role?: Database["public"]["Enums"]["profile_role"]
+          staff_permissions?: Database["public"]["Enums"]["staff_permission"][]
           updated_at?: string
         }
         Update: {
@@ -664,8 +668,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           loyalty_points?: number
+          must_change_password?: boolean
           phone?: string | null
           role?: Database["public"]["Enums"]["profile_role"]
+          staff_permissions?: Database["public"]["Enums"]["staff_permission"][]
           updated_at?: string
         }
         Relationships: []
@@ -938,6 +944,7 @@ export type Database = {
       payment_status: "pending" | "processing" | "paid" | "failed" | "refunded"
       profile_role: "customer" | "staff" | "admin"
       seat_status: "available" | "reserved" | "occupied" | "maintenance"
+      staff_permission: "seating" | "reservations" | "announcements"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1084,6 +1091,7 @@ export const Constants = {
       payment_status: ["pending", "processing", "paid", "failed", "refunded"],
       profile_role: ["customer", "staff", "admin"],
       seat_status: ["available", "reserved", "occupied", "maintenance"],
+      staff_permission: ["seating", "reservations", "announcements"],
     },
   },
 } as const
