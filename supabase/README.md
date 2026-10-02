@@ -18,8 +18,8 @@ npx supabase status
 Copy `frontend/.env.example` to `frontend/.env.local` and
 `admin/.env.example` to `admin/.env.local`, then copy the local `API_URL` and
 `PUBLISHABLE_KEY` printed by `npx supabase status` into both files. The
-checked-in local Auth configuration creates a session immediately without
-email confirmation. Test messages are available in Mailpit at
+checked-in local Auth configuration requires email confirmation and sends the
+branded welcome email through Supabase Auth. Test messages are available in Mailpit at
 <http://127.0.0.1:54324>.
 
 Useful local URLs:
@@ -60,11 +60,14 @@ In the production Supabase Dashboard:
 
 1. Authentication > URL Configuration: set the Site URL to the deployed HTTPS
    URL and allow `http://localhost:3000/**` plus the deployed callback URL.
-2. Authentication > Providers > Email: disable **Confirm email** so successful
-   registration creates a session immediately.
-3. Configure a production SMTP provider before launch. Supabase's default
+2. Authentication > Providers > Email: enable **Confirm email** so registration
+   sends the branded welcome and account activation message.
+3. Authentication > Email Templates > Confirm signup: copy the subject and HTML
+   from `supabase/templates/confirmation.html`. Local template files are not
+   automatically uploaded to hosted projects.
+4. Configure a production SMTP provider before launch. Supabase's default
    email sender is intended only for limited testing.
-4. Put the production URL and publishable key in Vercel as
+5. Put the production URL and publishable key in Vercel as
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and set
    `NEXT_PUBLIC_SITE_URL` to the deployed app URL. Never expose a secret or
    service-role key through a `NEXT_PUBLIC_` variable.

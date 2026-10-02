@@ -1,13 +1,56 @@
 <!doctype html>
 <html lang="en">
-  <body style="font-family: Arial, sans-serif; color: #2d2520">
-    <h2>Confirm your email address</h2>
-    <p>Welcome to Just In Time Study Hub and Coworking Space.</p>
-    <p>
-      <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email">
-        Confirm your account
-      </a>
-    </p>
-    <p>If you did not create this account, you can ignore this message.</p>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to Just In Time Study Hub</title>
+  </head>
+  <body style="margin: 0; background: #f8f5f0; color: #2d2520; font-family: Arial, Helvetica, sans-serif;">
+    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0;">Thank you for creating your Just In Time Study Hub account. Confirm your email to get started.</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: #f8f5f0;">
+      <tr>
+        <td align="center" style="padding: 32px 16px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; background: #ffffff; border: 1px solid #eee5da; border-radius: 24px; overflow: hidden;">
+            <tr>
+              <td align="center" style="padding: 30px 32px 20px; background: #fffbf5; border-bottom: 1px solid #eee5da;">
+                <img src="{{ .SiteURL }}/images/logo.png" width="180" alt="Just In Time Study Hub and Coworking Space" style="display: block; width: 180px; max-width: 100%; height: auto; border: 0;">
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 36px 32px 18px;">
+                <p style="margin: 0 0 10px; color: #b47b0d; font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase;">Welcome to the community</p>
+                <h1 style="margin: 0 0 18px; color: #2d2520; font-size: 30px; line-height: 1.25;">Thank you for creating an account!</h1>
+                <p style="margin: 0 0 14px; color: #5f5248; font-size: 16px; line-height: 1.65;">Hi {{ if .Data.full_name }}{{ .Data.full_name }}{{ else }}there{{ end }},</p>
+                <p style="margin: 0 0 24px; color: #5f5248; font-size: 16px; line-height: 1.65;">Your Just In Time Study Hub account is almost ready. Confirm your email address to activate it and start planning more productive study sessions.</p>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td style="border-radius: 999px; background: #e5a930;">
+                      <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email" style="display: inline-block; padding: 14px 26px; color: #ffffff; font-size: 16px; font-weight: 700; text-decoration: none;">Confirm my account</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 18px 32px 34px;">
+                <div style="padding: 24px; background: #fef3dc; border: 1px solid #f2d793; border-radius: 18px;">
+                  <h2 style="margin: 0 0 14px; color: #2d2520; font-size: 20px;">Make every study session count</h2>
+                  <p style="margin: 0 0 9px; color: #5f5248; font-size: 15px; line-height: 1.55;">&#10003;&nbsp; Reserve your preferred study seat online</p>
+                  <p style="margin: 0 0 9px; color: #5f5248; font-size: 15px; line-height: 1.55;">&#10003;&nbsp; Keep your bookings and study hours in one place</p>
+                  <p style="margin: 0 0 9px; color: #5f5248; font-size: 15px; line-height: 1.55;">&#10003;&nbsp; Earn loyalty points while you study</p>
+                  <p style="margin: 0; color: #5f5248; font-size: 15px; line-height: 1.55;">&#10003;&nbsp; Discover member promotions and rewards</p>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 22px 32px; background: #2d2520; text-align: center;">
+                <p style="margin: 0 0 8px; color: #ffffff; font-size: 14px;">We look forward to welcoming you to Just In Time Study Hub.</p>
+                <p style="margin: 0; color: #d8cfc7; font-size: 12px; line-height: 1.5;">If you did not create this account, you can safely ignore this email.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>

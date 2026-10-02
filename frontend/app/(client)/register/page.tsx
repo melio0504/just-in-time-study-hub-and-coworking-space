@@ -18,6 +18,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,6 +31,7 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
+    setSuccessMessage('');
 
     if (formData.password !== formData.confirmPassword) {
       setErrorMessage('Passwords do not match.');
@@ -50,6 +52,7 @@ export default function Register() {
         data: {
           full_name: formData.username,
         },
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
       },
     });
     setIsSubmitting(false);
@@ -60,7 +63,8 @@ export default function Register() {
     }
 
     if (!data.session) {
-      setErrorMessage('Account created, but automatic sign-in is unavailable. Disable email confirmation in Supabase Auth settings.');
+      setSuccessMessage(`Your account was created. We sent a welcome email to ${formData.email}. Open it to confirm your address and activate your account.`);
+      setFormData({ username: '', email: '', password: '', confirmPassword: '' });
       return;
     }
 
@@ -117,6 +121,12 @@ export default function Register() {
                 <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                   {errorMessage}
                 </p>
+              )}
+              {successMessage && (
+                <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                  <p className="font-semibold">Check your inbox</p>
+                  <p className="mt-1 leading-6">{successMessage}</p>
+                </div>
               )}
               <div>
                 <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
