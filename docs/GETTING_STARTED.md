@@ -7,16 +7,44 @@ shared Supabase backend on one development machine.
 
 - Node.js 22 or newer
 - npm (included with Node.js)
-- Docker Desktop or Docker Engine running locally
+- Docker Desktop or Docker Engine, installed and running
 - Git
 
-Check the installed tools:
+Docker is required for this project's local development database. The
+`npm run supabase:start` command starts Postgres and the other local Supabase
+services in Docker containers; installing only the Docker command-line client
+is not sufficient because the Docker daemon must also be running.
+
+### Install Docker
+
+Use Docker's installation guide for your operating system:
+
+- **macOS:** Install [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/).
+  Choose the download for Apple silicon or Intel, move Docker to Applications,
+  and launch Docker Desktop.
+- **Windows:** Install [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/).
+  Use the WSL 2 backend (the default), enable hardware virtualization if
+  needed, and launch Docker Desktop after installation.
+- **Linux:** Install [Docker Engine](https://docs.docker.com/engine/install/)
+  using the instructions for your distribution, then start the Docker service.
+  Complete Docker's
+  [Linux post-installation steps](https://docs.docker.com/engine/install/linux-postinstall/)
+  if you want to run Docker without `sudo`.
+
+After installation, make sure Docker Desktop or the Docker service is running,
+then verify Node.js, npm, the Docker client, and the Docker daemon:
 
 ```bash
 node --version
 npm --version
-docker --version
+docker version
+docker info
 ```
+
+Both Docker commands must complete successfully before you start the local
+database. If `docker version` shows only a client section or `docker info`
+cannot connect to the daemon, start Docker Desktop or the Docker service and
+try again.
 
 ## 1. Install dependencies
 
@@ -153,4 +181,3 @@ npm run build
 
 `supabase:reset` recreates local database data. Do not use it against a
 production project.
-
