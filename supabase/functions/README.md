@@ -27,5 +27,5 @@ Deploy it after linking the Supabase project:
 npx supabase functions deploy create-staff-account --use-api
 npx supabase functions deploy create-booking-confirmation --use-api
 npx supabase functions deploy confirm-booking --no-verify-jwt --use-api
-npx supabase functions deploy scan-booking-pass --use-api
+npx supabase functions deploy scan-booking-pass --no-verify-jwt --use-api
 ```

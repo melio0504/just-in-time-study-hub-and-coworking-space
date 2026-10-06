@@ -15,7 +15,7 @@ async function sha256(value: string) {
 }
 
 export default {
-  fetch: withSupabase({ auth: "user" }, async (request, context) => {
+  fetch: withSupabase({ auth: "none" }, async (request, context) => {
     if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
     let body: { code?: unknown };
@@ -31,7 +31,9 @@ export default {
     }
 
     const token = rawCode.slice("JITPASS:".length);
-    const { data, error } = await context.supabase.rpc("process_kiosk_scan", {
+    // The QR token is the kiosk credential. Keep database writes behind this
+    // server-only client so anonymous browsers never receive elevated keys.
+    const { data, error } = await context.supabaseAdmin.rpc("process_kiosk_scan", {
       p_token_hash: await sha256(token),
     });
 

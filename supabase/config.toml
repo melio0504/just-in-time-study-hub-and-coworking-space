@@ -263,6 +263,9 @@ verify_jwt = false
 [functions.create-booking-confirmation]
 verify_jwt = true
 
+[functions.scan-booking-pass]
+verify_jwt = false
+
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
 enable_signup = false

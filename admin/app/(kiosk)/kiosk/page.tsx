@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import {
   QrCode,
   Clock,
@@ -65,8 +64,8 @@ type ValidationError =
 
 const ERROR_MESSAGES: Record<ValidationError, { title: string; description: string }> = {
   access: {
-    title: "Kiosk sign-in required",
-    description: "Sign in with a staff account that has seating access, then scan the pass again.",
+    title: "Kiosk unavailable",
+    description: "Ask a staff member to check the kiosk service, then scan the pass again.",
   },
   invalid: {
     title: "Invalid QR Code",
@@ -455,22 +454,13 @@ export default function KioskPage() {
                 <p className="text-base sm:text-lg text-[#6b5e52] mb-6 leading-relaxed shrink-0 max-w-md">
                   {serverError || ERROR_MESSAGES[errorType].description}
                 </p>
-                {errorType === "access" ? (
-                  <Link
-                    href="/admin?next=%2Fkiosk"
-                    className="px-8 py-4 bg-[#2d2520] text-white rounded-full hover:shadow-lg transition-all text-lg font-medium shrink-0"
-                  >
-                    Sign in to kiosk
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={resetToIdle}
-                    className="px-8 py-4 bg-[#2d2520] text-white rounded-full hover:shadow-lg transition-all text-lg font-medium shrink-0"
-                  >
-                    Try again
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={resetToIdle}
+                  className="px-8 py-4 bg-[#2d2520] text-white rounded-full hover:shadow-lg transition-all text-lg font-medium shrink-0"
+                >
+                  Try again
+                </button>
               </motion.div>
             )}
           </AnimatePresence>

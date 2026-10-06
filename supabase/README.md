@@ -111,7 +111,7 @@ npx supabase db push
 npx supabase functions deploy create-staff-account --use-api
 npx supabase functions deploy create-booking-confirmation --use-api
 npx supabase functions deploy confirm-booking --no-verify-jwt --use-api
-npx supabase functions deploy scan-booking-pass --use-api
+npx supabase functions deploy scan-booking-pass --no-verify-jwt --use-api
 npx supabase secrets set --env-file supabase/functions/.env
 npx supabase migration list
 npx supabase db advisors --linked --type all --level warn --fail-on warn

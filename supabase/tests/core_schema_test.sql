@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(41);
+SELECT plan(43);
 
 SELECT has_table('public', 'profiles', 'profiles table exists');
 SELECT has_table('public', 'seats', 'seats table exists');
@@ -28,6 +28,15 @@ SELECT ok(
 SELECT ok(
   NOT has_function_privilege('authenticated', 'public.get_booking_confirmation_preview(text)', 'execute'),
   'customers cannot bypass the token-checking Edge Function to preview bookings'
+);
+SELECT ok(
+  NOT has_function_privilege('anon', 'public.process_kiosk_scan(text)', 'execute'),
+  'anonymous browsers cannot invoke the kiosk transition RPC directly'
+);
+SELECT ok(
+  has_function_privilege('service_role', 'public.process_kiosk_scan(text)', 'execute')
+    AND has_function_privilege('service_role', 'private.process_kiosk_scan(text)', 'execute'),
+  'the server-side kiosk function can invoke the kiosk transition'
 );
 SELECT ok('not_required' = ANY(enum_range(NULL::public.payment_status)::text[]), 'payment status supports bookings with no payment');
 
