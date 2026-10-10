@@ -16,15 +16,15 @@ type Scene = {
 
 const scenes: Scene[] = [
   {
-    id: 'overview',
-    title: 'Study Hub Overview',
-    subtitle: 'Reception and the heart of the study hub.',
-    image: PANORAMA_IMAGES.overview,
-  },
-  {
     id: 'pods',
     title: 'Private Study Pods',
     subtitle: 'Individual desks for distraction-free work.',
+    image: PANORAMA_IMAGES.overview,
+  },
+  {
+    id: 'overview',
+    title: 'Study Hub Overview',
+    subtitle: 'Reception and the heart of the study hub.',
     image: PANORAMA_IMAGES.pods,
   },
   {
