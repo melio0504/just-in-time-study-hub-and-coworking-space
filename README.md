@@ -38,7 +38,7 @@ Only use a Supabase publishable key in `NEXT_PUBLIC_` variables. Never place a s
 - `/admin` and `/admin/dashboard` for authenticated administrators
 - `/kiosk` for the on-site check-in interface
 
-It is not connected to a Vercel project. Its default development and production scripts bind to `127.0.0.1:3001`, making it reachable only from the facility computer. `npm run start:admin:lan` intentionally binds it to all local interfaces; use that only with a firewall that limits access to the facility LAN and never configure router port forwarding.
+It is not connected to a Vercel project. Its development and production scripts bind to `127.0.0.1:3001`, making it reachable only from the facility computer.
 
 Network isolation is an additional control. Admin authentication and Supabase RLS must remain enabled.
 
@@ -47,7 +47,7 @@ Network isolation is an additional control. Admin authentication and Supabase RL
 Complete setup, environment, architecture, and operational guidance is
 available in the [project documentation](docs/README.md).
 
-Requirements: Node.js 22 or newer, npm, and a running Docker installation for
+Requirements: Node.js 22.12 or newer, npm, and a running Docker installation for
 the local development database. See [Getting started](docs/GETTING_STARTED.md#install-docker)
 for Docker Desktop and Docker Engine installation instructions for macOS,
 Windows, and Linux.
@@ -100,7 +100,19 @@ npm run supabase:types
 
 ```bash
 npm run lint
+npm test
 npm run build
+```
+
+The full suite also includes Playwright smoke tests for both applications and
+pgTAP coverage for the schema and RLS rules. See the
+[testing guide](docs/TESTING.md) for setup and commands.
+
+```bash
+npm test               # frontend and admin unit tests
+npm run test:frontend  # frontend only
+npm run test:admin     # admin only
+npm run test:db        # database and RLS tests (local Supabase required)
 ```
 
 You can also check an individual app:
