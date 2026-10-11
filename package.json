@@ -71,6 +71,7 @@
     "supabase:types": "supabase gen types typescript --local > frontend/lib/supabase/database.types.ts && cp frontend/lib/supabase/database.types.ts admin/lib/supabase/database.types.ts"
   },
   "devDependencies": {
+    "cloudflared": "^0.7.3",
     "supabase": "2.117.0"
   }
 }
