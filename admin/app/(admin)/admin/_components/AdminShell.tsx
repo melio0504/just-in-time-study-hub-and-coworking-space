@@ -4,7 +4,7 @@ import { createContext, Suspense, useContext, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { LayoutDashboard, CalendarDays, FileText, ShieldCheck, LogOut, BarChart3, Menu, X, ChevronRight, Radio, UserCog } from 'lucide-react';
+import { LayoutDashboard, CalendarDays, FileText, ShieldCheck, LogOut, BarChart3, Menu, X, ChevronRight, Radio, UserCog, UsersRound } from 'lucide-react';
 import { hasAdminAccess, type AdminAccess, type StaffPermission } from '@/lib/admin-access';
 import { createClient } from '@/lib/supabase/client';
 
@@ -20,6 +20,7 @@ export function useAdminAccess() {
 
 const navItems: NavItem[] = [
   { label: 'Live overview', description: 'Seats and activity', href: '/admin/dashboard', icon: LayoutDashboard, permission: 'seating', match: (p, s) => p === '/admin/dashboard' && (!s || s === 'dashboard') },
+  { label: 'Walk-ins', description: 'Sessions and billing', href: '/admin/walk-ins', icon: UsersRound, permission: 'seating', match: (p) => p === '/admin/walk-ins' },
   { label: 'Reservations', description: 'Manage bookings', href: '/admin/dashboard?section=reservations', icon: CalendarDays, permission: 'reservations', match: (p, s) => p === '/admin/dashboard' && s === 'reservations' },
   { label: 'Content', description: 'Announcements', href: '/admin/dashboard?section=content', icon: FileText, permission: 'announcements', match: (p, s) => p === '/admin/dashboard' && s === 'content' },
   { label: 'Analytics', description: 'Business performance', href: '/admin/analytics', icon: BarChart3, ownerOnly: true, match: (p) => p === '/admin/analytics' },
