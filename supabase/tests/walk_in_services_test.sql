@@ -1,0 +1,296 @@
+BEGIN;
+SELECT plan(20);
+
+INSERT INTO public.seats (
+  code,
+  name,
+  zone,
+  seat_type,
+  hourly_rate_cents
+) VALUES (
+  'WI99',
+  'Walk-in service test seat',
+  'Test zone',
+  'individual',
+  8000
+);
+
+SELECT set_config(
+  'test.business_date',
+  ((((now() AT TIME ZONE 'Asia/Manila') - interval '8 hours')::date)::text),
+  true
+);
+
+-- Capture the existing seeded totals so these tests remain deterministic.
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"7d3b185a-905f-4f7a-93ec-a9e5276cdfe2","role":"authenticated"}',
+  true
+);
+SET LOCAL ROLE authenticated;
+SELECT set_config(
+  'test.baseline_count',
+  (
+    SELECT walk_in_count::text
+    FROM public.get_business_report(
+      current_setting('test.business_date')::date,
+      current_setting('test.business_date')::date
+    )
+  ),
+  true
+);
+SELECT set_config(
+  'test.baseline_revenue',
+  (
+    SELECT walk_in_revenue_cents::text
+    FROM public.get_business_report(
+      current_setting('test.business_date')::date,
+      current_setting('test.business_date')::date
+    )
+  ),
+  true
+);
+
+RESET ROLE;
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"b1000000-0000-4000-8000-000000000001","role":"authenticated"}',
+  true
+);
+SET LOCAL ROLE authenticated;
+
+SELECT throws_ok(
+  $$ SELECT public.start_walk_in('WI99', 'Unauthorized customer', NULL) $$,
+  '42501',
+  'Seating access required',
+  'customers cannot start walk-in sessions'
+);
+SELECT is(
+  (SELECT count(*) FROM public.service_rate_plans),
+  0::bigint,
+  'customers cannot read staff pricing tiers'
+);
+SELECT throws_ok(
+  format(
+    'SELECT * FROM public.get_business_report(%L::date, %L::date)',
+    current_setting('test.business_date'),
+    current_setting('test.business_date')
+  ),
+  '42501',
+  'Owner access required',
+  'customers cannot read owner business reports'
+);
+
+RESET ROLE;
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"f1000000-0000-4000-8000-000000000002","role":"authenticated"}',
+  true
+);
+SET LOCAL ROLE authenticated;
+
+SELECT ok(
+  (SELECT count(*) FROM public.service_rate_plans) >= 9,
+  'seating staff can read the configured walk-in prices'
+);
+SELECT set_config(
+  'test.first_walk_in',
+  (SELECT public.start_walk_in('wi99', 'Live walk-in', 'Created by pgTAP')::text),
+  true
+);
+SELECT is(
+  (
+    SELECT status
+    FROM public.walk_in_occupancies
+    WHERE id = current_setting('test.first_walk_in')::uuid
+  ),
+  'active',
+  'starting a walk-in creates an active timed session'
+);
+SELECT is(
+  (
+    SELECT business_date
+    FROM public.walk_in_occupancies
+    WHERE id = current_setting('test.first_walk_in')::uuid
+  ),
+  current_setting('test.business_date')::date,
+  'the walk-in uses the 8 AM Manila business-day cutoff'
+);
+SELECT lives_ok(
+  format(
+    'SELECT public.checkout_walk_in(%L::uuid, NULL, %L, %L, NULL, NULL)',
+    current_setting('test.first_walk_in'),
+    'cash',
+    'paid'
+  ),
+  'seating staff can check out and collect a walk-in'
+);
+SELECT is(
+  (
+    SELECT service_name
+    FROM public.walk_in_occupancies
+    WHERE id = current_setting('test.first_walk_in')::uuid
+  ),
+  '1 hour',
+  'checkout snapshots the matching service tier'
+);
+SELECT is(
+  (
+    SELECT charged_amount_cents
+    FROM public.walk_in_occupancies
+    WHERE id = current_setting('test.first_walk_in')::uuid
+  ),
+  8000::bigint,
+  'checkout records the calculated list price'
+);
+
+SELECT set_config(
+  'test.override_walk_in',
+  (SELECT public.start_walk_in('wi99', 'Discounted walk-in', NULL)::text),
+  true
+);
+SELECT throws_ok(
+  format(
+    'SELECT public.checkout_walk_in(%L::uuid, NULL, %L, %L, 7000, NULL)',
+    current_setting('test.override_walk_in'),
+    'gcash',
+    'paid'
+  ),
+  '22023',
+  'Explain why the listed price was changed',
+  'a price override requires an audit reason'
+);
+SELECT lives_ok(
+  format(
+    'SELECT public.checkout_walk_in(%L::uuid, NULL, %L, %L, 7000, %L)',
+    current_setting('test.override_walk_in'),
+    'gcash',
+    'paid',
+    'Opening promotion'
+  ),
+  'a documented price override is accepted'
+);
+SELECT is(
+  (
+    SELECT price_override_reason
+    FROM public.walk_in_occupancies
+    WHERE id = current_setting('test.override_walk_in')::uuid
+  ),
+  'Opening promotion',
+  'the price adjustment reason is retained'
+);
+
+SELECT set_config(
+  'test.manual_walk_in',
+  (
+    SELECT public.create_completed_walk_in(
+      'WI99',
+      'Recovered walk-in',
+      now() - interval '100 minutes',
+      now() - interval '10 minutes',
+      'qrph',
+      'paid',
+      11000,
+      'Student discount',
+      'Added after the shift'
+    )::text
+  ),
+  true
+);
+SELECT is(
+  (
+    SELECT billable_minutes
+    FROM public.walk_in_occupancies
+    WHERE id = current_setting('test.manual_walk_in')::uuid
+  ),
+  90,
+  'manual entry calculates the actual stay in minutes'
+);
+SELECT is(
+  (
+    SELECT payment_method
+    FROM public.walk_in_occupancies
+    WHERE id = current_setting('test.manual_walk_in')::uuid
+  ),
+  'qrph',
+  'manual entry records the payment method'
+);
+
+SELECT throws_ok(
+  format(
+    'SELECT * FROM public.get_business_report(%L::date, %L::date)',
+    current_setting('test.business_date'),
+    current_setting('test.business_date')
+  ),
+  '42501',
+  'Owner access required',
+  'seating-only staff cannot read financial reports'
+);
+
+RESET ROLE;
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"7d3b185a-905f-4f7a-93ec-a9e5276cdfe2","role":"authenticated"}',
+  true
+);
+SET LOCAL ROLE authenticated;
+
+SELECT is(
+  (
+    SELECT walk_in_count
+    FROM public.get_business_report(
+      current_setting('test.business_date')::date,
+      current_setting('test.business_date')::date
+    )
+  ),
+  current_setting('test.baseline_count')::bigint + 3,
+  'the owner report includes live and manually entered walk-ins'
+);
+SELECT is(
+  (
+    SELECT walk_in_revenue_cents
+    FROM public.get_business_report(
+      current_setting('test.business_date')::date,
+      current_setting('test.business_date')::date
+    )
+  ),
+  current_setting('test.baseline_revenue')::bigint + 26000,
+  'the owner report sums paid walk-in revenue after adjustments'
+);
+SELECT lives_ok(
+  format(
+    'SELECT public.void_walk_in(%L::uuid, %L)',
+    current_setting('test.first_walk_in'),
+    'Duplicate record'
+  ),
+  'the owner can void an incorrect walk-in record'
+);
+SELECT is(
+  (
+    SELECT walk_in_revenue_cents
+    FROM public.get_business_report(
+      current_setting('test.business_date')::date,
+      current_setting('test.business_date')::date
+    )
+  ),
+  current_setting('test.baseline_revenue')::bigint + 18000,
+  'voided walk-ins are removed from reported revenue'
+);
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.audit_logs
+    WHERE entity_type = 'walk_in'
+      AND entity_id IN (
+        current_setting('test.first_walk_in'),
+        current_setting('test.override_walk_in'),
+        current_setting('test.manual_walk_in')
+      )
+  ),
+  7::bigint,
+  'walk-in creation, checkout, manual entry, and void actions are audited'
+);
+
+RESET ROLE;
+SELECT * FROM finish();
+ROLLBACK;

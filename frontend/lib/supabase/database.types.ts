@@ -806,6 +806,54 @@ export type Database = {
         }
         Relationships: []
       }
+      service_rate_plans: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          effective_from: string
+          effective_until: string | null
+          id: number
+          is_active: boolean
+          max_minutes: number | null
+          min_minutes: number
+          name: string
+          price_cents: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          code: string
+          created_at?: string
+          effective_from?: string
+          effective_until?: string | null
+          id?: never
+          is_active?: boolean
+          max_minutes?: number | null
+          min_minutes: number
+          name: string
+          price_cents: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          effective_from?: string
+          effective_until?: string | null
+          id?: never
+          is_active?: boolean
+          max_minutes?: number | null
+          min_minutes?: number
+          name?: string
+          price_cents?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       study_sessions: {
         Row: {
           completed: boolean
@@ -855,34 +903,70 @@ export type Database = {
       }
       walk_in_occupancies: {
         Row: {
+          billable_minutes: number | null
+          business_date: string
+          charged_amount_cents: number | null
           created_at: string
           created_by: string
           ended_at: string | null
           ended_by: string | null
           guest_name: string | null
           id: string
+          listed_price_cents: number | null
+          notes: string | null
+          payment_method: string | null
+          payment_status: string
+          price_override_reason: string | null
+          rate_plan_id: number | null
           seat_id: string
+          service_name: string | null
           started_at: string
+          status: string
+          updated_at: string
         }
         Insert: {
+          billable_minutes?: number | null
+          business_date: string
+          charged_amount_cents?: number | null
           created_at?: string
           created_by: string
           ended_at?: string | null
           ended_by?: string | null
           guest_name?: string | null
           id?: string
+          listed_price_cents?: number | null
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          price_override_reason?: string | null
+          rate_plan_id?: number | null
           seat_id: string
+          service_name?: string | null
           started_at?: string
+          status?: string
+          updated_at?: string
         }
         Update: {
+          billable_minutes?: number | null
+          business_date?: string
+          charged_amount_cents?: number | null
           created_at?: string
           created_by?: string
           ended_at?: string | null
           ended_by?: string | null
           guest_name?: string | null
           id?: string
+          listed_price_cents?: number | null
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          price_override_reason?: string | null
+          rate_plan_id?: number | null
           seat_id?: string
+          service_name?: string | null
           started_at?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -897,6 +981,13 @@ export type Database = {
             columns: ["ended_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "walk_in_occupancies_rate_plan_id_fkey"
+            columns: ["rate_plan_id"]
+            isOneToOne: false
+            referencedRelation: "service_rate_plans"
             referencedColumns: ["id"]
           },
           {
@@ -918,6 +1009,44 @@ export type Database = {
         Returns: undefined
       }
       cancel_booking: { Args: { p_booking_id: string }; Returns: undefined }
+      checkout_walk_in: {
+        Args: {
+          p_charged_amount_cents?: number
+          p_ended_at?: string
+          p_override_reason?: string
+          p_payment_method?: string
+          p_payment_status?: string
+          p_walk_in_id: string
+        }
+        Returns: {
+          billable_minutes: number | null
+          business_date: string
+          charged_amount_cents: number | null
+          created_at: string
+          created_by: string
+          ended_at: string | null
+          ended_by: string | null
+          guest_name: string | null
+          id: string
+          listed_price_cents: number | null
+          notes: string | null
+          payment_method: string | null
+          payment_status: string
+          price_override_reason: string | null
+          rate_plan_id: number | null
+          seat_id: string
+          service_name: string | null
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "walk_in_occupancies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       confirm_booking_from_token: {
         Args: { p_access_token_hash: string; p_token_hash: string }
         Returns: {
@@ -978,6 +1107,20 @@ export type Database = {
         Args: { p_booking_id: string; p_token_hash: string; p_user_id: string }
         Returns: undefined
       }
+      create_completed_walk_in: {
+        Args: {
+          p_charged_amount_cents?: number
+          p_ended_at: string
+          p_guest_name: string
+          p_notes?: string
+          p_override_reason?: string
+          p_payment_method?: string
+          p_payment_status?: string
+          p_seat_code: string
+          p_started_at: string
+        }
+        Returns: string
+      }
       get_available_seats: {
         Args: { p_ends_at: string; p_starts_at: string }
         Returns: {
@@ -1011,6 +1154,30 @@ export type Database = {
           seat_ids: string[]
           starts_at: string
           subtotal_cents: number
+        }[]
+      }
+      get_business_report: {
+        Args: { p_end_date: string; p_start_date: string }
+        Returns: {
+          available_seat_hours: number
+          cash_revenue_cents: number
+          checkins_count: number
+          gcash_revenue_cents: number
+          occupied_seat_hours: number
+          other_revenue_cents: number
+          outstanding_walk_in_cents: number
+          qrph_revenue_cents: number
+          report_date: string
+          reservation_checkins: number
+          reservation_count: number
+          reservation_revenue_cents: number
+          reservation_seat_hours: number
+          revenue_cents: number
+          total_visits: number
+          walk_in_checkins: number
+          walk_in_count: number
+          walk_in_revenue_cents: number
+          walk_in_seat_hours: number
         }[]
       }
       log_admin_access: { Args: { p_action?: string }; Returns: undefined }
@@ -1090,6 +1257,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      start_walk_in: {
+        Args: { p_guest_name?: string; p_notes?: string; p_seat_code: string }
+        Returns: string
+      }
       sync_booking_account_email: {
         Args: { p_booking_id: string; p_user_id: string }
         Returns: string
@@ -1097,6 +1268,10 @@ export type Database = {
       toggle_walk_in_occupancy: {
         Args: { p_guest_name?: string; p_seat_code: string }
         Returns: boolean
+      }
+      void_walk_in: {
+        Args: { p_reason: string; p_walk_in_id: string }
+        Returns: undefined
       }
     }
     Enums: {
