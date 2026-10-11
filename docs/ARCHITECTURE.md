@@ -89,7 +89,11 @@ publishable key; privileged database keys must not be shipped to either app.
 3. The frontend submits the reservation through `create_booking`.
 4. The database validates the user and requested seats and writes the booking
    atomically.
-5. RLS limits customers to their own booking data while staff can perform
+5. The authenticated payment function creates a PayMongo dynamic QR Ph code
+   for the database-calculated amount.
+6. A signed PayMongo webhook verifies the Payment Intent, confirms the booking,
+   creates the kiosk pass, and sends the Mailpit or Resend email.
+7. RLS limits customers to their own booking data while staff can perform
    authorized operational work.
 
 ### Facility operations

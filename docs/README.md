@@ -10,6 +10,8 @@ Just In Time Study Hub and Coworking Space.
   applications.
 - [Environment and secrets](ENVIRONMENT.md) — required variables, safe local
   setup, and how production credentials are handed over.
+- [PayMongo and email](PAYMENTS_AND_EMAIL.md) — dynamic QR Ph payments,
+  webhooks, local Mailpit, production Resend, and deployment.
 - [Architecture](ARCHITECTURE.md) — applications, routes, shared services, and
   important data flows.
 - [Development and operations](DEVELOPMENT.md) — checks, database changes,
