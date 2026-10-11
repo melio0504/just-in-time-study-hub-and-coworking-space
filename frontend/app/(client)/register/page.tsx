@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, Mail, Lock, Check, Eye, EyeOff } from 'lucide-react';
@@ -20,6 +20,15 @@ export default function Register() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+
+  useEffect(() => {
+    const error = new URLSearchParams(window.location.search).get('error');
+    if (!error) return;
+
+    const timer = window.setTimeout(() => setErrorMessage(error), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -70,6 +79,30 @@ export default function Register() {
 
     router.push('/account');
     router.refresh();
+  };
+
+  const handleGoogleSignUp = async () => {
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    if (!isSupabaseConfigured) {
+      setErrorMessage('Supabase is not configured. Add your project values to .env.');
+      return;
+    }
+
+    setIsGoogleSubmitting(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/account`,
+      },
+    });
+
+    if (error) {
+      setErrorMessage(error.message);
+      setIsGoogleSubmitting(false);
+    }
   };
 
   const benefits = [
@@ -128,6 +161,28 @@ export default function Register() {
                   <p className="mt-1 leading-6">{successMessage}</p>
                 </div>
               )}
+
+              <button
+                type="button"
+                onClick={handleGoogleSignUp}
+                disabled={isSubmitting || isGoogleSubmitting}
+                className="flex w-full items-center justify-center gap-3 rounded-full border border-[#d8d0c5] bg-white px-8 py-4 font-medium text-[#2d2520] transition-colors hover:bg-[#fffcf7] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
+                  <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.91h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.75 2.98-4.33 2.98-7.4Z" />
+                  <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.63-2.43l-3.24-2.54c-.9.6-2.05.96-3.39.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.62A10 10 0 0 0 12 22Z" />
+                  <path fill="#FBBC05" d="M6.39 13.86A6.02 6.02 0 0 1 6.08 12c0-.65.11-1.28.31-1.86V7.52H3.04A10 10 0 0 0 2 12c0 1.61.39 3.14 1.04 4.48l3.35-2.62Z" />
+                  <path fill="#EA4335" d="M12 6.01c1.47 0 2.79.51 3.82 1.5l2.88-2.88A9.66 9.66 0 0 0 12 2a10 10 0 0 0-8.96 5.52l3.35 2.62C7.18 7.77 9.39 6.01 12 6.01Z" />
+                </svg>
+                {isGoogleSubmitting ? 'Redirecting to Google…' : 'Continue with Google'}
+              </button>
+
+              <div className="flex items-center gap-4" aria-hidden="true">
+                <div className="h-px flex-1 bg-[#e8e1d8]" />
+                <span className="text-xs uppercase tracking-wider text-[#8a7c70]">or continue with email</span>
+                <div className="h-px flex-1 bg-[#e8e1d8]" />
+              </div>
+
               <div>
                 <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
                   <User className="inline w-4 h-4 mr-1" />
@@ -217,7 +272,7 @@ export default function Register() {
 
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isGoogleSubmitting}
                 className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? 'Creating Account…' : 'Create Account'}
