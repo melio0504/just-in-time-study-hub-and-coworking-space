@@ -2,6 +2,10 @@
 
 This repository is an npm workspace containing two independent Next.js applications backed by one Supabase project.
 
+## Preview
+
+![Just In Time Study Hub and Coworking Space website](docs/assets/screenshot.png)
+
 ```text
 studyhub/
 ├── frontend/    Public customer website; deploy this directory to Vercel
