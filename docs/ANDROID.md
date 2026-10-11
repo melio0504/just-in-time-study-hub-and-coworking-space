@@ -19,7 +19,7 @@ physical-device or deployed URL.
 
 ## Prerequisites
 
-- Node.js 22 or newer and npm
+- Node.js 22.12 or newer and npm
 - Android Studio 2025.2.1 or newer
 - Android SDK Platform 36 and the Android SDK tools
 - An Android emulator or a physical device with USB debugging enabled
@@ -55,7 +55,7 @@ From the repository root:
 
 ```bash
 npm install
-npm run dev:frontend:lan
+npm run dev:frontend
 ```
 
 Leave that terminal running. In another terminal:
@@ -76,15 +76,15 @@ npm run android:run
 ```
 
 The default address works with the standard Android emulator. For a physical
-device or a deployed frontend, set the URL as described below.
+device, use a deployed HTTPS frontend or USB port forwarding as described
+below.
 
 ## Develop against the local frontend
 
-Start the frontend so it listens on the local network if it is not already
-running:
+Start the frontend if it is not already running:
 
 ```bash
-npm run dev:frontend:lan
+npm run dev:frontend
 ```
 
 In another terminal, launch the app. The standard Android emulator can use the
@@ -94,21 +94,19 @@ configured default because the host computer is available at `10.0.2.2`:
 npm run android:run
 ```
 
-For a physical device, connect the phone and computer to the same network and
-replace `192.168.1.20` with the computer's LAN address:
+For a USB-connected physical device, forward the development port with ADB and
+point Capacitor at the device loopback address:
 
 ```bash
-CAPACITOR_SERVER_URL=http://192.168.1.20:3000 npm run android:run
+adb reverse tcp:3000 tcp:3000
+CAPACITOR_SERVER_URL=http://localhost:3000 npm run android:run
 ```
 
 The selected URL is written into generated Android assets by Capacitor each
-time it syncs.
 
-When testing on a physical device, allow incoming TCP traffic on port 3000 in
-the computer's firewall. Local Supabase URLs such as `127.0.0.1:54321` refer to
-the Android device itself when used by browser-side code. Use a reachable
-Supabase environment for device testing, or expose the local Supabase ports to
-the device and update the frontend environment accordingly.
+Use the hosted HTTPS frontend for normal physical-device testing. If the local
+frontend also uses local Supabase, forward each required Supabase port through
+ADB or configure the app with a hosted Supabase project.
 
 ### Windows PowerShell
 
