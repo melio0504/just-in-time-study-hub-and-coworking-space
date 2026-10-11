@@ -27,8 +27,8 @@ function DesktopNavLink({ href, children }: { href: string; children: React.Reac
 }
 
 export function Header() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
   const mobileMenuRef = useRef<HTMLDetailsElement>(null);
 
   const closeMobileMenu = () => mobileMenuRef.current?.removeAttribute('open');
@@ -45,17 +45,65 @@ export function Header() {
   }, []);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    handleScroll();
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const header = headerRef.current;
+    if (!header) return;
+
+    let displayedProgress = 0;
+    let targetProgress = 0;
+    let animationFrame = 0;
+    let previousTime = performance.now();
+
+    const draw = (progress: number) => {
+      const viewportWidth = window.innerWidth;
+      const sideGap = viewportWidth >= 640 ? 48 : 24;
+      const finalWidth = Math.min(viewportWidth - sideGap, 1280);
+      const finalRadius = viewportWidth >= 640 ? 24 : 16;
+
+      header.style.width = `${viewportWidth + (finalWidth - viewportWidth) * progress}px`;
+      header.style.top = `${6 * progress}px`;
+      header.style.borderRadius = `${finalRadius * progress}px`;
+      header.dataset.scrolled = progress > 0.01 ? 'true' : 'false';
+    };
+
+    const animate = (time: number) => {
+      const elapsed = Math.min(time - previousTime, 64);
+      previousTime = time;
+      const smoothing = 1 - Math.exp(-elapsed / 210);
+      displayedProgress += (targetProgress - displayedProgress) * smoothing;
+
+      if (Math.abs(targetProgress - displayedProgress) < 0.001) {
+        displayedProgress = targetProgress;
+      }
+      draw(displayedProgress);
+
+      if (displayedProgress !== targetProgress) {
+        animationFrame = requestAnimationFrame(animate);
+      } else {
+        animationFrame = 0;
+      }
+    };
+
+    const updateTarget = () => {
+      targetProgress = Math.min(Math.max(window.scrollY / 160, 0), 1);
+      if (!animationFrame) {
+        previousTime = performance.now();
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    draw(0);
+    updateTarget();
+    window.addEventListener('scroll', updateTarget, { passive: true });
+    window.addEventListener('resize', updateTarget);
+    return () => {
+      window.removeEventListener('scroll', updateTarget);
+      window.removeEventListener('resize', updateTarget);
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+    };
   }, []);
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 border-b border-[#f3ede4]/60 bg-[#fffcf7]/65 pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-300 ${isScrolled
-      ? 'mx-3 mt-1.5 rounded-2xl border border-[#f3ede4] shadow-lg sm:mx-6 sm:rounded-3xl xl:mx-auto xl:w-[calc(100%-3rem)] xl:max-w-7xl'
-      : ''
-      }`}>
+    <header ref={headerRef} className="site-header fixed z-50 pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
         <Link href="/" className="flex min-w-0 items-center" onClick={closeMobileMenu}>
           <Image src="/images/logo.png" alt="Study Hub Logo" width={245} height={118} priority loading="eager" className="h-9 w-auto max-w-35 shrink-0 object-contain sm:h-12 sm:max-w-45" />
