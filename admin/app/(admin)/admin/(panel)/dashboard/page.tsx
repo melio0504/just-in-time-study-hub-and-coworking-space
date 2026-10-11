@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertTriangle, Armchair, CalendarDays, Eye, Loader2, Pencil, Plus, Radio, Search, ShieldCheck, Trash2, X } from 'lucide-react';
 import { SeatingPlanMini } from '../../_components/SeatingPlanMini';
 import { useAdminAccess } from '../../_components/AdminShell';
+import { useDashboardInitialData, type DashboardAuditLog } from './_components/DashboardDataProvider';
 import { hasAdminAccess } from '@/lib/admin-access';
 import { allSeatIds } from '@/lib/seats';
 import { createClient } from '@/lib/supabase/client';
@@ -14,7 +15,6 @@ type Booking = Tables<'bookings'>;
 type Seat = Tables<'seats'>;
 type WalkIn = Tables<'walk_in_occupancies'>;
 type Announcement = Tables<'announcements'>;
-type AuditLog = Tables<'audit_logs'> & { profile?: { full_name: string; email: string | null } | null };
 type Section = 'dashboard' | 'reservations' | 'content' | 'logs';
 type NoticeForm = { id?: string; date: string; title: string; description: string; status: 'draft' | 'published' | 'archived' };
 type AnnouncementFilter = 'all' | 'published' | 'draft' | 'archived';
@@ -34,6 +34,7 @@ function statusStyle(status: string) {
 
 function DashboardContent() {
   const access = useAdminAccess();
+  const initialData = useDashboardInitialData();
   const router = useRouter();
   const param = useSearchParams().get('section');
   const section: Section = param === 'reservations' || param === 'content' || param === 'logs' ? param : 'dashboard';
@@ -42,11 +43,11 @@ function DashboardContent() {
     || (section === 'dashboard' && hasAdminAccess(access, 'seating'))
     || (section === 'reservations' && canManageReservations)
     || (section === 'content' && hasAdminAccess(access, 'announcements'));
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [seats, setSeats] = useState<Seat[]>([]);
-  const [walkIns, setWalkIns] = useState<WalkIn[]>([]);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>(initialData.bookings);
+  const [seats, setSeats] = useState<Seat[]>(initialData.seats);
+  const [walkIns, setWalkIns] = useState<WalkIn[]>(initialData.walkIns);
+  const [announcements, setAnnouncements] = useState<Announcement[]>(initialData.announcements);
+  const [logs, setLogs] = useState<DashboardAuditLog[]>(initialData.logs);
   const [selectedDate, setSelectedDate] = useState(today());
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -62,8 +63,7 @@ function DashboardContent() {
   const [walkInError, setWalkInError] = useState('');
   const [busySeat, setBusySeat] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(initialData.error);
   const [noticeForm, setNoticeForm] = useState<NoticeForm>(cleanForm);
 
   const loadData = useCallback(async () => {
@@ -81,19 +81,19 @@ function DashboardContent() {
     setSeats(seatResult.data ?? []);
     setWalkIns(walkInResult.data ?? []);
     setAnnouncements(announcementResult.data ?? []);
-    setLogs((logResult.data ?? []) as AuditLog[]);
-    setLoading(false);
+    setLogs((logResult.data ?? []) as DashboardAuditLog[]);
   }, []);
 
   useEffect(() => {
-    queueMicrotask(() => void loadData());
     const supabase = createClient();
     const channel = supabase.channel('admin-operations')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => void loadData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'walk_in_occupancies' }, () => void loadData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => void loadData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'audit_logs' }, () => void loadData())
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') void loadData();
+      });
     return () => { void supabase.removeChannel(channel); };
   }, [loadData]);
 
@@ -218,8 +218,6 @@ function DashboardContent() {
     const { error } = await createClient().from('announcements').update({ status: 'archived' }).eq('id', announcement.id);
     setMessage(error ? error.message : 'Announcement archived.'); if (!error) await loadData();
   };
-
-  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-[#5f5248]"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Loading live operations…</div>;
 
   if (!canViewSection) {
     return <div className="mx-auto max-w-xl rounded-3xl border border-[#e8dfd4] bg-white p-8 text-center shadow-sm"><ShieldCheck className="mx-auto h-10 w-10 text-[#b47b0d]" /><h1 className="mt-4 text-2xl font-semibold text-[#2d2520]">Access not assigned</h1><p className="mt-2 text-[#5f5248]">The owner has not granted your employee account permission to view this section.</p></div>;

@@ -52,3 +52,105 @@ textarea::placeholder {
   border-color: #e5a930;
   box-shadow: 0 0 0 3px rgb(229 169 48 / 15%);
 }
+
+.seating-plan-shell {
+  container-type: inline-size;
+}
+
+.seating-plan-viewport {
+  --seating-plan-scale: 0.8;
+  --seating-plan-width: 880px;
+  --seating-plan-height: 448px;
+  height: calc(var(--seating-plan-height) + 8px);
+}
+
+.seating-plan-sizer {
+  width: var(--seating-plan-width);
+  height: var(--seating-plan-height);
+}
+
+.seating-plan-canvas {
+  width: 1100px;
+  height: 560px;
+  transform: scale(var(--seating-plan-scale));
+}
+
+@container (min-width: 935px) {
+  .seating-plan-viewport {
+    --seating-plan-scale: 0.85;
+    --seating-plan-width: 935px;
+    --seating-plan-height: 476px;
+  }
+}
+
+@container (min-width: 990px) {
+  .seating-plan-viewport {
+    --seating-plan-scale: 0.9;
+    --seating-plan-width: 990px;
+    --seating-plan-height: 504px;
+  }
+}
+
+@container (min-width: 1045px) {
+  .seating-plan-viewport {
+    --seating-plan-scale: 0.95;
+    --seating-plan-width: 1045px;
+    --seating-plan-height: 532px;
+  }
+}
+
+@container (min-width: 1100px) {
+  .seating-plan-viewport {
+    --seating-plan-scale: 1;
+    --seating-plan-width: 1100px;
+    --seating-plan-height: 560px;
+  }
+}
+
+@container (min-width: 1155px) {
+  .seating-plan-viewport {
+    --seating-plan-scale: 1.05;
+    --seating-plan-width: 1155px;
+    --seating-plan-height: 588px;
+  }
+}
+
+@container (min-width: 1210px) {
+  .seating-plan-viewport {
+    --seating-plan-scale: 1.1;
+    --seating-plan-width: 1210px;
+    --seating-plan-height: 616px;
+  }
+}
+
+@container (min-width: 1265px) {
+  .seating-plan-viewport {
+    --seating-plan-scale: 1.15;
+    --seating-plan-width: 1265px;
+    --seating-plan-height: 644px;
+  }
+}
+
+@container (min-width: 1320px) {
+  .seating-plan-viewport {
+    --seating-plan-scale: 1.2;
+    --seating-plan-width: 1320px;
+    --seating-plan-height: 672px;
+  }
+}
+
+@container (min-width: 1375px) {
+  .seating-plan-viewport {
+    --seating-plan-scale: 1.25;
+    --seating-plan-width: 1375px;
+    --seating-plan-height: 700px;
+  }
+}
+
+@container (min-width: 1430px) {
+  .seating-plan-viewport {
+    --seating-plan-scale: 1.32;
+    --seating-plan-width: 1452px;
+    --seating-plan-height: 739.2px;
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 
 type SeatStatus = "available" | "reserved" | "occupied" | "maintenance";
 
@@ -15,31 +15,11 @@ interface SeatingPlanMiniProps {
   busySeatId?: string | null;
 }
 
-const DESIGN_WIDTH = 1100;
-const DESIGN_HEIGHT = 560;
-const MIN_MOBILE_SCALE = 0.8;
-
 export function SeatingPlanMini({ seats, onSeatClick, busySeatId }: SeatingPlanMiniProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(MIN_MOBILE_SCALE);
   const seatStatuses = useMemo(
     () => new Map(seats.map((seat) => [seat.id, seat.status])),
     [seats],
   );
-
-  useEffect(() => {
-    const element = containerRef.current;
-    if (!element) return;
-
-    const updateScale = () => {
-      setScale(Math.max(element.clientWidth / DESIGN_WIDTH, MIN_MOBILE_SCALE));
-    };
-
-    updateScale();
-    const observer = new ResizeObserver(updateScale);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
 
   const renderSeat = (id: string) => {
     const status = seatStatuses.get(id) ?? "available";
@@ -65,27 +45,16 @@ export function SeatingPlanMini({ seats, onSeatClick, busySeatId }: SeatingPlanM
     );
   };
 
-  const scaledHeight = DESIGN_HEIGHT * scale;
-  const scaledWidth = DESIGN_WIDTH * scale;
-
   return (
-    <div
-      ref={containerRef}
-      className="w-full overflow-x-auto overscroll-x-contain pb-2 [scrollbar-color:#c4b5a3_transparent] [scrollbar-width:thin]"
-      style={{ height: scaledHeight + 8 }}
-      role="region"
-      aria-label="Current seating plan"
-      tabIndex={0}
-    >
-      <div className="relative" style={{ width: scaledWidth, height: scaledHeight }}>
-        <div
-          className="relative origin-top-left"
-          style={{
-            width: DESIGN_WIDTH,
-            height: DESIGN_HEIGHT,
-            transform: `scale(${scale})`,
-          }}
-        >
+    <div className="seating-plan-shell">
+      <div
+        className="seating-plan-viewport w-full overflow-x-auto overscroll-x-contain pb-2 [scrollbar-color:#c4b5a3_transparent] [scrollbar-width:thin]"
+        role="region"
+        aria-label="Current seating plan"
+        tabIndex={0}
+      >
+        <div className="seating-plan-sizer relative mx-auto">
+          <div className="seating-plan-canvas relative origin-top-left">
           <div
             className="absolute inset-2 rounded-2xl border-[3px] border-[#8b7355] bg-linear-to-br from-[#faf8f5] via-[#f5f0e8] to-[#ebe4d8] shadow-[inset_0_2px_12px_rgba(45,37,32,0.06)]"
             aria-hidden
@@ -199,6 +168,7 @@ export function SeatingPlanMini({ seats, onSeatClick, busySeatId }: SeatingPlanM
             {renderSeat("BR06")}
             {renderSeat("BR07")}
             {renderSeat("BR08")}
+          </div>
           </div>
         </div>
       </div>
