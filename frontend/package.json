@@ -11,9 +11,14 @@
     "build": "next build",
     "start": "next start -p 3000",
     "start:lan": "next start -H 0.0.0.0 -p 3000",
-    "lint": "eslint"
+    "lint": "eslint",
+    "android:sync": "cap sync android",
+    "android:open": "cap open android",
+    "android:run": "cap run android"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3",
     "@radix-ui/react-dialog": "1.1.6",
     "@radix-ui/react-slot": "1.1.2",
     "@react-three/drei": "^10.7.7",
@@ -31,6 +36,7 @@
     "three": "0.182.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

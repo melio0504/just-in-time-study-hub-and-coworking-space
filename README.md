@@ -81,6 +81,9 @@ npm run dev:admin
 
 Open <http://localhost:3000> for the public site and <http://127.0.0.1:3001> for facility operations.
 
+To run the public frontend as an Android app, install Android Studio and follow
+the [Capacitor Android guide](docs/ANDROID.md).
+
 ## Supabase
 
 The root `supabase/` directory remains the single source of truth for both applications:

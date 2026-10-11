@@ -10,3 +10,7 @@ From the repository root, run:
 npm run dev:frontend
 npm run build:frontend
 ```
+
+The Capacitor Android wrapper is in `frontend/android`. See the
+[Android app guide](../docs/ANDROID.md) for prerequisites, local development,
+and release builds.

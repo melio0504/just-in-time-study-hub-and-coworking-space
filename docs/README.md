@@ -16,6 +16,8 @@ Just In Time Study Hub and Coworking Space.
   important data flows.
 - [Development and operations](DEVELOPMENT.md) — checks, database changes,
   generated types, deployment boundaries, and troubleshooting.
+- [Android app](ANDROID.md) — run, debug, sync, and build the Capacitor Android
+  application.
 - [Contributing](CONTRIBUTING.md) — branch, commit, and pull-request workflow.
 - [Supabase reference](../supabase/README.md) — database testing, production
   migration, Auth configuration, and first-admin setup.
