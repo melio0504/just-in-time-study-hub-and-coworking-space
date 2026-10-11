@@ -52,6 +52,8 @@ export function Header() {
     let targetProgress = 0;
     let animationFrame = 0;
     let previousTime = performance.now();
+    let previousScrollY = window.scrollY;
+    let isScrollingUp = false;
 
     const draw = (progress: number) => {
       const viewportWidth = window.innerWidth;
@@ -68,7 +70,8 @@ export function Header() {
     const animate = (time: number) => {
       const elapsed = Math.min(time - previousTime, 64);
       previousTime = time;
-      const smoothing = 1 - Math.exp(-elapsed / 210);
+      const responseTime = isScrollingUp ? 120 : 210;
+      const smoothing = 1 - Math.exp(-elapsed / responseTime);
       displayedProgress += (targetProgress - displayedProgress) * smoothing;
 
       if (Math.abs(targetProgress - displayedProgress) < 0.001) {
@@ -84,7 +87,12 @@ export function Header() {
     };
 
     const updateTarget = () => {
-      targetProgress = Math.min(Math.max(window.scrollY / 160, 0), 1);
+      const currentScrollY = window.scrollY;
+      if (currentScrollY !== previousScrollY) {
+        isScrollingUp = currentScrollY < previousScrollY;
+        previousScrollY = currentScrollY;
+      }
+      targetProgress = Math.min(Math.max(currentScrollY / 160, 0), 1);
       if (!animationFrame) {
         previousTime = performance.now();
         animationFrame = requestAnimationFrame(animate);
