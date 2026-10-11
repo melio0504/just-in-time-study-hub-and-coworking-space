@@ -76,14 +76,30 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <section className="pt-10 sm:pt-24 pb-20 sm:pb-32 px-4 sm:px-6 relative overflow-hidden">
+      <section className="relative overflow-hidden px-4 pb-20 sm:px-6 sm:pb-32">
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-20 right-20 w-96 h-96 bg-[#fef3dc] rounded-full blur-3xl"></div>
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-[#fff8ed] rounded-full blur-3xl"></div>
         </div>
 
+        <motion.div
+          className="absolute right-0 top-0 hidden h-dvh w-1/2 md:block"
+          initial={false}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+        >
+          <Image
+            src="/images/solo-learner.jpg"
+            alt="Study Hub Interior"
+            fill
+            priority
+            sizes="50vw"
+            className="object-cover object-center"
+          />
+        </motion.div>
+
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="relative isolate -mx-4 mb-16 grid items-center gap-12 overflow-hidden px-4 py-16 sm:-mx-6 sm:rounded-3xl sm:px-6 md:mx-0 md:grid-cols-2 md:overflow-visible md:rounded-none md:p-0">
+          <div className="relative isolate -mx-4 mb-16 grid min-h-dvh items-center overflow-hidden px-4 py-24 sm:-mx-6 sm:px-6 md:mx-0 md:grid-cols-2 md:gap-12 md:overflow-visible md:p-0">
             <Image
               src="/images/solo-learner.jpg"
               alt=""
@@ -95,6 +111,7 @@ export default function Home() {
             <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#fffcf7]/90 via-[#fffcf7]/80 to-[#fff8ed]/95 md:hidden" />
 
             <motion.div
+              className="md:pr-8"
               initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -172,24 +189,7 @@ export default function Home() {
               </motion.div>
             </motion.div>
 
-            <motion.div
-              className="relative hidden items-center justify-center md:flex"
-          initial={false}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
-            >
-              <div className="w-80 h-80 sm:w-96 sm:h-96 md:w-[500px] md:h-[500px] lg:w-[900px] lg:h-[600px] rounded-3xl overflow-hidden shadow-2xl">
-                <Image
-                  src="/images/solo-learner.jpg"
-                  alt="Study Hub Interior"
-                  width={1024}
-                  height={768}
-                  priority
-                  sizes="(min-width: 1024px) 600px, (min-width: 768px) 500px, 384px"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </motion.div>
+            <div className="hidden md:block" aria-hidden="true" />
           </div>
 
           <motion.div
