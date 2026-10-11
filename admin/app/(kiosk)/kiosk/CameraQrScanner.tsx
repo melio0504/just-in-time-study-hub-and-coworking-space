@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertCircle, ScanLine } from "lucide-react";
 import { motion } from "motion/react";
 import QrScanner from "qr-scanner";
@@ -23,7 +23,6 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
   const scanLockedRef = useRef(false);
   const [cameraState, setCameraState] = useState<CameraState>("starting");
   const [attempt, setAttempt] = useState(0);
-  const [imageError, setImageError] = useState("");
 
   useEffect(() => {
     const video = videoRef.current;
@@ -85,21 +84,6 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
 
   const cameraError = cameraState !== "starting" && cameraState !== "active";
 
-  const scanQrImage = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file || scanLockedRef.current) return;
-
-    setImageError("");
-    try {
-      const result = await QrScanner.scanImage(file, { returnDetailedScanResult: true });
-      scanLockedRef.current = true;
-      onScan(result.data);
-    } catch {
-      setImageError("No QR code was found in that image. Try a clearer image.");
-    }
-  };
-
   return (
     <div className="relative mb-3 aspect-square min-h-[220px] max-h-[min(54dvh,460px)] w-full max-w-[min(100%,460px)] overflow-hidden rounded-3xl bg-[#2d2520] shadow-xl">
       <video
@@ -145,25 +129,18 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
             <AlertCircle className="h-9 w-9 text-[#dc2626]" />
           </div>
           <p className="mb-4 max-w-sm text-[#6b5e52]">{CAMERA_MESSAGES[cameraState]}</p>
-          {imageError && <p className="mb-3 text-sm text-[#dc2626]">{imageError}</p>}
-          <div className="flex flex-wrap justify-center gap-3">
-            {cameraState !== "insecure" && (
-              <button
-                type="button"
-                onClick={() => {
-                  setCameraState("starting");
-                  setAttempt((current) => current + 1);
-                }}
-                className="rounded-full bg-[#2d2520] px-6 py-3 font-medium text-white transition-all hover:shadow-lg"
-              >
-                Try camera again
-              </button>
-            )}
-            <label className="cursor-pointer rounded-full bg-[#e5a930] px-6 py-3 font-medium text-[#2d2520] transition-all hover:shadow-lg">
-              Scan a QR image
-              <input type="file" accept="image/*" onChange={scanQrImage} className="sr-only" />
-            </label>
-          </div>
+          {cameraState !== "insecure" && (
+            <button
+              type="button"
+              onClick={() => {
+                setCameraState("starting");
+                setAttempt((current) => current + 1);
+              }}
+              className="rounded-full bg-[#2d2520] px-6 py-3 font-medium text-white transition-all hover:shadow-lg"
+            >
+              Try camera again
+            </button>
+          )}
         </div>
       )}
     </div>
