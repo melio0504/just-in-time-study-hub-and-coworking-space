@@ -114,7 +114,7 @@ function ReserveContent() {
   const [bookingId, setBookingId] = useState('');
   const [subtotalCents, setSubtotalCents] = useState(0);
   const [confirmationQr, setConfirmationQr] = useState('');
-  const [confirmationUrl, setConfirmationUrl] = useState('');
+  const [qrExpiresAt, setQrExpiresAt] = useState('');
   const [confirmationError, setConfirmationError] = useState('');
   const [isConfirmationLoading, setIsConfirmationLoading] = useState(false);
   const [isConfirmationEmailSent, setIsConfirmationEmailSent] = useState(false);
@@ -204,7 +204,7 @@ function ReserveContent() {
         )));
         window.localStorage.removeItem(RESERVATION_DRAFT_KEY);
       } else if (booking.status === 'declined') {
-        setConfirmationError('The confirmation QR code expired. Please create a new reservation.');
+        setConfirmationError('The QR Ph code expired or the payment failed. Please create a new reservation.');
       }
       setIsConfirmationEmailSent(Boolean(booking.confirmation_email_sent_at));
       setEmailDeliveryError(booking.confirmation_email_error ?? '');
@@ -229,36 +229,18 @@ function ReserveContent() {
     return () => { void supabase.removeChannel(channel); };
   }, [bookingId, isModalOpen]);
 
-  const getConfirmationBaseUrl = async () => {
-    const currentUrl = new URL(window.location.href);
-    const isLoopback = currentUrl.hostname === 'localhost' ||
-      currentUrl.hostname === '127.0.0.1' || currentUrl.hostname === '[::1]';
-    if (!isLoopback) return currentUrl.origin;
-
-    try {
-      const response = await fetch('/api/network/lan-origin', { cache: 'no-store' });
-      const payload = await response.json();
-      if (response.ok && typeof payload?.origin === 'string') return payload.origin;
-    } catch (error) {
-      console.warn('LAN address discovery failed; using the current origin.', error);
-    }
-
-    return currentUrl.origin;
-  };
-
-  const createLocalConfirmation = async (id: string) => {
+  const createPaymongoQr = async (id: string) => {
     setIsConfirmationLoading(true);
     setConfirmationError('');
     setConfirmationQr('');
-    setConfirmationUrl('');
+    setQrExpiresAt('');
     setIsConfirmationEmailSent(false);
     setEmailDeliveryError('');
 
     try {
       const supabase = createClient();
-      const confirmationBaseUrl = await getConfirmationBaseUrl();
-      const { data, error } = await supabase.functions.invoke('create-booking-confirmation', {
-        body: { bookingId: id, confirmationBaseUrl },
+      const { data, error } = await supabase.functions.invoke('create-paymongo-qr', {
+        body: { bookingId: id },
       });
       if (error) {
         let message = error.message;
@@ -269,13 +251,13 @@ function ReserveContent() {
         throw new Error(message);
       }
       if (data?.error) throw new Error(data.error);
-      if (typeof data?.qrDataUrl !== 'string' || typeof data?.confirmationUrl !== 'string') {
-        throw new Error('The server did not return a confirmation QR code.');
+      if (typeof data?.qrImage !== 'string' || typeof data?.expiresAt !== 'string') {
+        throw new Error('PayMongo did not return a QR Ph code.');
       }
-      setConfirmationQr(data.qrDataUrl);
-      setConfirmationUrl(data.confirmationUrl);
+      setConfirmationQr(data.qrImage);
+      setQrExpiresAt(data.expiresAt);
     } catch (error) {
-      setConfirmationError(error instanceof Error ? error.message : 'Unable to prepare confirmation.');
+      setConfirmationError(error instanceof Error ? error.message : 'Unable to generate QR Ph.');
     } finally {
       setIsConfirmationLoading(false);
     }
@@ -564,7 +546,7 @@ function ReserveContent() {
       setLastSelectedSeats(selectedSeats);
       setConfirmationStep('pending');
       setIsModalOpen(true);
-      await createLocalConfirmation(booking.id);
+      await createPaymongoQr(booking.id);
     } catch (error) {
       setBookingError(error instanceof Error ? error.message : 'Unable to create booking.');
       setIsSubmitting(false);
@@ -851,16 +833,21 @@ function ReserveContent() {
                   </div>
 
                   <div className="mb-6">
-                    <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-3">Simulated GCash Payment QR</p>
+                    <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-3">PayMongo Dynamic QR Ph</p>
                     <div className="bg-[#f9f9f9] border-2 border-dashed border-[#d1d5db] rounded-2xl p-4 sm:p-8 flex flex-col items-center justify-center">
                       {isConfirmationLoading ? (
                         <div className="flex h-48 items-center justify-center text-sm text-[#6b5e52]">Generating secure QR code…</div>
                       ) : confirmationQr ? (
-                        <Image src={confirmationQr} alt="Reservation confirmation QR code" width={240} height={240} unoptimized className="h-48 w-48 sm:h-60 sm:w-60" />
+                        <Image src={confirmationQr} alt="PayMongo QR Ph payment code" width={240} height={240} unoptimized className="h-48 w-48 sm:h-60 sm:w-60" />
                       ) : (
                         <QrCode className="w-36 h-36 sm:w-48 sm:h-48 text-[#9ca3af] mb-4" />
                       )}
-                      <p className="mt-4 text-sm text-[#6b5e52] text-center">Scan with your phone&apos;s camera, review the exact amount, then tap Pay in the GCash simulator.</p>
+                      <p className="mt-4 text-sm text-[#6b5e52] text-center">Scan with GCash, Maya, or a QR Ph-enabled banking app. The amount is fixed to this reservation.</p>
+                      {qrExpiresAt && (
+                        <p className="mt-2 text-xs font-medium text-[#9b6810]">
+                          Expires {new Date(qrExpiresAt).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -870,23 +857,13 @@ function ReserveContent() {
                       {bookingId && (
                         <button
                           type="button"
-                          onClick={() => void createLocalConfirmation(bookingId)}
+                          onClick={() => void createPaymongoQr(bookingId)}
                           disabled={isConfirmationLoading}
                           className="mt-3 rounded-full bg-red-700 px-4 py-2 font-medium text-white transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {isConfirmationLoading ? 'Trying again…' : 'Try generating QR again'}
                         </button>
                       )}
-                    </div>
-                  )}
-
-                  {confirmationUrl && (
-                    <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                      <p className="font-semibold">Testing on this device?</p>
-                      <p className="mt-1">You can open the same simulated payment link directly instead of scanning.</p>
-                      <a href={confirmationUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex rounded-full bg-blue-700 px-5 py-2.5 font-medium text-white hover:bg-blue-800">
-                        Open payment simulator
-                      </a>
                     </div>
                   )}
 
@@ -900,7 +877,7 @@ function ReserveContent() {
                     <ul className="space-y-2 text-sm text-[#6b5e52] ml-7">
                       <li className="flex items-start gap-2">
                         <span className="text-[#e5a930] mt-1">•</span>
-                        <span><strong>One-time link:</strong> The QR expires with the 15-minute seat hold.</span>
+                        <span><strong>Single-use QR:</strong> Pay before the 15-minute QR Ph deadline.</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[#e5a930] mt-1">•</span>
@@ -913,7 +890,7 @@ function ReserveContent() {
                     </ul>
                   </div>
 
-                  <p className="text-center text-sm text-[#6b5e52]">Waiting for the simulated payment to complete…</p>
+                  <p className="text-center text-sm text-[#6b5e52]">Waiting for PayMongo to confirm your payment…</p>
                 </>
               ) : (
                 <>

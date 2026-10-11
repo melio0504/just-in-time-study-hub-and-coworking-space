@@ -616,11 +616,16 @@ export type Database = {
           failure_code: string | null
           failure_message: string | null
           id: string
+          livemode: boolean | null
           method: Database["public"]["Enums"]["payment_method"]
           paid_at: string | null
           provider: string
           provider_checkout_id: string | null
           provider_payment_id: string | null
+          provider_payment_intent_id: string | null
+          provider_payment_method_id: string | null
+          provider_status: string | null
+          qr_expires_at: string | null
           refunded_at: string | null
           status: Database["public"]["Enums"]["payment_status"]
           updated_at: string
@@ -633,11 +638,16 @@ export type Database = {
           failure_code?: string | null
           failure_message?: string | null
           id?: string
+          livemode?: boolean | null
           method: Database["public"]["Enums"]["payment_method"]
           paid_at?: string | null
           provider?: string
           provider_checkout_id?: string | null
           provider_payment_id?: string | null
+          provider_payment_intent_id?: string | null
+          provider_payment_method_id?: string | null
+          provider_status?: string | null
+          qr_expires_at?: string | null
           refunded_at?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
@@ -650,11 +660,16 @@ export type Database = {
           failure_code?: string | null
           failure_message?: string | null
           id?: string
+          livemode?: boolean | null
           method?: Database["public"]["Enums"]["payment_method"]
           paid_at?: string | null
           provider?: string
           provider_checkout_id?: string | null
           provider_payment_id?: string | null
+          provider_payment_intent_id?: string | null
+          provider_payment_method_id?: string | null
+          provider_status?: string | null
+          qr_expires_at?: string | null
           refunded_at?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
@@ -1003,6 +1018,26 @@ export type Database = {
         Args: { p_booking_id: string; p_error?: string }
         Returns: undefined
       }
+      prepare_paymongo_payment: {
+        Args: { p_booking_id: string; p_user_id: string }
+        Returns: {
+          amount_cents: number
+          booking_id: string
+          ends_at: string
+          guest_email: string
+          guest_name: string
+          livemode: boolean
+          payment_id: string
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          provider_payment_intent_id: string
+          provider_payment_method_id: string
+          provider_status: string
+          qr_expires_at: string
+          reservation_code: string
+          seat_ids: string[]
+          starts_at: string
+        }[]
+      }
       process_kiosk_scan: {
         Args: { p_token_hash: string }
         Returns: {
@@ -1015,6 +1050,45 @@ export type Database = {
           scheduled_start: string
           seat_ids: string[]
         }[]
+      }
+      process_paymongo_event: {
+        Args: {
+          p_access_token_hash: string
+          p_amount_cents: number
+          p_currency: string
+          p_event_id: string
+          p_event_type: string
+          p_livemode: boolean
+          p_paid_at: string
+          p_payload: Json
+          p_payment_id: string
+          p_payment_intent_id: string
+        }
+        Returns: {
+          booking_id: string
+          confirmation_email_sent_at: string
+          ends_at: string
+          guest_email: string
+          guest_name: string
+          newly_confirmed: boolean
+          requires_review: boolean
+          reservation_code: string
+          seat_ids: string[]
+          starts_at: string
+          subtotal_cents: number
+        }[]
+      }
+      save_paymongo_qr: {
+        Args: {
+          p_booking_id: string
+          p_livemode: boolean
+          p_payment_intent_id: string
+          p_payment_method_id: string
+          p_provider_status: string
+          p_qr_expires_at: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
       sync_booking_account_email: {
         Args: { p_booking_id: string; p_user_id: string }

@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(43);
+SELECT plan(50);
 
 SELECT has_table('public', 'profiles', 'profiles table exists');
 SELECT has_table('public', 'seats', 'seats table exists');
@@ -21,6 +21,33 @@ SELECT has_function('public', 'get_booking_confirmation_preview', ARRAY['text'],
 SELECT has_function('public', 'sync_booking_account_email', ARRAY['uuid', 'uuid'], 'account email synchronization RPC exists');
 SELECT has_column('public', 'bookings', 'confirmation_email_sent_at', 'bookings track confirmation email delivery');
 SELECT has_column('public', 'qr_access_passes', 'last_scanned_at', 'QR passes track their last scan');
+SELECT has_column('public', 'payments', 'provider_payment_intent_id', 'payments store the PayMongo Payment Intent');
+SELECT has_column('public', 'payments', 'qr_expires_at', 'payments track QR Ph expiry');
+SELECT has_function('public', 'prepare_paymongo_payment', ARRAY['uuid', 'uuid'], 'payment preparation RPC exists');
+SELECT has_function(
+  'public',
+  'save_paymongo_qr',
+  ARRAY['uuid', 'uuid', 'text', 'text', 'text', 'timestamp with time zone', 'boolean'],
+  'PayMongo QR persistence RPC exists'
+);
+SELECT has_function(
+  'public',
+  'process_paymongo_event',
+  ARRAY['text', 'text', 'boolean', 'text', 'text', 'bigint', 'text', 'timestamp with time zone', 'jsonb', 'text'],
+  'PayMongo webhook finalization RPC exists'
+);
+SELECT ok(
+  NOT has_function_privilege('authenticated', 'public.prepare_paymongo_payment(uuid,uuid)', 'execute'),
+  'customers cannot invoke server-only payment preparation directly'
+);
+SELECT ok(
+  has_function_privilege(
+    'service_role',
+    'public.process_paymongo_event(text,text,boolean,text,text,bigint,text,timestamp with time zone,jsonb,text)',
+    'execute'
+  ),
+  'the signed webhook service can finalize PayMongo events'
+);
 SELECT ok(
   NOT has_function_privilege('authenticated', 'public.confirm_booking_from_token(text,text)', 'execute'),
   'customers cannot invoke the trusted local confirmation transition directly'

@@ -444,3 +444,25 @@ entrypoint = "./functions/create-staff-account/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/create-staff-account/*.html" ]
+
+[functions.create-paymongo-qr]
+enabled = true
+verify_jwt = true
+import_map = "./functions/create-paymongo-qr/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/create-paymongo-qr/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/create-paymongo-qr/*.html" ]
+
+[functions.paymongo-webhook]
+enabled = true
+verify_jwt = false
+import_map = "./functions/paymongo-webhook/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/paymongo-webhook/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/paymongo-webhook/*.html" ]
