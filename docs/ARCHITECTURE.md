@@ -43,9 +43,8 @@ The facility application contains:
 - dashboard and analytics pages
 - the on-site check-in kiosk at `/kiosk`
 
-It runs on `127.0.0.1:3001` by default. Keeping it on the facility machine or
-trusted LAN is an additional control; authorization and database Row Level
-Security (RLS) remain required.
+It runs on `127.0.0.1:3001` on the facility machine. Authorization and database
+Row Level Security (RLS) remain required.
 
 ### `supabase/`
 
