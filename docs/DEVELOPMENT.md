@@ -18,8 +18,12 @@ Before opening a pull request, run:
 
 ```bash
 npm run lint
+npm test
 npm run build
 ```
+
+Run `npm run test:e2e` for user-interface changes. The complete unit, browser,
+database, coverage, and CI workflow is documented in [Testing](TESTING.md).
 
 For database-related changes, also run:
 
@@ -71,16 +75,8 @@ npm run start:frontend
 npm run start:admin
 ```
 
-The admin server remains bound to `127.0.0.1`. To make its production build
-available to trusted facility LAN devices, use:
-
-```bash
-npm run start:admin:lan
-```
-
-This binds port `3001` to all network interfaces. Use it only behind host and
-router firewall rules that restrict access to the trusted facility network.
-Never configure public router port forwarding for this service.
+The admin server remains bound to `127.0.0.1` and is intended to run on the
+facility computer only.
 
 ## Deployment boundaries
 
@@ -130,7 +126,6 @@ service before restarting the project.
 
 ### Admin is unavailable from another device
 
-The standard admin scripts intentionally listen only on `127.0.0.1`. Build the
-admin app and use `npm run start:admin:lan` only when LAN access is intended
-and firewall restrictions are in place.
+This is expected. The admin scripts intentionally listen only on `127.0.0.1`.
+Use the facility computer to access the dashboard and kiosk.
 
