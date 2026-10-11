@@ -4,7 +4,7 @@ This guide explains how to set up your work, name branches, use git, and open a 
 
 ## Before You Start
 
-- Make sure you have Node.js 22 or newer installed.
+- Make sure you have Node.js 22.12 or newer installed.
 - Install dependencies with `npm install`.
 - Run the affected app with `npm run dev:frontend` or `npm run dev:admin` before making changes.
 - Review the README to understand the app structure and available routes.
@@ -75,10 +75,13 @@ Before opening a pull request, run the project checks that apply to your change:
 
 ```bash
 npm run lint
+npm test
 npm run build
 ```
 
-If your change affects the UI, also verify it in the browser with `npm run dev`.
+If your change affects the UI, run `npm run test:e2e`. If it affects migrations,
+database functions, grants, or RLS, run `npm run test:db`. See the
+[testing guide](TESTING.md) for prerequisites and coverage commands.
 
 ## Opening a Pull Request on GitHub
 
