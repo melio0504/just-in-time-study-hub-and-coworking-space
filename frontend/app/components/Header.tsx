@@ -52,7 +52,7 @@ export function Header() {
   }, []);
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 border-b border-[#f3ede4]/60 bg-[#fffcf7]/65 backdrop-blur-xl backdrop-saturate-150 transition-all duration-300 ${isScrolled
+    <header className={`fixed top-0 left-0 right-0 z-50 border-b border-[#f3ede4]/60 bg-[#fffcf7]/65 pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150 transition-all duration-300 ${isScrolled
       ? 'mx-3 mt-1.5 rounded-2xl border border-[#f3ede4] shadow-lg sm:mx-6 sm:rounded-3xl xl:mx-auto xl:w-[calc(100%-3rem)] xl:max-w-7xl'
       : ''
       }`}>

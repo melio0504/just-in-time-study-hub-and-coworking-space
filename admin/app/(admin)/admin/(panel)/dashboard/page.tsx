@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AlertTriangle, CalendarDays, Eye, Loader2, Pencil, Plus, Radio, Search, ShieldCheck, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Armchair, CalendarDays, Eye, Loader2, Pencil, Plus, Radio, Search, ShieldCheck, Trash2, X } from 'lucide-react';
 import { SeatingPlanMini } from '../../_components/SeatingPlanMini';
 import { useAdminAccess } from '../../_components/AdminShell';
 import { hasAdminAccess } from '@/lib/admin-access';
@@ -18,6 +18,7 @@ type AuditLog = Tables<'audit_logs'> & { profile?: { full_name: string; email: s
 type Section = 'dashboard' | 'reservations' | 'content' | 'logs';
 type NoticeForm = { id?: string; date: string; title: string; description: string; status: 'draft' | 'published' | 'archived' };
 type AnnouncementFilter = 'all' | 'published' | 'draft' | 'archived';
+type WalkInTarget = { seatCode: string; isOccupied: boolean };
 
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 const cleanForm: NoticeForm = { date: today(), title: '', description: '', status: 'published' };
@@ -55,6 +56,9 @@ function DashboardContent() {
   const [cancelReason, setCancelReason] = useState('Cancelled by staff');
   const [cancelError, setCancelError] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [walkInTarget, setWalkInTarget] = useState<WalkInTarget | null>(null);
+  const [walkInGuestName, setWalkInGuestName] = useState('');
+  const [walkInError, setWalkInError] = useState('');
   const [busySeat, setBusySeat] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -119,12 +123,43 @@ function DashboardContent() {
     });
   }, [announcementFilter, announcementSearch, announcements]);
 
-  const toggleWalkIn = async (seatCode: string) => {
-    setBusySeat(seatCode); setMessage('');
-    const guestName = activeWalkInCodes.has(seatCode) ? null : window.prompt(`Optional walk-in guest name for ${seatCode}:`, '')?.trim() || null;
-    const { error } = await createClient().rpc('toggle_walk_in_occupancy', { p_seat_code: seatCode, p_guest_name: guestName ?? undefined });
-    if (error) setMessage(error.message); else await loadData();
+  const requestWalkInChange = (seatCode: string) => {
+    const hasActiveWalkIn = activeWalkInCodes.has(seatCode);
+    if (checkedInCodes.has(seatCode) && !hasActiveWalkIn) {
+      setMessage(`Seat ${seatCode} is occupied by a checked-in reservation and cannot be changed from the floor plan.`);
+      return;
+    }
+    setWalkInTarget({ seatCode, isOccupied: hasActiveWalkIn });
+    setWalkInGuestName('');
+    setWalkInError('');
+  };
+
+  const closeWalkInModal = () => {
+    if (busySeat) return;
+    setWalkInTarget(null);
+    setWalkInGuestName('');
+    setWalkInError('');
+  };
+
+  const confirmWalkInChange = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!walkInTarget) return;
+    const { seatCode, isOccupied } = walkInTarget;
+    setBusySeat(seatCode);
+    setMessage('');
+    setWalkInError('');
+    const guestName = isOccupied ? undefined : walkInGuestName.trim() || undefined;
+    const { error } = await createClient().rpc('toggle_walk_in_occupancy', { p_seat_code: seatCode, p_guest_name: guestName });
+    if (error) {
+      setWalkInError(error.message);
+      setBusySeat(null);
+      return;
+    }
+    setMessage(isOccupied ? `Seat ${seatCode} is now available.` : `Seat ${seatCode} is now marked as occupied.`);
+    setWalkInTarget(null);
+    setWalkInGuestName('');
     setBusySeat(null);
+    await loadData();
   };
 
   const requestCancellation = (booking: Booking) => {
@@ -186,11 +221,11 @@ function DashboardContent() {
     {message && <div className="mb-5 flex items-center justify-between rounded-2xl border border-[#ecd8ad] bg-[#fff8e8] px-4 py-3 text-sm text-[#775919]"><span>{message}</span><button onClick={() => setMessage('')}><X className="h-4 w-4" /></button></div>}
 
     {section === 'dashboard' && <>
-      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-emerald-700"><Radio className="h-3.5 w-3.5" />Live operations</p><h1 className="text-3xl font-semibold tracking-tight text-[#2d2520] sm:text-4xl">Seating overview</h1><p className="mt-2 text-[#5f5248]">Reservations and walk-ins update automatically from the shared database.</p></div><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]">Viewing date <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="ml-3 bg-transparent font-semibold text-[#2d2520] outline-none" /></label></div>
+      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-emerald-700"><Radio className="h-3.5 w-3.5" />Live operations</p><h1 className="text-3xl font-semibold tracking-tight text-[#2d2520] sm:text-4xl">Seating overview</h1><p className="mt-2 text-[#5f5248]">Reservations and walk-ins update automatically from the shared database.</p></div><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]">Viewing date <input type="date" min={today()} value={selectedDate} onChange={(e) => setSelectedDate(e.target.value < today() ? today() : e.target.value)} className="ml-3 bg-transparent font-semibold text-[#2d2520] outline-none" /></label></div>
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
         ['Available', seatSummary.available || 0, 'bg-emerald-50 text-emerald-700'], ['Reserved', seatSummary.reserved || 0, 'bg-slate-100 text-slate-700'], ['Occupied now', seatSummary.occupied || 0, 'bg-amber-50 text-amber-700'], ['Total active seats', seats.filter((seat) => seat.is_active).length, 'bg-white text-[#2d2520]'],
       ].map(([label, value, color]) => <div key={String(label)} className={`rounded-3xl border border-[#e8dfd4] p-5 shadow-sm ${color}`}><p className="text-xs font-semibold uppercase tracking-[.14em] opacity-70">{label}</p><p className="mt-2 text-4xl font-semibold">{value}</p></div>)}</div>
-      <div className="rounded-3xl border border-[#e8dfd4] bg-white p-4 shadow-sm sm:p-6"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold text-[#2d2520]">Live floor plan</h2><p className="mt-1 text-sm text-[#5f5248]">{selectedDate === today() ? 'Click an available or occupied seat to check a walk-in in or out.' : 'Return to today to manage live walk-in occupancy.'}</p></div><div className="flex flex-wrap gap-3 text-xs text-[#6b5e52]"><span>● <b className="text-emerald-600">Available</b></span><span>● Reserved</span><span className="text-amber-600">● Occupied</span></div></div><SeatingPlanMini seats={seatPlan} onSeatClick={selectedDate === today() ? toggleWalkIn : undefined} busySeatId={busySeat} /></div>
+      <div className="rounded-3xl border border-[#e8dfd4] bg-white p-4 shadow-sm sm:p-6"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold text-[#2d2520]">Live floor plan</h2><p className="mt-1 text-sm text-[#5f5248]">{selectedDate === today() ? 'Select a seat to update its live walk-in occupancy.' : 'Return to today to manage live walk-in occupancy.'}</p></div><div className="flex flex-wrap gap-3 text-xs text-[#6b5e52]"><span>● <b className="text-emerald-600">Available</b></span><span>● Reserved</span><span className="text-amber-600">● Occupied</span></div></div><SeatingPlanMini seats={seatPlan} onSeatClick={selectedDate === today() ? requestWalkInChange : undefined} busySeatId={busySeat} /></div>
       <div className="mt-6 rounded-3xl border border-[#e8dfd4] bg-white p-5 shadow-sm"><h2 className="mb-4 text-xl font-semibold text-[#2d2520]">Recent reservations</h2><BookingTable bookings={bookings.slice(0, 8)} onView={setSelectedBooking} onCancel={canManageReservations ? requestCancellation : undefined} /></div>
     </>}
 
@@ -199,6 +234,8 @@ function DashboardContent() {
     {section === 'content' && <><PageHeading eyebrow="Content management" title="Announcements" detail="Create, edit, publish, and archive updates shown on the customer landing page." /><div className="grid gap-6 xl:grid-cols-[minmax(320px,0.8fr)_1.5fr]"><form onSubmit={saveAnnouncement} className="h-fit self-start rounded-3xl border border-[#e8dfd4] bg-white p-6 shadow-sm xl:sticky xl:top-8"><div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-semibold text-[#2d2520]">{noticeForm.id ? 'Edit announcement' : 'New announcement'}</h2>{noticeForm.id && <button type="button" onClick={() => setNoticeForm(cleanForm)} className="text-sm text-[#9b6810]">Cancel edit</button>}</div><div className="space-y-4"><Field label="Date"><input type="date" required value={noticeForm.date} onChange={(e) => setNoticeForm({ ...noticeForm, date: e.target.value })} className="input" /></Field><Field label="Title"><input required maxLength={160} value={noticeForm.title} onChange={(e) => setNoticeForm({ ...noticeForm, title: e.target.value })} placeholder="Important update" className="input" /></Field><Field label="Description"><textarea required maxLength={5000} rows={6} value={noticeForm.description} onChange={(e) => setNoticeForm({ ...noticeForm, description: e.target.value })} placeholder="What should customers know?" className="input resize-y" /></Field><Field label="Publishing status"><select value={noticeForm.status} onChange={(e) => setNoticeForm({ ...noticeForm, status: e.target.value as NoticeForm['status'] })} className="input"><option value="published">Published</option><option value="draft">Draft</option><option value="archived">Archived</option></select></Field><button disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#e5a930] px-4 py-3 font-semibold text-white disabled:opacity-60">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}{noticeForm.id ? 'Save changes' : 'Publish announcement'}</button></div></form><div className="space-y-3"><AnnouncementFilters search={announcementSearch} onSearch={setAnnouncementSearch} filter={announcementFilter} onFilter={setAnnouncementFilter} announcements={announcements} resultCount={filteredAnnouncements.length} />{filteredAnnouncements.map((item) => <article key={item.id} className="rounded-3xl border border-[#e8dfd4] bg-white p-5 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="mb-2 flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle(item.status)}`}>{titleCase(item.status)}</span><span className="text-xs text-[#5f5248]">{new Date(item.starts_at || item.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium', timeZone: 'Asia/Manila' })}</span></div><h3 className="text-lg font-semibold text-[#2d2520]">{item.title}</h3><p className="mt-2 text-sm leading-6 text-[#6b5e52]">{item.body}</p></div><div className="flex shrink-0 gap-2"><button onClick={() => editAnnouncement(item)} className="rounded-xl border border-[#e8dfd4] p-2.5 text-[#8a671a] hover:bg-[#fff8e8]" title="Edit"><Pencil className="h-4 w-4" /></button>{item.status !== 'archived' && <button onClick={() => archiveAnnouncement(item)} className="rounded-xl border border-red-100 p-2.5 text-red-600 hover:bg-red-50" title="Archive"><Trash2 className="h-4 w-4" /></button>}</div></div></article>)}</div></div></>}
 
     {section === 'logs' && <><PageHeading eyebrow="Security & accountability" title="Access logs" detail="A realtime history of who accessed or changed the admin dashboard." /><div className="overflow-hidden rounded-3xl border border-[#e8dfd4] bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left"><thead className="bg-[#faf7f2] text-xs uppercase tracking-wider text-[#5f5248]"><tr><th className="px-5 py-4">Name</th><th className="px-5 py-4">Email</th><th className="px-5 py-4">Action</th><th className="px-5 py-4">Resource</th><th className="px-5 py-4">Date & time</th></tr></thead><tbody>{logs.map((log) => <tr key={log.id} className="border-t border-[#eee6dc]"><td className="px-5 py-4 font-medium text-[#2d2520]">{log.profile?.full_name || 'Former staff account'}</td><td className="px-5 py-4 text-sm text-[#6b5e52]">{log.profile?.email || '—'}</td><td className="px-5 py-4"><span className="rounded-full bg-[#fef3dc] px-3 py-1 text-sm text-[#8a671a]">{log.action}</span></td><td className="px-5 py-4 text-sm text-[#6b5e52]">{titleCase(log.entity_type)}</td><td className="px-5 py-4 text-sm text-[#6b5e52]">{formatDateTime(log.created_at)}</td></tr>)}</tbody></table></div>{logs.length === 0 && <EmptyState icon={ShieldCheck} text="No staff access has been logged yet." />}</div></>}
+
+    {walkInTarget && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm" onMouseDown={closeWalkInModal}><form onSubmit={confirmWalkInChange} className="w-full max-w-md rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="walk-in-title" aria-describedby="walk-in-description"><div className="mb-5 flex items-start justify-between gap-4"><div className="flex items-start gap-3"><span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${walkInTarget.isOccupied ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}><Armchair className="h-5 w-5" /></span><div><p className="text-xs font-semibold uppercase tracking-wider text-[#8a671a]">Seat {walkInTarget.seatCode}</p><h2 id="walk-in-title" className="mt-1 text-2xl font-semibold">{walkInTarget.isOccupied ? 'Is this seat now available?' : 'Is someone using this seat?'}</h2></div></div><button type="button" onClick={closeWalkInModal} disabled={Boolean(busySeat)} className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:opacity-50" aria-label="Close occupancy dialog"><X className="h-5 w-5" /></button></div><p id="walk-in-description" className="text-sm leading-6 text-[#574b42]">{walkInTarget.isOccupied ? `Confirm that the walk-in has left seat ${walkInTarget.seatCode}. It will be shown as available on the live floor plan.` : `Confirm that someone is currently using seat ${walkInTarget.seatCode}. It will be shown as occupied on the live floor plan.`}</p>{!walkInTarget.isOccupied && <label className="mt-5 block"><span className="mb-2 block text-sm font-semibold text-[#3f3630]">Guest name <span className="font-normal text-[#6b5e52]">(optional)</span></span><input autoFocus maxLength={160} value={walkInGuestName} onChange={(event) => setWalkInGuestName(event.target.value)} className="w-full rounded-xl border border-[#b9aa9b] bg-white px-4 py-3 text-[#2d2520] outline-none placeholder:text-[#6b5e52] focus:border-[#c4841a] focus:ring-2 focus:ring-amber-100" placeholder="Enter the walk-in guest's name" /></label>}{walkInError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{walkInError}</p>}<div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={closeWalkInModal} disabled={Boolean(busySeat)} className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50">No, cancel</button><button type="submit" autoFocus={walkInTarget.isOccupied} disabled={Boolean(busySeat)} className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${walkInTarget.isOccupied ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-[#c4841a] hover:bg-[#a86f12]'}`}>{busySeat && <Loader2 className="h-4 w-4 animate-spin" />}{busySeat ? 'Updating…' : walkInTarget.isOccupied ? 'Yes, mark as available' : 'Yes, mark as occupied'}</button></div></form></div>}
 
     {selectedBooking && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#2d2520]/45 p-4 backdrop-blur-sm" onMouseDown={() => setSelectedBooking(null)}><div className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl" onMouseDown={(e) => e.stopPropagation()}><div className="mb-5 flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-wider text-[#9b6810]">{selectedBooking.reservation_code}</p><h2 className="mt-1 text-2xl font-semibold">Reservation details</h2></div><button onClick={() => setSelectedBooking(null)} className="rounded-xl p-2 hover:bg-[#f7f1e8]" aria-label="Close reservation details"><X className="h-5 w-5" /></button></div><dl className="grid grid-cols-2 gap-4 rounded-2xl bg-[#faf7f2] p-4 text-sm"><Detail label="Guest" value={selectedBooking.guest_name} /><Detail label="Email" value={selectedBooking.guest_email} /><Detail label="Schedule" value={formatDateTime(selectedBooking.starts_at)} /><Detail label="Duration" value={`${selectedBooking.duration_hours} hour(s)`} /><Detail label="Seats" value={selectedBooking.seat_ids.join(', ')} /><Detail label="Status" value={titleCase(selectedBooking.status)} /><Detail label="Payment" value={titleCase(selectedBooking.payment_status)} /><Detail label="Amount" value={`₱${(selectedBooking.subtotal_cents / 100).toLocaleString('en-PH')}`} /></dl>{canManageReservations && !terminalStatuses.has(selectedBooking.status) && <button onClick={() => requestCancellation(selectedBooking)} className="mt-5 w-full rounded-xl bg-red-700 px-4 py-3 font-semibold text-white hover:bg-red-800">Cancel reservation</button>}</div></div>}
 
