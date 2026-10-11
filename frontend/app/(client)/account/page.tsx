@@ -5,8 +5,13 @@ import { useRouter } from 'next/navigation';
 import { User, Calendar, Award, Clock, LogOut, TrendingUp, BookOpen, Play, Pause, RotateCcw, Plus, X, Settings, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
+import {
+  buildStudyHistory,
+  getStudyHistoryDateRange,
+  STUDY_HISTORY_DAYS,
+  type StudyDay,
+} from '@/lib/study-history';
 
-const STUDY_HISTORY_DAYS = 364;
 const STUDY_HISTORY_WEEKS = STUDY_HISTORY_DAYS / 7;
 const WELCOME_LOYALTY_POINTS = 500;
 const NEXT_REWARD_POINTS = 1000;
@@ -25,6 +30,8 @@ export default function Account() {
       status: string;
     }>
   >([]);
+  const [bookingCount, setBookingCount] = useState(0);
+  const [studyData, setStudyData] = useState<StudyDay[]>([]);
 
   // Timer states
   const [timerMinutes, setTimerMinutes] = useState(25);
@@ -63,18 +70,31 @@ export default function Account() {
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, loyalty_points')
-        .eq('id', user.id)
-        .single();
+      const { startDate, endDate } = getStudyHistoryDateRange();
+      const [profileResult, recentBookingsResult, bookingHistoryResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('full_name, loyalty_points')
+          .eq('id', user.id)
+          .single(),
+        supabase
+          .from('bookings')
+          .select('reservation_code, booking_date, seat_ids, duration_hours, status')
+          .eq('user_id', user.id)
+          .order('booking_date', { ascending: false })
+          .order('start_time', { ascending: false })
+          .limit(4),
+        supabase
+          .from('bookings')
+          .select('booking_date, duration_hours')
+          .eq('user_id', user.id)
+          .gte('booking_date', startDate)
+          .lte('booking_date', endDate),
+      ]);
 
-      const { data: bookings } = await supabase
-        .from('bookings')
-        .select('reservation_code, booking_date, seat_ids, duration_hours, status')
-        .order('booking_date', { ascending: false })
-        .order('start_time', { ascending: false })
-        .limit(4);
+      const profile = profileResult.data;
+      const bookings = recentBookingsResult.data;
+      const bookingHistory = bookingHistoryResult.data ?? [];
 
       if (!cancelled) {
         setUserName(profile?.full_name || user.user_metadata.full_name || 'User');
@@ -89,6 +109,8 @@ export default function Account() {
             status: booking.status.replace('_', ' ').replace(/^./, (letter) => letter.toUpperCase()),
           })),
         );
+        setBookingCount(bookingHistory.length);
+        setStudyData(buildStudyHistory(bookingHistory));
       }
     };
 
@@ -213,25 +235,6 @@ export default function Account() {
     setShowDeleteCardModal(false);
   };
 
-  // Generate study activity data (GitHub-style contributions)
-  const [studyData, setStudyData] = useState(() => [] as { date: string; hours: number; level: number }[]);
-
-  useEffect(() => {
-    const data: { date: string; hours: number; level: number }[] = [];
-    const today = new Date();
-    for (let i = STUDY_HISTORY_DAYS - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      data.push({
-        date: date.toISOString().split('T')[0],
-        hours: 0,
-        level: 0,
-      });
-    }
-    // Defer setState to avoid synchronous state update within effect
-    setTimeout(() => setStudyData(data), 0);
-  }, []);
-
   const getWeekData = (weekIndex: number) => {
     return studyData.slice(weekIndex * 7, (weekIndex + 1) * 7);
   };
@@ -271,7 +274,7 @@ export default function Account() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-6">
               <div>
                 <h2 className="text-3xl text-[#2d2520]">Study History</h2>
-                <p className="mt-2 text-sm text-[#6b5e52]">Your focused study activity over the last 52 weeks.</p>
+                <p className="mt-2 text-sm text-[#6b5e52]">Your booking activity over the last 52 weeks.</p>
               </div>
             </div>
 
@@ -300,13 +303,31 @@ export default function Account() {
                               key={weekIndex}
                               className="aspect-square w-full rounded-[3px] transition-transform hover:scale-120 cursor-pointer"
                               style={{ backgroundColor: dayData ? getLevelColor(dayData.level) : '#f3ede4' }}
-                              title={dayData ? `${dayData.date}: ${dayData.hours} hours` : 'No study data'}
+                              title={dayData
+                                ? `${dayData.date}: ${dayData.hours} booked hour${dayData.hours === 1 ? '' : 's'}`
+                                : 'No booking data'}
+                              aria-label={dayData
+                                ? `${dayData.date}: ${dayData.hours} booked hour${dayData.hours === 1 ? '' : 's'}`
+                                : 'No booking data'}
                             />
                           );
                         })}
                       </div>
                     </div>
                   ))}
+                </div>
+
+                <div className="mt-4 flex items-center justify-end gap-1.5 text-xs text-[#6b5e52]">
+                  <span className="mr-1">Less</span>
+                  {[0, 1, 2, 3, 4].map((level) => (
+                    <span
+                      key={level}
+                      className="h-3 w-3 rounded-[3px]"
+                      style={{ backgroundColor: getLevelColor(level) }}
+                      aria-hidden="true"
+                    />
+                  ))}
+                  <span className="ml-1">More</span>
                 </div>
               </div>
             </div>
@@ -341,7 +362,7 @@ export default function Account() {
                 </div>
                 <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Bookings</p>
               </div>
-              <p className="text-2xl text-[#2d2520]">{recentBookings.length}</p>
+              <p className="text-2xl text-[#2d2520]">{bookingCount}</p>
             </div>
 
             <div className="bg-white rounded-2xl p-4 border border-[#f3ede4]">
