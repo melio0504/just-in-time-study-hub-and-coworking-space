@@ -5,7 +5,7 @@ shared Supabase backend on one development machine.
 
 ## Prerequisites
 
-- Node.js 22 or newer
+- Node.js 22.12 or newer
 - npm (included with Node.js)
 - Docker Desktop or Docker Engine, installed and running
 - Git
