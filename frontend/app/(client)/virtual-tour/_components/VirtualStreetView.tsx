@@ -2,10 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { Html, OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { BackSide, TextureLoader, type PerspectiveCamera as ThreePerspectiveCamera } from 'three';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarDays, Check, MapPin } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { PANORAMA_IMAGES, type PanoramaId } from '../_lib/tourGraph';
+import {
+  VIRTUAL_PANORAMA_HEIGHT,
+  VIRTUAL_PANORAMA_WIDTH,
+  VIRTUAL_SEAT_MARKERS,
+  VIRTUAL_SEAT_MARKERS_BY_PANORAMA,
+  type VirtualSeatMarker,
+} from '../_lib/virtualSeats';
 
 type Scene = {
   id: PanoramaId;
@@ -42,6 +52,54 @@ const scenes: Scene[] = [
 ];
 
 const CAMERA_FOV = 75;
+const PANORAMA_RADIUS = 500;
+const MARKER_RADIUS = 480;
+const MARKER_HORIZONTAL_OFFSET = 70;
+const MARKER_VERTICAL_OFFSET = 40;
+
+type SeatDisplayStatus = 'free' | 'reserved' | 'in_use';
+
+type SeatDisplay = {
+  code: string;
+  name: string;
+  status: SeatDisplayStatus;
+};
+
+const STATUS_DETAILS: Record<SeatDisplayStatus, { label: string; dotClass: string; badgeClass: string }> = {
+  free: {
+    label: 'Free',
+    dotClass: 'bg-emerald-500 ring-emerald-200',
+    badgeClass: 'bg-emerald-50 text-emerald-700',
+  },
+  reserved: {
+    label: 'Reserved',
+    dotClass: 'bg-amber-500 ring-amber-200',
+    badgeClass: 'bg-amber-50 text-amber-800',
+  },
+  in_use: {
+    label: 'Used currently',
+    dotClass: 'bg-rose-500 ring-rose-200',
+    badgeClass: 'bg-rose-50 text-rose-700',
+  },
+};
+
+const getManilaDateString = () => new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Manila',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(new Date());
+
+const getNextDateString = (date: string) => {
+  const [year, month, day] = date.split('-').map(Number);
+  const nextDate = new Date(Date.UTC(year, month - 1, day + 1));
+  return nextDate.toISOString().slice(0, 10);
+};
+
+const getDateAvailabilityWindow = (date: string) => ({
+  startsAt: `${date}T08:00:00+08:00`,
+  endsAt: `${getNextDateString(date)}T05:00:00+08:00`,
+});
 
 const getVerticalCoverage = (aspectRatio: number) =>
   Math.min(Math.PI, (Math.PI * 2) / aspectRatio);
@@ -72,7 +130,7 @@ function PanoramaSphere({
 
   return (
     <mesh scale={[-1, 1, 1]}>
-      <sphereGeometry args={[500, 64, 64, 0, Math.PI * 2, verticalStart, verticalCoverage]} />
+      <sphereGeometry args={[PANORAMA_RADIUS, 64, 64, 0, Math.PI * 2, verticalStart, verticalCoverage]} />
       <meshBasicMaterial
         map={texture}
         side={BackSide}
@@ -82,6 +140,83 @@ function PanoramaSphere({
       />
     </mesh>
   );
+}
+
+function markerPosition(marker: VirtualSeatMarker): [number, number, number] {
+  const verticalCoverage = getVerticalCoverage(VIRTUAL_PANORAMA_WIDTH / VIRTUAL_PANORAMA_HEIGHT);
+  const theta = ((Math.PI - verticalCoverage) / 2)
+    + ((marker.y + MARKER_VERTICAL_OFFSET + (marker.yOffset ?? 0)) / VIRTUAL_PANORAMA_HEIGHT) * verticalCoverage;
+  const longitude = (
+    (marker.x + MARKER_HORIZONTAL_OFFSET + (marker.xOffset ?? 0)) / VIRTUAL_PANORAMA_WIDTH
+  ) * Math.PI * 2;
+  const sinTheta = Math.sin(theta);
+
+  return [
+    MARKER_RADIUS * Math.cos(longitude) * sinTheta,
+    MARKER_RADIUS * Math.cos(theta),
+    MARKER_RADIUS * Math.sin(longitude) * sinTheta,
+  ];
+}
+
+function SeatMarkers({
+  markers,
+  seats,
+  selectedSeats,
+  onToggleSeat,
+}: {
+  markers: VirtualSeatMarker[];
+  seats: Map<string, SeatDisplay>;
+  selectedSeats: Set<string>;
+  onToggleSeat: (seat: SeatDisplay) => void;
+}) {
+  return markers.map((marker) => {
+    const seat = seats.get(marker.code);
+    if (!seat) return null;
+
+    const details = STATUS_DETAILS[seat.status];
+    const isSelected = selectedSeats.has(seat.code);
+    const isSelectable = seat.status === 'free';
+    return (
+      <Html key={marker.code} position={markerPosition(marker)} center zIndexRange={[30, 10]}>
+        <button
+          type="button"
+          disabled={!isSelectable}
+          aria-pressed={isSelectable ? isSelected : undefined}
+          aria-label={`${seat.name}: ${isSelected ? 'selected' : details.label}`}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleSeat(seat);
+          }}
+          className={`flex -translate-y-12 flex-col items-center focus:outline-none ${isSelectable
+            ? 'pointer-events-auto cursor-pointer group'
+            : 'pointer-events-none cursor-default'
+            }`}
+        >
+          <div className={`min-w-20 rounded-lg border px-2.5 py-1.5 text-center shadow-[0_5px_18px_rgba(0,0,0,0.35)] backdrop-blur-sm transition ${isSelected
+            ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-400'
+            : 'border-white/70 bg-white/95 group-hover:border-[#f5cf82] group-hover:ring-2 group-hover:ring-[#e5a930]'
+            }`}>
+            <p className="whitespace-nowrap text-[11px] font-bold leading-tight text-[#2d2520]">
+              Seat {seat.code}
+            </p>
+            <span className={`mt-1 inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[9px] font-semibold leading-tight ${isSelected
+              ? 'bg-blue-100 text-blue-700'
+              : details.badgeClass
+              }`}>
+              {isSelected ? 'Selected' : details.label}
+            </span>
+          </div>
+          <span className="h-2 w-px bg-white/90 shadow-sm" aria-hidden />
+          <div className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-white shadow-[0_4px_16px_rgba(0,0,0,0.5)] backdrop-blur-sm transition ${isSelected ? 'scale-110 bg-blue-600' : 'bg-black/70 group-hover:scale-110'
+            }`}>
+            {isSelected ? <Check className="h-4 w-4" aria-hidden /> : <MapPin className="h-4 w-4" aria-hidden />}
+            <span className={`absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full ring-2 ${details.dotClass}`} />
+          </div>
+        </button>
+      </Html>
+    );
+  });
 }
 
 function PanoramaScene({
@@ -187,6 +322,7 @@ function TourNavigation({
 }
 
 export function VirtualStreetView() {
+  const router = useRouter();
   const [activePanoramaId, setActivePanoramaId] = useState<PanoramaId>(scenes[0].id);
   const [transitionTarget, setTransitionTarget] = useState<PanoramaId | null>(null);
   const [transitionProgress, setTransitionProgress] = useState(0);
@@ -195,12 +331,22 @@ export function VirtualStreetView() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [zoomTarget, setZoomTarget] = useState<number | null>(null);
   const [panoramaAspectRatios, setPanoramaAspectRatios] = useState<Partial<Record<PanoramaId, number>>>({});
+  const [selectedDate, setSelectedDate] = useState(getManilaDateString);
+  const [seatAvailability, setSeatAvailability] = useState<Map<string, SeatDisplay>>(new Map());
+  const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(isSupabaseConfigured);
+  const [availabilityError, setAvailabilityError] = useState(
+    isSupabaseConfigured ? '' : 'Seat availability is temporarily unavailable.',
+  );
+  const [selectedSeatCodes, setSelectedSeatCodes] = useState<string[]>([]);
+  const [isReservePromptOpen, setIsReservePromptOpen] = useState(false);
+  const [selectionError, setSelectionError] = useState('');
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [eventSource, setEventSource] = useState<HTMLDivElement | null>(null);
   const cameraRef = useRef<ThreePerspectiveCamera | null>(null);
   const minZoom = 0.75;
   const maxZoom = 1.8;
   const zoomStep = 0.16;
+  const today = getManilaDateString();
 
   const setContainer = useCallback((node: HTMLDivElement | null) => {
     containerRef.current = node;
@@ -219,6 +365,104 @@ export function VirtualStreetView() {
   const verticalLookRange = Math.max(0.04, (activeVerticalCoverage - widestCameraVerticalFov) / 2);
   const minPolarAngle = Math.PI / 2 - verticalLookRange;
   const maxPolarAngle = Math.PI / 2 + verticalLookRange;
+  const selectedSeatSet = useMemo(() => new Set(selectedSeatCodes), [selectedSeatCodes]);
+  const activeSeatMarkers = VIRTUAL_SEAT_MARKERS_BY_PANORAMA[activePanoramaId] ?? [];
+
+  const handleToggleSeat = useCallback((seat: SeatDisplay) => {
+    if (seat.status !== 'free') return;
+
+    if (selectedSeatCodes.includes(seat.code)) {
+      const next = selectedSeatCodes.filter((code) => code !== seat.code);
+      setSelectedSeatCodes(next);
+      if (next.length === 0) setIsReservePromptOpen(false);
+      setSelectionError('');
+      return;
+    }
+
+    if (selectedSeatCodes.length >= 5) {
+      setSelectionError('You can select up to 5 seats only.');
+      return;
+    }
+
+    setSelectionError('');
+    setSelectedSeatCodes([...selectedSeatCodes, seat.code]);
+    setIsReservePromptOpen(true);
+  }, [selectedSeatCodes]);
+
+  const clearSelectedSeats = useCallback(() => {
+    setSelectedSeatCodes([]);
+    setSelectionError('');
+    setIsReservePromptOpen(false);
+  }, []);
+
+  const continueToReservation = useCallback(async () => {
+    if (selectedSeatCodes.length === 0) return;
+
+    const params = new URLSearchParams({
+      seats: selectedSeatCodes.join(','),
+      date: selectedDate,
+      focus: 'schedule',
+    });
+    if (document.fullscreenElement) await document.exitFullscreen();
+    router.push(`/reserve?${params.toString()}`);
+  }, [router, selectedDate, selectedSeatCodes]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    let cancelled = false;
+    const loadSeatAvailability = async () => {
+      setIsAvailabilityLoading(true);
+      setAvailabilityError('');
+
+      const supabase = createClient();
+      const { startsAt, endsAt } = getDateAvailabilityWindow(selectedDate);
+      const markerCodes = VIRTUAL_SEAT_MARKERS.map(({ code }) => code);
+      const [availableResult, seatsResult] = await Promise.all([
+        supabase.rpc('get_available_seats', {
+          p_starts_at: new Date(startsAt).toISOString(),
+          p_ends_at: new Date(endsAt).toISOString(),
+        }),
+        supabase
+          .from('seats')
+          .select('code, name, status')
+          .in('code', markerCodes),
+      ]);
+
+      if (cancelled) return;
+      if (availableResult.error || seatsResult.error) {
+        setAvailabilityError(
+          availableResult.error?.message
+          ?? seatsResult.error?.message
+          ?? 'Unable to load seat availability.',
+        );
+        setSeatAvailability(new Map());
+        setIsAvailabilityLoading(false);
+        return;
+      }
+
+      const availableCodes = new Set((availableResult.data ?? []).map(({ code }) => code));
+      const isToday = selectedDate === today;
+      const nextAvailability = new Map<string, SeatDisplay>((seatsResult.data ?? []).map((seat): [string, SeatDisplay] => [
+        seat.code,
+        {
+          code: seat.code,
+          name: seat.name,
+          status: isToday && seat.status === 'occupied'
+            ? 'in_use'
+            : availableCodes.has(seat.code) ? 'free' : 'reserved',
+        },
+      ]));
+      setSeatAvailability(nextAvailability);
+      setSelectedSeatCodes((current) => current.filter(
+        (code) => nextAvailability.get(code)?.status === 'free',
+      ));
+      setIsAvailabilityLoading(false);
+    };
+
+    void loadSeatAvailability();
+    return () => { cancelled = true; };
+  }, [selectedDate, today]);
 
   useEffect(() => {
     if (zoomTarget === null) return;
@@ -340,6 +584,39 @@ export function VirtualStreetView() {
           <p className="text-xs uppercase tracking-[0.3em] text-[#f5cf82]">360° Virtual Tour</p>
           <h3 className="mt-1 text-xl font-medium text-white md:text-2xl">{activeScene.title}</h3>
           <p className="mt-1 text-sm text-white/75">{activeScene.subtitle}</p>
+          <label className="mt-3 flex items-center gap-2 border-t border-white/15 pt-3 text-xs font-medium text-white/80">
+            <CalendarDays className="h-4 w-4 text-[#f5cf82]" aria-hidden />
+            <span>Seat availability</span>
+            <input
+              type="date"
+              min={today}
+              value={selectedDate}
+              onChange={(event) => {
+                if (event.target.value >= today) {
+                  setSelectedDate(event.target.value);
+                  clearSelectedSeats();
+                }
+              }}
+              className="min-w-0 rounded-lg border border-white/20 bg-black/30 px-2 py-1.5 text-xs text-white scheme-dark outline-none focus:border-[#f5cf82]"
+              aria-label="Choose a date to check seat availability"
+            />
+          </label>
+          {availabilityError ? (
+            <p className="mt-2 text-xs text-rose-200" role="alert">{availabilityError}</p>
+          ) : (
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-medium text-white/80" aria-live="polite">
+              {isAvailabilityLoading ? <span>Checking seats…</span> : (
+                <>
+                  {Object.entries(STATUS_DETAILS).map(([status, details]) => (
+                    <span key={status} className="inline-flex items-center gap-1">
+                      <span className={`h-2 w-2 rounded-full ring-1 ${details.dotClass}`} />
+                      {details.label}
+                    </span>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex shrink-0 gap-3">
@@ -394,6 +671,14 @@ export function VirtualStreetView() {
             progress={transitionProgress}
             onAspectRatio={handlePanoramaAspectRatio}
           />
+          {activeSeatMarkers.length > 0 && !transitionTarget && !isAvailabilityLoading && !availabilityError ? (
+            <SeatMarkers
+              markers={activeSeatMarkers}
+              seats={seatAvailability}
+              selectedSeats={selectedSeatSet}
+              onToggleSeat={handleToggleSeat}
+            />
+          ) : null}
           <OrbitControls
             enableZoom={false}
             enablePan={false}
@@ -411,10 +696,71 @@ export function VirtualStreetView() {
           onSelect={navigateToScene}
         />
 
+        {selectedSeatCodes.length > 0 ? (
+          <div className="absolute bottom-20 left-4 z-30 rounded-2xl border border-white/20 bg-black/70 p-3 text-white shadow-xl backdrop-blur-md md:bottom-6">
+            <p className="text-xs font-semibold">Selected seats ({selectedSeatCodes.length}/5)</p>
+            <p className="mt-1 max-w-56 truncate text-xs text-white/75">{selectedSeatCodes.join(', ')}</p>
+            {selectionError ? <p className="mt-2 text-xs text-rose-200" role="alert">{selectionError}</p> : null}
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setIsReservePromptOpen(true)}
+                className="rounded-full bg-[#e5a930] px-3 py-1.5 text-xs font-semibold text-[#241b0f] transition hover:bg-[#f5cf82]"
+              >
+                Reserve selected
+              </button>
+              <button
+                type="button"
+                onClick={clearSelectedSeats}
+                className="rounded-full border border-white/25 px-3 py-1.5 text-xs font-medium transition hover:bg-white/10"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {transitionTarget ? (
           <div className="pointer-events-none absolute inset-0 z-10 bg-black/10" />
         ) : null}
       </div>
+
+      {isReservePromptOpen && selectedSeatCodes.length > 0 ? (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reserve-seat-title"
+            aria-describedby="reserve-seat-description"
+            className="w-full max-w-md rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c98d17]">Selected {selectedSeatCodes.length}/5</p>
+            <h3 id="reserve-seat-title" className="mt-2 text-2xl font-semibold">Reserve these seats?</h3>
+            <p id="reserve-seat-description" className="mt-2 text-sm leading-6 text-[#6b5e52]">
+              {selectedSeatCodes.join(', ')} will be carried to the reservation form for {new Date(`${selectedDate}T00:00:00`).toLocaleDateString('en-PH', { dateStyle: 'long' })}.
+            </p>
+            <div className="mt-5 rounded-2xl bg-[#fff8ed] px-4 py-3 text-sm text-[#6b5e52]">
+              You can reserve up to five seats together. Choose more seats or continue to select a time and duration.
+            </div>
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setIsReservePromptOpen(false)}
+                className="rounded-full border border-[#ded4c7] px-5 py-2.5 text-sm font-semibold text-[#6b5e52] transition hover:bg-[#f8f3ec]"
+              >
+                Choose more seats
+              </button>
+              <button
+                type="button"
+                onClick={() => void continueToReservation()}
+                className="rounded-full bg-[#e5a930] px-5 py-2.5 text-sm font-semibold text-[#241b0f] transition hover:bg-[#f5cf82]"
+              >
+                Yes, reserve
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

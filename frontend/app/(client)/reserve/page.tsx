@@ -106,6 +106,8 @@ function ReserveContent() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const calendarRef = useRef<HTMLDivElement>(null);
+  const scheduleRef = useRef<HTMLDivElement>(null);
+  const timeSelectRef = useRef<HTMLSelectElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [confirmationStep, setConfirmationStep] = useState<'pending' | 'success'>('pending');
   const [reservationId, setReservationId] = useState('');
@@ -378,30 +380,50 @@ function ReserveContent() {
       return;
     }
 
-    const seatParam = searchParams.get('seat');
+    const seatParam = searchParams.get('seats') ?? searchParams.get('seat');
     if (!seatParam) {
       return;
     }
 
     const applySeatParam = window.setTimeout(() => {
-      const normalizedSeat = seatParam.trim().toUpperCase();
-      if (allSeatIds.includes(normalizedSeat)) {
-        const targetSeat = seats.find((seat) => seat.id === normalizedSeat);
-        if (targetSeat?.status !== 'reserved') {
-          setSeats((currentSeats) => {
-            const selectedSeatIds = currentSeats
-              .filter((seat) => seat.status === 'selected')
-              .map((seat) => seat.id);
-            const mergedSeatIds = Array.from(new Set([...selectedSeatIds, normalizedSeat])).slice(0, 5);
-            return initializeSeats(formData.date, mergedSeatIds);
-          });
-        }
+      const requestedSeats = Array.from(new Set(
+        seatParam
+          .split(',')
+          .map((seat) => seat.trim().toUpperCase())
+          .filter((seat) => allSeatIds.includes(seat)),
+      )).slice(0, 5);
+      const requestedDate = searchParams.get('date');
+      const parsedRequestedDate = requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
+        ? new Date(`${requestedDate}T00:00:00`)
+        : null;
+      const reservationDate = parsedRequestedDate
+        && !Number.isNaN(parsedRequestedDate.getTime())
+        && !isPastDate(parsedRequestedDate)
+        ? requestedDate as string
+        : formData.date;
+
+      if (requestedSeats.length > 0) {
+        setFormData((current) => ({
+          ...current,
+          date: reservationDate,
+          time: '',
+          duration: '',
+        }));
+        setCurrentMonth(new Date(`${reservationDate}T00:00:00`));
+        setSeats(initializeSeats(reservationDate, requestedSeats));
       }
       setHasAppliedSeatParam(true);
+
+      if (searchParams.get('focus') === 'schedule') {
+        window.setTimeout(() => {
+          scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          timeSelectRef.current?.focus({ preventScroll: true });
+        }, 150);
+      }
     }, 0);
 
     return () => window.clearTimeout(applySeatParam);
-  }, [formData.date, hasAppliedSeatParam, hasRestoredDraft, initializeSeats, searchParams, seats]);
+  }, [formData.date, hasAppliedSeatParam, hasRestoredDraft, initializeSeats, searchParams]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -707,13 +729,14 @@ function ReserveContent() {
             </div>
           ) : null}
 
-          <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+          <div ref={scheduleRef} className="grid scroll-mt-28 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
             <div>
               <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
                 <Clock className="inline w-4 h-4 mr-1" />
                 Time
               </label>
               <select
+                ref={timeSelectRef}
                 name="time"
                 value={formData.time}
                 onChange={handleChange}
