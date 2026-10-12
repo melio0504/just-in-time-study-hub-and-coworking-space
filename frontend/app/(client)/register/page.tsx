@@ -23,6 +23,14 @@ export default function Register() {
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   useEffect(() => {
+    if (window.location.hash) {
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${window.location.pathname}${window.location.search}`,
+      );
+    }
+
     const error = new URLSearchParams(window.location.search).get('error');
     if (!error) return;
 

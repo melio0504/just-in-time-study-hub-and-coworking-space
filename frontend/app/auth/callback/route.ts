@@ -31,5 +31,9 @@ export async function GET(request: NextRequest) {
 
   const failureUrl = new URL("/register", origin);
   failureUrl.searchParams.set("error", "Google sign-up could not be completed. Please try again.");
+  // A redirect without its own fragment inherits the fragment from the
+  // incoming OAuth URL. Override it so provider error details and state do not
+  // leak into the registration page URL.
+  failureUrl.hash = "_";
   return NextResponse.redirect(failureUrl);
 }
