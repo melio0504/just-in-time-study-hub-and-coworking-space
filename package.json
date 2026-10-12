@@ -2,7 +2,7 @@
   "name": "just-in-time-study-hub-and-coworking-space",
   "version": "1.1.0",
   "private": true,
-  "description": "A web-based study hub platform developed as a capstone project, featuring an informational website, admin dashboard, and an interactive 3D virtual tour of the facility.",
+  "description": "A full-stack reservation, customer management, and on-site check-in platform for Just In Time Study Hub and Coworking Space.",
   "author": {
     "name": "Just in Time Study Hub Dev Team"
   },
