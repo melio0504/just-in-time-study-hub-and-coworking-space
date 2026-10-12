@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(18);
+SELECT plan(21);
 
 -- A dedicated seat keeps the walk-in tests independent from seeded occupancy.
 INSERT INTO public.seats (
@@ -204,6 +204,41 @@ SELECT throws_ok(
   'P0001',
   'Booking cannot be cancelled',
   'a customer cannot cancel another customer booking'
+);
+
+-- Once a payment webhook confirms a booking, closing the payment modal must
+-- not overwrite the paid state or release its seat.
+RESET ROLE;
+UPDATE public.bookings
+SET status = 'confirmed', payment_status = 'paid'
+WHERE id = current_setting('test.other_booking_id')::uuid;
+
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"b1000000-0000-4000-8000-000000000002","role":"authenticated"}',
+  true
+);
+SET LOCAL ROLE authenticated;
+SELECT throws_ok(
+  format('SELECT public.cancel_booking(%L::uuid)', current_setting('test.other_booking_id')),
+  'P0001',
+  'Booking cannot be cancelled',
+  'a paid booking cannot be cancelled by closing the payment modal'
+);
+SELECT is(
+  (SELECT status::text FROM public.bookings WHERE id = current_setting('test.other_booking_id')::uuid),
+  'confirmed',
+  'a paid booking remains confirmed after a cancellation race'
+);
+SELECT is(
+  (
+    SELECT count(*)
+    FROM public.booking_seats
+    WHERE booking_id = current_setting('test.other_booking_id')::uuid
+      AND active
+  ),
+  1::bigint,
+  'a paid booking retains its active seat reservation'
 );
 
 -- Ramon has seating permission and can check a walk-in in and back out.

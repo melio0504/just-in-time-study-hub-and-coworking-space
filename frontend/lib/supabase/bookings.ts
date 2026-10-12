@@ -41,6 +41,17 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
   return data as Booking;
 }
 
+export async function cancelBooking(bookingId: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("cancel_booking", {
+    p_booking_id: bookingId,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function listMyBookings(): Promise<Booking[]> {
   const supabase = createClient();
   const { data, error } = await supabase

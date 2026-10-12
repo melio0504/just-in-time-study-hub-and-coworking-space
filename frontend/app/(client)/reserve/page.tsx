@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { SeatingPlan } from '@/app/components/SeatingPlan';
 import { allSeatIds } from '@/lib/seats';
-import { createBooking } from '@/lib/supabase/bookings';
+import { cancelBooking, createBooking } from '@/lib/supabase/bookings';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
@@ -116,7 +116,9 @@ function ReserveContent() {
   const [confirmationQr, setConfirmationQr] = useState('');
   const [qrExpiresAt, setQrExpiresAt] = useState('');
   const [confirmationError, setConfirmationError] = useState('');
+  const [cancellationError, setCancellationError] = useState('');
   const [isConfirmationLoading, setIsConfirmationLoading] = useState(false);
+  const [isCancellingReservation, setIsCancellingReservation] = useState(false);
   const [isConfirmationEmailSent, setIsConfirmationEmailSent] = useState(false);
   const [emailDeliveryError, setEmailDeliveryError] = useState('');
   const [lastSelectedSeats, setLastSelectedSeats] = useState<string[]>([]);
@@ -126,6 +128,7 @@ function ReserveContent() {
   const [memberIdentity, setMemberIdentity] = useState<MemberIdentity | null>(null);
   const [isIdentityLoading, setIsIdentityLoading] = useState(isSupabaseConfigured);
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+  const qrRequestVersionRef = useRef(0);
 
   const initializeSeats = useCallback((_date: string, selectedSeats: string[] = []): Seat[] => {
     return allSeatIds.map(id => ({
@@ -186,9 +189,62 @@ function ReserveContent() {
     };
   }, []);
 
-  const closePaymentModal = () => {
+  const finishCancelledBooking = () => {
+    qrRequestVersionRef.current += 1;
     setIsModalOpen(false);
     setConfirmationStep('pending');
+    setBookingId('');
+    setReservationId('');
+    setSubtotalCents(0);
+    setConfirmationQr('');
+    setQrExpiresAt('');
+    setConfirmationError('');
+    setCancellationError('');
+    setIsConfirmationLoading(false);
+    setIsConfirmationEmailSent(false);
+    setEmailDeliveryError('');
+    setSeats((currentSeats) => currentSeats.map((seat) => (
+      lastSelectedSeats.includes(seat.id) ? { ...seat, status: 'available' } : seat
+    )));
+    setLastSelectedSeats([]);
+  };
+
+  const closePaymentModal = async () => {
+    if (confirmationStep === 'success' || !bookingId) {
+      setIsModalOpen(false);
+      setConfirmationStep('pending');
+      return;
+    }
+    if (isCancellingReservation) return;
+
+    setIsCancellingReservation(true);
+    setCancellationError('');
+    try {
+      await cancelBooking(bookingId);
+      finishCancelledBooking();
+    } catch (error) {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('bookings')
+        .select('status')
+        .eq('id', bookingId)
+        .single();
+
+      if (data?.status === 'confirmed') {
+        setConfirmationStep('success');
+        setConfirmationError('');
+      } else if (data?.status === 'cancelled') {
+        finishCancelledBooking();
+      } else {
+        setCancellationError(
+          error instanceof Error
+            ? error.message
+            : 'Unable to cancel this reservation. Please try again.',
+        );
+      }
+    } finally {
+      setIsCancellingReservation(false);
+    }
   };
 
   useEffect(() => {
@@ -230,8 +286,10 @@ function ReserveContent() {
   }, [bookingId, isModalOpen]);
 
   const createPaymongoQr = async (id: string) => {
+    const requestVersion = ++qrRequestVersionRef.current;
     setIsConfirmationLoading(true);
     setConfirmationError('');
+    setCancellationError('');
     setConfirmationQr('');
     setQrExpiresAt('');
     setIsConfirmationEmailSent(false);
@@ -254,12 +312,18 @@ function ReserveContent() {
       if (typeof data?.qrImage !== 'string' || typeof data?.expiresAt !== 'string') {
         throw new Error('PayMongo did not return a QR Ph code.');
       }
-      setConfirmationQr(data.qrImage);
-      setQrExpiresAt(data.expiresAt);
+      if (requestVersion === qrRequestVersionRef.current) {
+        setConfirmationQr(data.qrImage);
+        setQrExpiresAt(data.expiresAt);
+      }
     } catch (error) {
-      setConfirmationError(error instanceof Error ? error.message : 'Unable to generate QR Ph.');
+      if (requestVersion === qrRequestVersionRef.current) {
+        setConfirmationError(error instanceof Error ? error.message : 'Unable to generate QR Ph.');
+      }
     } finally {
-      setIsConfirmationLoading(false);
+      if (requestVersion === qrRequestVersionRef.current) {
+        setIsConfirmationLoading(false);
+      }
     }
   };
 
@@ -545,6 +609,7 @@ function ReserveContent() {
       setSubtotalCents(booking.subtotal_cents);
       setLastSelectedSeats(selectedSeats);
       setConfirmationStep('pending');
+      setCancellationError('');
       setIsModalOpen(true);
       await createPaymongoQr(booking.id);
     } catch (error) {
@@ -809,8 +874,10 @@ function ReserveContent() {
                     <h2 className="text-2xl sm:text-3xl text-[#2d2520]">Scan to Pay</h2>
                     <button
                       type="button"
-                      onClick={closePaymentModal}
-                      className="p-2 hover:bg-[#f3ede4] rounded-full transition-colors"
+                      onClick={() => void closePaymentModal()}
+                      disabled={isCancellingReservation}
+                      aria-label="Cancel reservation"
+                      className="p-2 hover:bg-[#f3ede4] rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <X className="w-6 h-6 text-[#6b5e52]" />
                     </button>
@@ -867,6 +934,12 @@ function ReserveContent() {
                     </div>
                   )}
 
+                  {cancellationError && (
+                    <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                      {cancellationError}
+                    </p>
+                  )}
+
                   <div className="mb-6 border-l-4 border-[#e5a930] bg-[#fef3dc]/30 p-4 rounded-r-xl">
                     <div className="flex items-start gap-2 mb-3">
                       <AlertCircle className="w-5 h-5 text-[#e5a930] flex-shrink-0 mt-0.5" />
@@ -891,6 +964,14 @@ function ReserveContent() {
                   </div>
 
                   <p className="text-center text-sm text-[#6b5e52]">Waiting for PayMongo to confirm your payment…</p>
+                  <button
+                    type="button"
+                    onClick={() => void closePaymentModal()}
+                    disabled={isCancellingReservation}
+                    className="mt-4 w-full rounded-full border border-red-200 px-6 py-3 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isCancellingReservation ? 'Cancelling reservation…' : 'Cancel reservation'}
+                  </button>
                 </>
               ) : (
                 <>
@@ -898,7 +979,8 @@ function ReserveContent() {
                     <h2 className="text-2xl sm:text-3xl text-[#2d2520]">Reservation Confirmed</h2>
                     <button
                       type="button"
-                      onClick={closePaymentModal}
+                      onClick={() => void closePaymentModal()}
+                      aria-label="Close confirmation"
                       className="p-2 hover:bg-[#f3ede4] rounded-full transition-colors"
                     >
                       <X className="w-6 h-6 text-[#6b5e52]" />
@@ -977,7 +1059,7 @@ function ReserveContent() {
 
                   <button
                     type="button"
-                    onClick={closePaymentModal}
+                    onClick={() => void closePaymentModal()}
                     className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl cursor-pointer"
                   >
                     Done

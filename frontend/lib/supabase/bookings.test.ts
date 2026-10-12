@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createClient } from "./client";
-import { createBooking, listMyBookings, type CreateBookingInput } from "./bookings";
+import { cancelBooking, createBooking, listMyBookings, type CreateBookingInput } from "./bookings";
 
 vi.mock("./client", () => ({ createClient: vi.fn() }));
 
@@ -61,6 +61,26 @@ describe("createBooking", () => {
     } as never);
 
     await expect(createBooking(bookingInput)).rejects.toThrow("Seat unavailable");
+  });
+});
+
+describe("cancelBooking", () => {
+  it("calls the customer cancellation RPC", async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    createClientMock.mockReturnValue({ rpc } as never);
+
+    await expect(cancelBooking("booking-1")).resolves.toBeUndefined();
+    expect(rpc).toHaveBeenCalledWith("cancel_booking", {
+      p_booking_id: "booking-1",
+    });
+  });
+
+  it("surfaces cancellation errors", async () => {
+    createClientMock.mockReturnValue({
+      rpc: vi.fn().mockResolvedValue({ error: { message: "Booking cannot be cancelled" } }),
+    } as never);
+
+    await expect(cancelBooking("booking-1")).rejects.toThrow("Booking cannot be cancelled");
   });
 });
 
