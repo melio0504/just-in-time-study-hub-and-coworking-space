@@ -114,7 +114,7 @@ export function Header() {
     <header ref={headerRef} className="site-header fixed z-50 pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
         <Link href="/" className="flex min-w-0 items-center" onClick={closeMobileMenu}>
-          <Image src="/images/logo.png" alt="Study Hub Logo" width={245} height={118} priority loading="eager" className="h-9 w-auto max-w-35 shrink-0 object-contain sm:h-12 sm:max-w-45" />
+          <Image src="/images/logo.png" alt="Study Hub Logo" width={245} height={118} priority loading="eager" className="h-9 w-auto max-w-35 shrink-0 object-contain sm:h-12 sm:max-w-45" draggable="false" />
         </Link>
 
         <nav className="hidden items-center gap-6 lg:flex xl:gap-8">
