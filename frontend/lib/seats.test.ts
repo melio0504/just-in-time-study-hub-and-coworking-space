@@ -12,7 +12,7 @@ describe("seat catalogue", () => {
     expect(TOTAL_SEATS).toBe(50);
     expect(new Set(allSeatIds).size).toBe(TOTAL_SEATS);
     expect(allSeatIds).toEqual(
-      expect.arrayContaining(["LA01", "UB02", "RW04", "BR08"]),
+      expect.arrayContaining(["SO01", "FD10", "GS12", "HC16"]),
     );
     expect(allSeatIds.every((code) => /^[A-Z]{2}\d{2}$/.test(code))).toBe(true);
   });
@@ -20,11 +20,11 @@ describe("seat catalogue", () => {
 
 describe("sample occupancy helpers", () => {
   it.each([
-    ["2026-10-12T12:00:00", ["LA02", "UA03", "BR03", "RA01", "LW02", "RW03"]],
-    ["2026-10-13T12:00:00", ["LA01", "LA05", "UA02", "UB01", "RC03", "BR07", "RW01"]],
-    ["2026-10-14T12:00:00", ["LB02", "UA06", "RA04", "RB02", "BR01", "BR05", "RW04"]],
-    ["2026-10-15T12:00:00", ["LA03", "LA07", "UA01", "LW01", "LW04", "RB04", "RC01", "RW02"]],
-    ["2026-10-16T12:00:00", ["LB01", "LB03", "UA04", "UA08", "RA02", "BR02"]],
+    ["2026-10-12T12:00:00", ["SO02", "FD03", "HC07", "GS01", "HC02", "HC15"]],
+    ["2026-10-13T12:00:00", ["SO01", "SO05", "FD02", "FD09", "GS11", "HC11", "HC13"]],
+    ["2026-10-14T12:00:00", ["SO10", "FD06", "GS04", "GS06", "HC05", "HC09", "HC16"]],
+    ["2026-10-15T12:00:00", ["SO03", "SO07", "FD01", "HC01", "HC04", "GS08", "GS09", "HC14"]],
+    ["2026-10-16T12:00:00", ["SO09", "SO11", "FD04", "FD08", "GS02", "HC06"]],
   ])("returns the expected weekday seats for %s", (date, expected) => {
     expect(getReservedSeatsForDate(date)).toEqual(expected);
   });

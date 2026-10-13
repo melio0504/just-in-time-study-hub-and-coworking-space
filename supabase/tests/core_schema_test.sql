@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(50);
+SELECT plan(56);
 
 SELECT has_table('public', 'profiles', 'profiles table exists');
 SELECT has_table('public', 'seats', 'seats table exists');
@@ -71,6 +71,47 @@ SELECT is(
   (SELECT count(*)::integer FROM public.seats),
   50,
   'all 50 facility seats are provisioned'
+);
+
+SELECT is(
+  (SELECT count(*)::integer FROM public.seats WHERE code ~ '^(LA|LB|UA|UB|LW|RA|RB|RC|RW|BR)[0-9]{2}$'),
+  0,
+  'legacy seat codes are fully retired'
+);
+
+SELECT is(
+  (SELECT count(*)::integer FROM public.seats WHERE code ~ '^SO[0-9]{2}$' AND zone = 'Solo Learner/Worker' AND seat_type = 'solo'),
+  12,
+  'solo learner and worker seats use the SO category'
+);
+
+SELECT is(
+  (SELECT count(*)::integer FROM public.seats WHERE code ~ '^FD[0-9]{2}$' AND zone = 'Floor Desk Setup' AND seat_type = 'floor-desk'),
+  10,
+  'floor desk seats use the FD category'
+);
+
+SELECT is(
+  (SELECT count(*)::integer FROM public.seats WHERE code ~ '^GS[0-9]{2}$' AND zone = 'Group Study' AND seat_type = 'group-study'),
+  12,
+  'group study seats use the GS category'
+);
+
+SELECT is(
+  (SELECT count(*)::integer FROM public.seats WHERE code ~ '^HC[0-9]{2}$' AND zone = 'High Chair' AND seat_type = 'high-chair'),
+  16,
+  'high-chair seats use the HC category'
+);
+
+SELECT is(
+  (
+    SELECT count(*)::integer
+    FROM public.bookings AS booking,
+         unnest(booking.seat_ids) AS codes(code)
+    WHERE codes.code ~ '^(LA|LB|UA|UB|LW|RA|RB|RC|RW|BR)[0-9]{2}$'
+  ),
+  0,
+  'seeded and migrated reservations contain only current seat codes'
 );
 
 SELECT is(

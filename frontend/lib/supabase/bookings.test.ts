@@ -13,7 +13,7 @@ const bookingInput: CreateBookingInput = {
   startTime: "09:00",
   durationHours: 2,
   space: "study-seat",
-  seatCodes: ["LA01", "LA02"],
+  seatCodes: ["SO01", "SO02"],
 };
 
 beforeEach(() => {
@@ -50,7 +50,7 @@ describe("createBooking", () => {
       p_start_time: "09:00",
       p_duration_hours: 2,
       p_space: "study-seat",
-      p_seat_codes: ["LA01", "LA02"],
+      p_seat_codes: ["SO01", "SO02"],
     });
   });
 

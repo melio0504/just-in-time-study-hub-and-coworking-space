@@ -35,7 +35,7 @@ SELECT set_config(
       '09:00'::time,
       1::smallint,
       'study-seat',
-      ARRAY['LA01', 'LA02']
+      ARRAY['SO01', 'SO02']
     )
   ),
   true
@@ -85,7 +85,7 @@ SELECT throws_ok(
       '09:30'::time,
       1::smallint,
       'study-seat',
-      ARRAY['LA01']
+      ARRAY['SO01']
     )
   $$,
   '23P01',
@@ -110,7 +110,7 @@ SELECT throws_ok(
       '11:00'::time,
       1::smallint,
       'study-seat',
-      ARRAY['LA01', 'LA01']
+      ARRAY['SO01', 'SO01']
     )
   $$,
   '22023',
@@ -132,7 +132,7 @@ SELECT ok(
       ((current_date + 30)::timestamp + time '09:30') AT TIME ZONE 'Asia/Manila',
       ((current_date + 30)::timestamp + time '10:30') AT TIME ZONE 'Asia/Manila'
     )
-    WHERE code = 'LA01'
+    WHERE code = 'SO01'
   ),
   'an actively reserved seat is excluded from availability'
 );
@@ -163,7 +163,7 @@ SELECT ok(
       ((current_date + 30)::timestamp + time '09:30') AT TIME ZONE 'Asia/Manila',
       ((current_date + 30)::timestamp + time '10:30') AT TIME ZONE 'Asia/Manila'
     )
-    WHERE code = 'LA01'
+    WHERE code = 'SO01'
   ),
   'a cancelled booking makes its seat available again'
 );
@@ -186,7 +186,7 @@ SELECT set_config(
       '11:00'::time,
       1::smallint,
       'study-seat',
-      ARRAY['LB01']
+      ARRAY['SO09']
     )
   ),
   true

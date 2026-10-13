@@ -93,7 +93,7 @@ SELECT is_empty(
   'customers cannot update another profile'
 );
 SELECT throws_ok(
-  $$ SELECT public.toggle_walk_in_occupancy('LA01', 'RLS test') $$,
+  $$ SELECT public.toggle_walk_in_occupancy('SO01', 'RLS test') $$,
   '42501',
   'Seating access required',
   'customers cannot invoke seating operations'

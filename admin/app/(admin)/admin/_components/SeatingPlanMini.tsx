@@ -69,16 +69,16 @@ export function SeatingPlanMini({ seats, onSeatClick, busySeatId }: SeatingPlanM
 
           <div className="absolute top-[4%] left-[2.5%] flex flex-col gap-2">
             <div className="flex gap-2">
-              {renderSeat("LA01")}
-              {renderSeat("LA02")}
-              {renderSeat("LA03")}
-              {renderSeat("LA04")}
+              {renderSeat("SO01")}
+              {renderSeat("SO02")}
+              {renderSeat("SO03")}
+              {renderSeat("SO04")}
             </div>
             <div className="flex gap-2">
-              {renderSeat("LA05")}
-              {renderSeat("LA06")}
-              {renderSeat("LA07")}
-              {renderSeat("LA08")}
+              {renderSeat("SO05")}
+              {renderSeat("SO06")}
+              {renderSeat("SO07")}
+              {renderSeat("SO08")}
             </div>
           </div>
 
@@ -87,23 +87,23 @@ export function SeatingPlanMini({ seats, onSeatClick, busySeatId }: SeatingPlanM
           </div>
 
           <div className="absolute top-[4%] left-[38%] grid grid-cols-4 gap-x-2 gap-y-2">
-            {renderSeat("UA01")}
-            {renderSeat("UA02")}
-            {renderSeat("UA03")}
-            {renderSeat("UA04")}
-            {renderSeat("UA05")}
-            {renderSeat("UA06")}
-            {renderSeat("UA07")}
-            {renderSeat("UA08")}
-            <div className="col-start-3">{renderSeat("UB01")}</div>
-            <div className="col-start-4">{renderSeat("UB02")}</div>
+            {renderSeat("FD01")}
+            {renderSeat("FD02")}
+            {renderSeat("FD03")}
+            {renderSeat("FD04")}
+            {renderSeat("FD05")}
+            {renderSeat("FD06")}
+            {renderSeat("FD07")}
+            {renderSeat("FD08")}
+            <div className="col-start-3">{renderSeat("FD09")}</div>
+            <div className="col-start-4">{renderSeat("FD10")}</div>
           </div>
 
           <div className="absolute top-[38%] left-[2.5%] flex gap-2">
-            {renderSeat("LB01")}
-            {renderSeat("LB02")}
-            {renderSeat("LB03")}
-            {renderSeat("LB04")}
+            {renderSeat("SO09")}
+            {renderSeat("SO10")}
+            {renderSeat("SO11")}
+            {renderSeat("SO12")}
           </div>
 
           <div className="absolute top-[54%] left-[27%] w-[11%]">
@@ -113,61 +113,61 @@ export function SeatingPlanMini({ seats, onSeatClick, busySeatId }: SeatingPlanM
           </div>
 
           <div className="absolute top-[47%] left-[40%] flex flex-col gap-2.5 border-l-2 border-[#c4b5a3]/50 pl-2">
-            {renderSeat("LW01")}
-            {renderSeat("LW02")}
-            {renderSeat("LW03")}
-            {renderSeat("LW04")}
+            {renderSeat("HC01")}
+            {renderSeat("HC02")}
+            {renderSeat("HC03")}
+            {renderSeat("HC04")}
           </div>
 
           <div className="absolute top-[44%] right-[9%] left-[50%] flex justify-between">
             <div className="flex flex-col gap-5">
               <div className="flex gap-2">
-                {renderSeat("RA01")}
-                {renderSeat("RA02")}
+                {renderSeat("GS01")}
+                {renderSeat("GS02")}
               </div>
               <div className="flex gap-2">
-                {renderSeat("RA03")}
-                {renderSeat("RA04")}
+                {renderSeat("GS03")}
+                {renderSeat("GS04")}
               </div>
             </div>
             <div className="flex flex-col gap-5">
               <div className="flex gap-2">
-                {renderSeat("RB01")}
-                {renderSeat("RB02")}
+                {renderSeat("GS05")}
+                {renderSeat("GS06")}
               </div>
               <div className="flex gap-2">
-                {renderSeat("RB03")}
-                {renderSeat("RB04")}
+                {renderSeat("GS07")}
+                {renderSeat("GS08")}
               </div>
             </div>
             <div className="flex flex-col gap-5">
               <div className="flex gap-2">
-                {renderSeat("RC01")}
-                {renderSeat("RC02")}
+                {renderSeat("GS09")}
+                {renderSeat("GS10")}
               </div>
               <div className="flex gap-2">
-                {renderSeat("RC03")}
-                {renderSeat("RC04")}
+                {renderSeat("GS11")}
+                {renderSeat("GS12")}
               </div>
             </div>
           </div>
 
-          <div className="absolute top-[50%] right-[2.5%] flex flex-col gap-2.5 border-r-2 border-[#c4b5a3]/50 pr-2">
-            {renderSeat("RW01")}
-            {renderSeat("RW02")}
-            {renderSeat("RW03")}
-            {renderSeat("RW04")}
+          <div className="absolute top-[47%] right-[2.5%] flex flex-col gap-2.5 border-r-2 border-[#c4b5a3]/50 pr-2">
+            {renderSeat("HC15")}
+            {renderSeat("HC14")}
+            {renderSeat("HC13")}
+            {renderSeat("HC16")}
           </div>
 
-          <div className="absolute top-[82%] right-[3%] left-[47%] flex justify-between border-t-2 border-dashed border-[#c4b5a3]/40 pt-2">
-            {renderSeat("BR01")}
-            {renderSeat("BR02")}
-            {renderSeat("BR03")}
-            {renderSeat("BR04")}
-            {renderSeat("BR05")}
-            {renderSeat("BR06")}
-            {renderSeat("BR07")}
-            {renderSeat("BR08")}
+          <div className="absolute top-[81%] right-[3%] left-[47%] flex justify-between border-t-2 border-dashed border-[#c4b5a3]/40 pt-2">
+            {renderSeat("HC05")}
+            {renderSeat("HC06")}
+            {renderSeat("HC07")}
+            {renderSeat("HC08")}
+            {renderSeat("HC09")}
+            {renderSeat("HC10")}
+            {renderSeat("HC11")}
+            {renderSeat("HC12")}
           </div>
           </div>
         </div>

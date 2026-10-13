@@ -64,19 +64,19 @@ export function SeatingPlan({ renderSeat }: SeatingPlanProps) {
           <div className="absolute left-[26%] bottom-0 w-[11%] h-1.5 bg-[#d1d5db] rounded-t-sm pointer-events-none" />
         </div>
 
-        {/* Zone: Left Area */}
+        {/* Solo Learner/Worker — first divider bank */}
         <div className="absolute left-[2.5%] top-[4%] flex flex-col gap-2">
           <div className="flex gap-2">
-            {renderSeat("LA01")}
-            {renderSeat("LA02")}
-            {renderSeat("LA03")}
-            {renderSeat("LA04")}
+            {renderSeat("SO01")}
+            {renderSeat("SO02")}
+            {renderSeat("SO03")}
+            {renderSeat("SO04")}
           </div>
           <div className="flex gap-2">
-            {renderSeat("LA05")}
-            {renderSeat("LA06")}
-            {renderSeat("LA07")}
-            {renderSeat("LA08")}
+            {renderSeat("SO05")}
+            {renderSeat("SO06")}
+            {renderSeat("SO07")}
+            {renderSeat("SO08")}
           </div>
         </div>
 
@@ -85,26 +85,26 @@ export function SeatingPlan({ renderSeat }: SeatingPlanProps) {
           <span className="text-sm font-medium tracking-wide text-[#6b5e52]">CASHIER</span>
         </div>
 
-        {/* Zone: Upper Area — UA grid with UB under UA07 & UA08 */}
+        {/* Floor Desk Setup */}
         <div className="absolute left-[38%] top-[4%] grid grid-cols-4 gap-x-2 gap-y-2">
-          {renderSeat("UA01")}
-          {renderSeat("UA02")}
-          {renderSeat("UA03")}
-          {renderSeat("UA04")}
-          {renderSeat("UA05")}
-          {renderSeat("UA06")}
-          {renderSeat("UA07")}
-          {renderSeat("UA08")}
-          <div className="col-start-3">{renderSeat("UB01")}</div>
-          <div className="col-start-4">{renderSeat("UB02")}</div>
+          {renderSeat("FD01")}
+          {renderSeat("FD02")}
+          {renderSeat("FD03")}
+          {renderSeat("FD04")}
+          {renderSeat("FD05")}
+          {renderSeat("FD06")}
+          {renderSeat("FD07")}
+          {renderSeat("FD08")}
+          <div className="col-start-3">{renderSeat("FD09")}</div>
+          <div className="col-start-4">{renderSeat("FD10")}</div>
         </div>
 
-        {/* Zone: Left Bottom */}
+        {/* Solo Learner/Worker — second divider bank */}
         <div className="absolute left-[2.5%] top-[38%] flex gap-2">
-          {renderSeat("LB01")}
-          {renderSeat("LB02")}
-          {renderSeat("LB03")}
-          {renderSeat("LB04")}
+          {renderSeat("SO09")}
+          {renderSeat("SO10")}
+          {renderSeat("SO11")}
+          {renderSeat("SO12")}
         </div>
 
         {/* Zone: Entrance */}
@@ -114,66 +114,66 @@ export function SeatingPlan({ renderSeat }: SeatingPlanProps) {
           </div>
         </div>
 
-        {/* Zone: Left Wall */}
+        {/* High Chair — left bank */}
         <div className="absolute left-[40%] top-[47%] flex flex-col gap-2.5 pl-2 border-l-2 border-[#c4b5a3]/50">
-          {renderSeat("LW01")}
-          {renderSeat("LW02")}
-          {renderSeat("LW03")}
-          {renderSeat("LW04")}
+          {renderSeat("HC01")}
+          {renderSeat("HC02")}
+          {renderSeat("HC03")}
+          {renderSeat("HC04")}
         </div>
 
-        {/* Zone: Right Area — fills space between left wall and right wall */}
+        {/* Group Study — three large tables */}
         <div className="absolute left-[50%] right-[9%] top-[44%] flex justify-between">
           <div className="flex flex-col gap-5">
             <div className="flex gap-2">
-              {renderSeat("RA01")}
-              {renderSeat("RA02")}
+              {renderSeat("GS01")}
+              {renderSeat("GS02")}
             </div>
             <div className="flex gap-2">
-              {renderSeat("RA03")}
-              {renderSeat("RA04")}
+              {renderSeat("GS03")}
+              {renderSeat("GS04")}
             </div>
           </div>
           <div className="flex flex-col gap-5">
             <div className="flex gap-2">
-              {renderSeat("RB01")}
-              {renderSeat("RB02")}
+              {renderSeat("GS05")}
+              {renderSeat("GS06")}
             </div>
             <div className="flex gap-2">
-              {renderSeat("RB03")}
-              {renderSeat("RB04")}
+              {renderSeat("GS07")}
+              {renderSeat("GS08")}
             </div>
           </div>
           <div className="flex flex-col gap-5">
             <div className="flex gap-2">
-              {renderSeat("RC01")}
-              {renderSeat("RC02")}
+              {renderSeat("GS09")}
+              {renderSeat("GS10")}
             </div>
             <div className="flex gap-2">
-              {renderSeat("RC03")}
-              {renderSeat("RC04")}
+              {renderSeat("GS11")}
+              {renderSeat("GS12")}
             </div>
           </div>
         </div>
 
-        {/* Zone: Right Wall — pinned to the right edge */}
-        <div className="absolute right-[2.5%] top-[50%] flex flex-col gap-2.5 pr-2 border-r-2 border-[#c4b5a3]/50">
-          {renderSeat("RW01")}
-          {renderSeat("RW02")}
-          {renderSeat("RW03")}
-          {renderSeat("RW04")}
+        {/* High Chair — right bank */}
+        <div className="absolute right-[2.5%] top-[47%] flex flex-col gap-2.5 pr-2 border-r-2 border-[#c4b5a3]/50">
+          {renderSeat("HC15")}
+          {renderSeat("HC14")}
+          {renderSeat("HC13")}
+          {renderSeat("HC16")}
         </div>
 
-          {/* Zone: Bottom Row — spans the main study area width */}
-          <div className="absolute left-[47%] right-[3%] top-[82%] flex justify-between pt-2 border-t-2 border-dashed border-[#c4b5a3]/40">
-            {renderSeat("BR01")}
-            {renderSeat("BR02")}
-            {renderSeat("BR03")}
-            {renderSeat("BR04")}
-            {renderSeat("BR05")}
-            {renderSeat("BR06")}
-            {renderSeat("BR07")}
-            {renderSeat("BR08")}
+          {/* High Chair — bottom bank */}
+          <div className="absolute left-[47%] right-[3%] top-[81%] flex justify-between pt-2 border-t-2 border-dashed border-[#c4b5a3]/40">
+            {renderSeat("HC05")}
+            {renderSeat("HC06")}
+            {renderSeat("HC07")}
+            {renderSeat("HC08")}
+            {renderSeat("HC09")}
+            {renderSeat("HC10")}
+            {renderSeat("HC11")}
+            {renderSeat("HC12")}
           </div>
         </div>
       </div>
