@@ -1,4 +1,4 @@
-# Public frontend
+# Just in Time Study Hub Frontend
 
 This Next.js application contains only customer-facing routes. Deploy this directory as the Root Directory of the Vercel project.
 
