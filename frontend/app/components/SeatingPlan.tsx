@@ -82,7 +82,7 @@ export function SeatingPlan({ renderSeat }: SeatingPlanProps) {
 
         {/* Zone: Cashier */}
         <div className="absolute left-[27%] top-[22%] w-[11%] h-[15%] border-2 border-dashed border-[#8b7355]/70 rounded-xl bg-white/50 flex items-center justify-center">
-          <span className="text-sm font-medium tracking-wide text-[#6b5e52]">CASHIER</span>
+          <span className="text-sm font-medium tracking-wide text-[#6b5e52]">FRONT DESK</span>
         </div>
 
         {/* Floor Desk Setup */}
