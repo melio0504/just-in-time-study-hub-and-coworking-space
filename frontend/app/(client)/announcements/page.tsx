@@ -1,9 +1,13 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, CalendarDays, Megaphone, ShieldCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { createPageMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = { title: 'Announcements | Just In Time Study Hub', description: 'Current notices and updates from Just In Time Study Hub.' };
+export const metadata = createPageMetadata({
+  title: 'Announcements & Updates',
+  description: 'See current hours, closures, maintenance notices, and important customer updates from Just In Time Study Hub in Manila.',
+  path: '/announcements',
+});
 
 export default async function AnnouncementsPage() {
   const supabase = await createClient();

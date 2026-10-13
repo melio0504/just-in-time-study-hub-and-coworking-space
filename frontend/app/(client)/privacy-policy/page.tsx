@@ -1,11 +1,12 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Database, LockKeyhole, Mail, ShieldCheck, UserCheck } from 'lucide-react';
+import { createPageMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy | Just In Time Study Hub',
+export const metadata = createPageMetadata({
+  title: 'Privacy Policy',
   description: 'How Just In Time Study Hub collects, uses, protects, and manages personal information.',
-};
+  path: '/privacy-policy',
+});
 
 const sections = [
   {
