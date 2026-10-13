@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 export const siteConfig = {
   name: "Just In Time Study Hub and Coworking Space",
   shortName: "Just In Time Study Hub",
-  defaultTitle: "Study Hub & Coworking Space in Manila | Just In Time",
+  defaultTitle: "Just In Time Study Hub and Coworking Space",
   description:
-    "Study, work, and stay productive at Just In Time Study Hub in Mendiola, Manila. Explore affordable rates, focused workspaces, and online seat reservations.",
+    "Study, work, and stay productive at Just In Time Study Hub and Coworking Space in Mendiola, Manila. Explore affordable rates, focused workspaces, and online seat reservations.",
   url: "https://jit-studyhub.com",
   email: "jit.studyhub@gmail.com",
   telephone: "+639062885570",
