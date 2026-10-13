@@ -13,7 +13,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
-const createClientMock = vi.mocked(createClient);
+const createClientMock = vi.mocked(createClient, { deep: true, partial: true });
 
 beforeEach(() => {
   vi.stubEnv("NODE_ENV", "development");
@@ -39,7 +39,7 @@ describe("GET /auth/callback", () => {
     const exchangeCodeForSession = vi.fn().mockResolvedValue({ error: null });
     createClientMock.mockResolvedValue({
       auth: { exchangeCodeForSession },
-    } as Awaited<ReturnType<typeof createClient>>);
+    });
 
     const request = new NextRequest(
       "http://localhost:3000/auth/callback?code=valid-code&next=/account",
