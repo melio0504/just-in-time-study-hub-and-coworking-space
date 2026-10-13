@@ -900,7 +900,7 @@ function ReserveContent() {
                   </div>
 
                   <div className="mb-6">
-                    <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-3">PayMongo Dynamic QR Ph</p>
+                    <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-3">QRPH</p>
                     <div className="bg-[#f9f9f9] border-2 border-dashed border-[#d1d5db] rounded-2xl p-4 sm:p-8 flex flex-col items-center justify-center">
                       {isConfirmationLoading ? (
                         <div className="flex h-48 items-center justify-center text-sm text-[#6b5e52]">Generating secure QR code…</div>

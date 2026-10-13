@@ -51,14 +51,14 @@ export async function sendBookingConfirmationEmail(booking: Record<string, unkno
       <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#2d2520">
         <h1 style="color:#b57b12">Reservation confirmed</h1>
         <p>Hello ${escapeHtml(String(booking.guest_name))},</p>
-        <p>We received your QR Ph payment and confirmed your Just In Time Study Hub reservation.</p>
+        <p>We received your QR PH payment and confirmed your Just In Time Study Hub reservation.</p>
         <div style="background:#fff8ed;border:1px solid #eadfce;border-radius:16px;padding:20px">
           <p><strong>Reservation:</strong> ${escapeHtml(reservationCode)}</p>
           <p><strong>Seats:</strong> ${escapeHtml(seats)}</p>
           <p><strong>Starts:</strong> ${escapeHtml(formatManila(String(booking.starts_at)))}</p>
           <p><strong>Ends:</strong> ${escapeHtml(formatManila(String(booking.ends_at)))}</p>
           <p><strong>Total paid:</strong> ${escapeHtml(formatPeso(Number(booking.subtotal_cents)))}</p>
-          <p><strong>Payment method:</strong> QR Ph</p>
+          <p><strong>Payment method:</strong> QR PH</p>
         </div>
         ${reservationUrl ? `<p style="margin:24px 0"><a href="${escapeHtml(reservationUrl)}" style="background:#b57b12;color:white;padding:12px 18px;border-radius:999px;text-decoration:none">View your reservation</a></p>` : ""}
         <h2>Your kiosk access pass</h2>
