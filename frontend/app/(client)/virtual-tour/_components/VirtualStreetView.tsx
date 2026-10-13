@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useLoader } from '@react-three/fiber';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { Html, OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { BackSide, TextureLoader, type PerspectiveCamera as ThreePerspectiveCamera } from 'three';
 import { ArrowLeft, ArrowRight, CalendarDays, Check, MapPin } from 'lucide-react';
@@ -52,10 +52,16 @@ const scenes: Scene[] = [
 ];
 
 const CAMERA_FOV = 75;
+const CAMERA_ORBIT_RADIUS = 0.1;
+const PODS_LEFT_CAMERA_POSITION: [number, number, number] = [0.008, 0, -CAMERA_ORBIT_RADIUS];
+const OVERVIEW_LEFT_CAMERA_POSITION: [number, number, number] = [CAMERA_ORBIT_RADIUS, 0, 0];
+const LEFT_CAMERA_POSITION: [number, number, number] = [0.072, 0, 0.069];
 const PANORAMA_RADIUS = 500;
 const MARKER_RADIUS = 480;
 const MARKER_HORIZONTAL_OFFSET = 70;
 const MARKER_VERTICAL_OFFSET = 40;
+const MARKER_PROJECTION_EPSILON = 0.001;
+const MARKER_SETTLE_FRAMES = 2;
 
 type SeatDisplayStatus = 'free' | 'reserved' | 'in_use';
 
@@ -158,6 +164,30 @@ function markerPosition(marker: VirtualSeatMarker): [number, number, number] {
   ];
 }
 
+function CameraOrientation({
+  panoramaId,
+  cameraRef,
+}: {
+  panoramaId: PanoramaId;
+  cameraRef: { current: ThreePerspectiveCamera | null };
+}) {
+  useLayoutEffect(() => {
+    const camera = cameraRef.current;
+    if (!camera) return;
+
+    const position = panoramaId === 'pods'
+      ? PODS_LEFT_CAMERA_POSITION
+      : panoramaId === 'overview'
+        ? OVERVIEW_LEFT_CAMERA_POSITION
+        : LEFT_CAMERA_POSITION;
+    camera.position.set(...position);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+  }, [cameraRef, panoramaId]);
+
+  return null;
+}
+
 function SeatMarkers({
   markers,
   seats,
@@ -169,6 +199,18 @@ function SeatMarkers({
   selectedSeats: Set<string>;
   onToggleSeat: (seat: SeatDisplay) => void;
 }) {
+  const [isProjectionReady, setIsProjectionReady] = useState(false);
+  const projectionFrames = useRef(0);
+
+  useFrame(() => {
+    if (isProjectionReady) return;
+
+    projectionFrames.current += 1;
+    if (projectionFrames.current >= MARKER_SETTLE_FRAMES) {
+      setIsProjectionReady(true);
+    }
+  });
+
   return markers.map((marker) => {
     const seat = seats.get(marker.code);
     if (!seat) return null;
@@ -177,7 +219,17 @@ function SeatMarkers({
     const isSelected = selectedSeats.has(seat.code);
     const isSelectable = seat.status === 'free';
     return (
-      <Html key={marker.code} position={markerPosition(marker)} center zIndexRange={[30, 10]}>
+      <Html
+        key={marker.code}
+        position={markerPosition(marker)}
+        center
+        zIndexRange={[15, 1]}
+        // Force the initial camera-facing calculation before revealing the
+        // portal. This prevents unprojected and behind-camera markers from
+        // flashing across the panorama until the user moves the camera.
+        eps={isProjectionReady ? MARKER_PROJECTION_EPSILON : -1}
+        style={{ visibility: isProjectionReady ? 'visible' : 'hidden' }}
+      >
         <button
           type="button"
           disabled={!isSelectable}
@@ -660,10 +712,11 @@ export function VirtualStreetView() {
           <PerspectiveCamera
             ref={cameraRef}
             makeDefault
-            position={[0, 0, 0.1]}
+            position={PODS_LEFT_CAMERA_POSITION}
             fov={CAMERA_FOV}
             zoom={zoomLevel}
           />
+          <CameraOrientation panoramaId={activePanoramaId} cameraRef={cameraRef} />
           <color attach="background" args={['#120f0b']} />
           <PanoramaScene
             current={activeScene}
@@ -673,6 +726,7 @@ export function VirtualStreetView() {
           />
           {activeSeatMarkers.length > 0 && !transitionTarget && !isAvailabilityLoading && !availabilityError ? (
             <SeatMarkers
+              key={activePanoramaId}
               markers={activeSeatMarkers}
               seats={seatAvailability}
               selectedSeats={selectedSeatSet}
