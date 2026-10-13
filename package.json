@@ -83,9 +83,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
-    "@vitest/coverage-v8": "5.0.3",
     "cloudflared": "^0.7.3",
-    "supabase": "2.117.0",
-    "vitest": "5.0.3"
+    "supabase": "2.117.0"
   }
 }
