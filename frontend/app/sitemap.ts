@@ -15,6 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/virtual-tour", changeFrequency: "monthly", priority: 0.7 },
     { path: "/announcements", changeFrequency: "weekly", priority: 0.7 },
     { path: "/privacy-policy", changeFrequency: "yearly", priority: 0.2 },
+    { path: "/terms-of-service", changeFrequency: "yearly", priority: 0.2 },
   ];
 
   return pages.map(({ path, changeFrequency, priority }) => ({
