@@ -6,6 +6,10 @@ import { Html, OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { BackSide, TextureLoader, type PerspectiveCamera as ThreePerspectiveCamera } from 'three';
 import { ArrowLeft, ArrowRight, CalendarDays, Check, MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import {
+  getOperatingDayAvailabilityWindow,
+  SEAT_AVAILABILITY_REFRESH_MS,
+} from '@/lib/seatAvailability';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { PANORAMA_IMAGES, type PanoramaId } from '../_lib/tourGraph';
@@ -95,17 +99,6 @@ const getManilaDateString = () => new Intl.DateTimeFormat('en-CA', {
   month: '2-digit',
   day: '2-digit',
 }).format(new Date());
-
-const getNextDateString = (date: string) => {
-  const [year, month, day] = date.split('-').map(Number);
-  const nextDate = new Date(Date.UTC(year, month - 1, day + 1));
-  return nextDate.toISOString().slice(0, 10);
-};
-
-const getDateAvailabilityWindow = (date: string) => ({
-  startsAt: `${date}T08:00:00+08:00`,
-  endsAt: `${getNextDateString(date)}T05:00:00+08:00`,
-});
 
 const getVerticalCoverage = (aspectRatio: number) =>
   Math.min(Math.PI, (Math.PI * 2) / aspectRatio);
@@ -463,17 +456,17 @@ export function VirtualStreetView() {
     if (!isSupabaseConfigured) return;
 
     let cancelled = false;
-    const loadSeatAvailability = async () => {
-      setIsAvailabilityLoading(true);
+    const loadSeatAvailability = async (showLoading = false) => {
+      if (showLoading) setIsAvailabilityLoading(true);
       setAvailabilityError('');
 
       const supabase = createClient();
-      const { startsAt, endsAt } = getDateAvailabilityWindow(selectedDate);
+      const { startsAt, endsAt } = getOperatingDayAvailabilityWindow(selectedDate);
       const markerCodes = VIRTUAL_SEAT_MARKERS.map(({ code }) => code);
       const [availableResult, seatsResult] = await Promise.all([
         supabase.rpc('get_available_seats', {
-          p_starts_at: new Date(startsAt).toISOString(),
-          p_ends_at: new Date(endsAt).toISOString(),
+          p_starts_at: startsAt,
+          p_ends_at: endsAt,
         }),
         supabase
           .from('seats')
@@ -488,8 +481,8 @@ export function VirtualStreetView() {
           ?? seatsResult.error?.message
           ?? 'Unable to load seat availability.',
         );
-        setSeatAvailability(new Map());
-        setIsAvailabilityLoading(false);
+        if (showLoading) setSeatAvailability(new Map());
+        if (showLoading) setIsAvailabilityLoading(false);
         return;
       }
 
@@ -512,8 +505,19 @@ export function VirtualStreetView() {
       setIsAvailabilityLoading(false);
     };
 
-    void loadSeatAvailability();
-    return () => { cancelled = true; };
+    const refreshAvailability = () => void loadSeatAvailability();
+    const refreshInterval = window.setInterval(
+      refreshAvailability,
+      SEAT_AVAILABILITY_REFRESH_MS,
+    );
+    window.addEventListener('focus', refreshAvailability);
+
+    void loadSeatAvailability(true);
+    return () => {
+      cancelled = true;
+      window.clearInterval(refreshInterval);
+      window.removeEventListener('focus', refreshAvailability);
+    };
   }, [selectedDate, today]);
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(21);
+SELECT plan(22);
 
 -- A dedicated seat keeps the walk-in tests independent from seeded occupancy.
 INSERT INTO public.seats (
@@ -263,6 +263,17 @@ SELECT is(
   ),
   1::bigint,
   'walk-in check-in creates one active occupancy'
+);
+SELECT ok(
+  NOT EXISTS (
+    SELECT 1
+    FROM public.get_available_seats(
+      ((now() at time zone 'Asia/Manila')::date)::timestamp AT TIME ZONE 'Asia/Manila',
+      (((now() at time zone 'Asia/Manila')::date + 1)::timestamp) AT TIME ZONE 'Asia/Manila'
+    )
+    WHERE code = 'TZ99'
+  ),
+  'an active walk-in is excluded from customer availability'
 );
 SELECT is(
   public.toggle_walk_in_occupancy('TZ99', NULL),

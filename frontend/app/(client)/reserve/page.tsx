@@ -6,6 +6,10 @@ import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { SeatingPlan } from '@/app/components/SeatingPlan';
+import {
+  getReservationAvailabilityWindow,
+  SEAT_AVAILABILITY_REFRESH_MS,
+} from '@/lib/seatAvailability';
 import { allSeatIds } from '@/lib/seats';
 import { cancelBooking, createBooking } from '@/lib/supabase/bookings';
 import { createClient } from '@/lib/supabase/client';
@@ -94,6 +98,9 @@ const isPastDate = (date: Date) => startOfDay(date) < startOfDay(new Date());
 
 function ReserveContent() {
   const searchParams = useSearchParams();
+  const requestedSeatParam = searchParams.get('seats') ?? searchParams.get('seat');
+  const requestedDateParam = searchParams.get('date');
+  const shouldFocusSchedule = searchParams.get('focus') === 'schedule';
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -122,7 +129,6 @@ function ReserveContent() {
   const [isConfirmationEmailSent, setIsConfirmationEmailSent] = useState(false);
   const [emailDeliveryError, setEmailDeliveryError] = useState('');
   const [lastSelectedSeats, setLastSelectedSeats] = useState<string[]>([]);
-  const [hasAppliedSeatParam, setHasAppliedSeatParam] = useState(false);
   const [bookingError, setBookingError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [memberIdentity, setMemberIdentity] = useState<MemberIdentity | null>(null);
@@ -346,65 +352,124 @@ function ReserveContent() {
     if (!hasRestoredDraft || !formData.date) return;
     let cancelled = false;
     const loadAvailability = async () => {
-      const selected = seats.filter((seat) => seat.status === 'selected').map((seat) => seat.id);
-      const normalizedTime = formData.time ? formData.time.padStart(5, '0') : '00:00';
-      const start = new Date(`${formData.date}T${normalizedTime}:00+08:00`);
-      const end = new Date(start);
-      end.setHours(end.getHours() + (Number(formData.duration) || 24));
-      const { data, error } = await createClient().rpc('get_available_seats', { p_starts_at: start.toISOString(), p_ends_at: end.toISOString() });
+      const { startsAt, endsAt } = getReservationAvailabilityWindow(
+        formData.date,
+        formData.time,
+        formData.duration,
+      );
+      const { data, error } = await createClient().rpc('get_available_seats', {
+        p_starts_at: startsAt,
+        p_ends_at: endsAt,
+      });
       if (cancelled) return;
       if (error) { setBookingError(error.message); return; }
       const available = new Set((data ?? []).map((seat) => seat.code));
-      setSeats(allSeatIds.map((id) => ({ id, status: available.has(id) ? (selected.includes(id) ? 'selected' : 'available') : 'reserved' })));
+      setSeats((currentSeats) => {
+        const selected = new Set(
+          currentSeats
+            .filter((seat) => seat.status === 'selected')
+            .map((seat) => seat.id),
+        );
+
+        return allSeatIds.map((id) => ({
+          id,
+          status: available.has(id)
+            ? selected.has(id) ? 'selected' : 'available'
+            : 'reserved',
+        }));
+      });
     };
+    const refreshAvailability = () => void loadAvailability();
+    const refreshInterval = window.setInterval(
+      refreshAvailability,
+      SEAT_AVAILABILITY_REFRESH_MS,
+    );
+    window.addEventListener('focus', refreshAvailability);
+
     void loadAvailability();
-    return () => { cancelled = true; };
-    // Selected seats are intentionally read once when the requested interval changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+      window.clearInterval(refreshInterval);
+      window.removeEventListener('focus', refreshAvailability);
+    };
   }, [formData.date, formData.duration, formData.time, hasRestoredDraft]);
 
   useEffect(() => {
     const restoreDraft = window.setTimeout(() => {
+      let date = getTodayString();
+      let time = '';
+      let duration = '';
+      let seatIds: string[] = [];
+
       try {
         const storedDraft = window.localStorage.getItem(RESERVATION_DRAFT_KEY);
-        if (!storedDraft) return;
-
-        const draft = JSON.parse(storedDraft) as Partial<ReservationDraft>;
-        const parsedDate = typeof draft.date === 'string'
-          ? new Date(`${draft.date}T00:00:00`)
-          : null;
-        const date = parsedDate
-          && !Number.isNaN(parsedDate.getTime())
-          && !isPastDate(parsedDate)
-          ? draft.date as string
-          : getTodayString();
-        const time = typeof draft.time === 'string' && VALID_RESERVATION_TIMES.has(draft.time)
-          ? draft.time
-          : '';
-        const duration = typeof draft.duration === 'string'
-          && VALID_RESERVATION_DURATIONS.has(draft.duration)
-          ? draft.duration
-          : '';
-        const seatIds = Array.isArray(draft.seatIds)
-          ? draft.seatIds
-            .filter((seatId): seatId is string => (
-              typeof seatId === 'string' && allSeatIds.includes(seatId)
-            ))
-            .slice(0, 5)
-          : [];
-
-        setFormData((current) => ({ ...current, date, time, duration }));
-        setCurrentMonth(new Date(`${date}T00:00:00`));
-        setSeats(initializeSeats(date, seatIds));
+        if (storedDraft) {
+          const draft = JSON.parse(storedDraft) as Partial<ReservationDraft>;
+          const parsedDate = typeof draft.date === 'string'
+            ? new Date(`${draft.date}T00:00:00`)
+            : null;
+          date = parsedDate
+            && !Number.isNaN(parsedDate.getTime())
+            && !isPastDate(parsedDate)
+            ? draft.date as string
+            : date;
+          time = typeof draft.time === 'string' && VALID_RESERVATION_TIMES.has(draft.time)
+            ? draft.time
+            : '';
+          duration = typeof draft.duration === 'string'
+            && VALID_RESERVATION_DURATIONS.has(draft.duration)
+            ? draft.duration
+            : '';
+          seatIds = Array.isArray(draft.seatIds)
+            ? draft.seatIds
+              .filter((seatId): seatId is string => (
+                typeof seatId === 'string' && allSeatIds.includes(seatId)
+              ))
+              .slice(0, 5)
+            : [];
+        }
       } catch {
         window.localStorage.removeItem(RESERVATION_DRAFT_KEY);
-      } finally {
-        setHasRestoredDraft(true);
+      }
+
+      const requestedSeats = requestedSeatParam
+        ? Array.from(new Set(
+          requestedSeatParam
+            .split(',')
+            .map((seat) => seat.trim().toUpperCase())
+            .filter((seat) => allSeatIds.includes(seat)),
+        )).slice(0, 5)
+        : [];
+      const parsedRequestedDate = requestedDateParam && /^\d{4}-\d{2}-\d{2}$/.test(requestedDateParam)
+        ? new Date(`${requestedDateParam}T00:00:00`)
+        : null;
+
+      if (requestedSeats.length > 0) {
+        if (parsedRequestedDate
+          && !Number.isNaN(parsedRequestedDate.getTime())
+          && !isPastDate(parsedRequestedDate)) {
+          date = requestedDateParam as string;
+        }
+        time = '';
+        duration = '';
+        seatIds = requestedSeats;
+      }
+
+      setFormData((current) => ({ ...current, date, time, duration }));
+      setCurrentMonth(new Date(`${date}T00:00:00`));
+      setSeats(initializeSeats(date, seatIds));
+      setHasRestoredDraft(true);
+
+      if (requestedSeats.length > 0 && shouldFocusSchedule) {
+        window.setTimeout(() => {
+          scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          timeSelectRef.current?.focus({ preventScroll: true });
+        }, 150);
       }
     }, 0);
 
     return () => window.clearTimeout(restoreDraft);
-  }, [initializeSeats]);
+  }, [initializeSeats, requestedDateParam, requestedSeatParam, shouldFocusSchedule]);
 
   useEffect(() => {
     if (!hasRestoredDraft) return;
@@ -420,56 +485,6 @@ function ReserveContent() {
 
     window.localStorage.setItem(RESERVATION_DRAFT_KEY, JSON.stringify(draft));
   }, [formData.date, formData.duration, formData.time, hasRestoredDraft, seats]);
-
-  useEffect(() => {
-    if (!hasRestoredDraft || hasAppliedSeatParam) {
-      return;
-    }
-
-    const seatParam = searchParams.get('seats') ?? searchParams.get('seat');
-    if (!seatParam) {
-      return;
-    }
-
-    const applySeatParam = window.setTimeout(() => {
-      const requestedSeats = Array.from(new Set(
-        seatParam
-          .split(',')
-          .map((seat) => seat.trim().toUpperCase())
-          .filter((seat) => allSeatIds.includes(seat)),
-      )).slice(0, 5);
-      const requestedDate = searchParams.get('date');
-      const parsedRequestedDate = requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
-        ? new Date(`${requestedDate}T00:00:00`)
-        : null;
-      const reservationDate = parsedRequestedDate
-        && !Number.isNaN(parsedRequestedDate.getTime())
-        && !isPastDate(parsedRequestedDate)
-        ? requestedDate as string
-        : formData.date;
-
-      if (requestedSeats.length > 0) {
-        setFormData((current) => ({
-          ...current,
-          date: reservationDate,
-          time: '',
-          duration: '',
-        }));
-        setCurrentMonth(new Date(`${reservationDate}T00:00:00`));
-        setSeats(initializeSeats(reservationDate, requestedSeats));
-      }
-      setHasAppliedSeatParam(true);
-
-      if (searchParams.get('focus') === 'schedule') {
-        window.setTimeout(() => {
-          scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          timeSelectRef.current?.focus({ preventScroll: true });
-        }, 150);
-      }
-    }, 0);
-
-    return () => window.clearTimeout(applySeatParam);
-  }, [formData.date, hasAppliedSeatParam, hasRestoredDraft, initializeSeats, searchParams]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
