@@ -12,14 +12,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "android:sync": "cap sync android",
-    "android:open": "cap open android",
-    "android:run": "cap run android"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@capacitor/android": "8.5.3",
-    "@capacitor/core": "8.5.3",
     "@radix-ui/react-dialog": "1.1.6",
     "@radix-ui/react-slot": "1.1.2",
     "@react-three/drei": "^10.7.7",
@@ -37,7 +32,6 @@
     "three": "0.182.0"
   },
   "devDependencies": {
-    "@capacitor/cli": "8.5.3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

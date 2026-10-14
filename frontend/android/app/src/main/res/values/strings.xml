@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Just In Time Study Hub</string>
-    <string name="title_activity_main">Just In Time Study Hub</string>
-    <string name="package_name">com.jitstudyhub.app</string>
-    <string name="custom_url_scheme">com.jitstudyhub.app</string>
-</resources>
