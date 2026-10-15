@@ -2,16 +2,17 @@
 
 ## System overview
 
-This repository is an npm workspace with two Next.js 16 applications and one
-shared Supabase project.
+This repository is an npm workspace with two Next.js 16 web applications, one
+Electron kiosk with a statically exported Next.js renderer, and one shared
+Supabase project.
 
 ```text
-Customer browser                    Facility computer
-       |                                   |
-       v                                   v
-frontend/ (port 3000)              admin/ (port 3001)
-       |                                   |
-       +-------------+---------------------+
+Customer browser     Staff browser       Facility desktop
+       |                   |                     |
+       v                   v                     v
+frontend/ (3000)     admin/ (3001)       kiosk/ (Electron)
+       |                   |                     |
+       +-------------------+---------------------+
                      |
                      v
        Supabase Auth, Data API, Realtime, and Postgres
@@ -32,19 +33,27 @@ The public customer application contains:
 - account and reservation flows
 - public announcements
 
-It runs on port `3000` and is the only application intended for public Vercel
-deployment.
+It runs on port `3000` and is deployed to `jit-studyhub.com`.
 
 ### `admin/`
 
-The facility application contains:
+The remote staff application contains:
 
-- the authenticated admin area at `/admin`
-- dashboard and analytics pages
-- the on-site check-in kiosk at `/kiosk`
+- the administrator sign-in page at `/`
+- dedicated `/dashboard`, `/walk-ins`, `/reservations`, `/announcements`,
+  `/analytics`, `/staffs`, and `/logs` pages
 
-It runs on `127.0.0.1:3001` on the facility machine. Authorization and database
-Row Level Security (RLS) remain required.
+It runs locally on `127.0.0.1:3001` and is deployed as a separate Vercel project
+at `admin.jit-studyhub.com`. Authentication, staff permissions, and database
+Row Level Security (RLS) are required.
+
+### `kiosk/`
+
+The facility-only application packages the front-desk QR scanner inside
+Electron. Its static UI is served internally on loopback and is not publicly
+deployed. It opens without a user login; Electron's main process authenticates
+scan requests with a kiosk-scoped device credential. The renderer is sandboxed,
+has no Node.js access, and never receives that credential.
 
 ### `supabase/`
 
@@ -57,7 +66,7 @@ This directory is the shared backend source of truth:
 - `templates/` — local Auth email templates
 - `functions/` — Edge Function documentation and future function code
 
-Both applications use the same generated database types. Run
+The frontend and admin applications use the same generated database types. Run
 `npm run supabase:types` after a schema change.
 
 ## Data and authorization
@@ -101,14 +110,15 @@ publishable key; privileged database keys must not be shipped to either app.
 2. Database authorization confirms the user's staff or admin role.
 3. Admin actions use the exposed, permission-checked database functions and
    policies.
-4. Realtime-enabled operational data updates the dashboard and kiosk views.
+4. The separately authenticated kiosk invokes the permission-checked scanning
+   function; Realtime updates operational views.
 
 ## Source-of-truth rules
 
 - Database changes belong in `supabase/migrations/`, not manual production
   Dashboard edits.
-- `package-lock.json` is the dependency lockfile for both workspaces.
-- Generated database types must stay synchronized across both applications.
-- Public pages belong in `frontend/`; admin and kiosk pages belong in
-  `admin/`.
+- `package-lock.json` is the dependency lockfile for all workspaces.
+- Generated database types must stay synchronized across frontend and admin.
+- Public pages belong in `frontend/`, staff pages in `admin/`, and the local
+  scanner in `kiosk/`.
 

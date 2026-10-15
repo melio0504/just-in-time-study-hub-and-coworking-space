@@ -35,18 +35,24 @@ npm run supabase:reset
 npm run supabase:types
 cp frontend/.env.example frontend/.env.local
 cp admin/.env.example admin/.env.local
+cp kiosk/.env.example kiosk/.env.local
 ```
 
 Use `npx supabase status` to obtain the local API URL and publishable key, add
-them to both `.env.local` files, then run the applications in separate
+them to all three `.env.local` files, then run the applications in separate
 terminals:
 
 ```bash
 npm run dev:frontend
 npm run dev:admin
+npm run dev:kiosk
 ```
 
 - Public site: <http://localhost:3000>
-- Admin and kiosk: <http://127.0.0.1:3001>
+- Admin: <http://127.0.0.1:3001>
+- Kiosk: <http://127.0.0.1:3002>
 - Supabase Studio: <http://127.0.0.1:54323>
 - Local email viewer: <http://127.0.0.1:54324>
+
+`npm run dev:kiosk` is the browser development preview. Run
+`npm run desktop:kiosk` to build and open the Electron desktop application.

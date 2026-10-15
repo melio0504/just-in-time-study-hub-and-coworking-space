@@ -1,7 +1,7 @@
 # Getting started
 
-This guide runs the public website, facility admin application, and their
-shared Supabase backend on one development machine.
+This guide runs the public website, remote admin dashboard, local facility
+kiosk, and their shared Supabase backend on one development machine.
 
 ## Prerequisites
 
@@ -78,12 +78,13 @@ They belong to this local Supabase instance.
 
 ## 3. Create local environment files
 
-Each Next.js application reads its own environment file. Create both files
+Each application reads its own environment file. Create all three files
 from the committed templates:
 
 ```bash
 cp frontend/.env.example frontend/.env.local
 cp admin/.env.example admin/.env.local
+cp kiosk/.env.example kiosk/.env.local
 ```
 
 Set the local values as follows, replacing the publishable-key placeholder
@@ -103,7 +104,20 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_local_publishable_key
 NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3001
 ```
 
-Do not put these variables only in a root `.env` file. The two apps are
+```dotenv
+# kiosk/.env.local
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_local_publishable_key
+KIOSK_ACCESS_TOKEN=replace_with_at_least_32_random_characters
+```
+
+Add the identical `KIOSK_ACCESS_TOKEN` to `supabase/functions/.env`. This is a
+kiosk-scoped credential, not a Supabase service-role key. Desktop packaging
+embeds these kiosk values in `app.asar`, so installed copies do not need a
+separate environment file. Token rotation requires rebuilding and reinstalling
+the desktop application.
+
+Do not put these variables only in a root `.env` file. The three apps are
 separate workspace packages and must each have their own `.env.local`.
 
 For a shared or production environment, the project owner will provide the
@@ -124,7 +138,7 @@ admin application.
 
 ## 5. Run the applications
 
-Open two terminals at the repository root.
+Open three terminals at the repository root.
 
 Terminal 1 — public customer website:
 
@@ -132,20 +146,34 @@ Terminal 1 — public customer website:
 npm run dev:frontend
 ```
 
-Terminal 2 — facility admin and kiosk:
+Terminal 2 — admin dashboard:
 
 ```bash
 npm run dev:admin
 ```
 
+Terminal 3 — browser preview of the facility kiosk UI:
+
+```bash
+npm run dev:kiosk
+```
+
 Open:
 
 - <http://localhost:3000> for the public website
-- <http://127.0.0.1:3001/admin> for administration
-- <http://127.0.0.1:3001/kiosk> for the on-site kiosk
+- <http://127.0.0.1:3001> for administration
+- <http://127.0.0.1:3002> for the on-site kiosk
 
-The admin development server deliberately binds to `127.0.0.1`; it is not
-available to other devices on the network.
+The local servers bind to `127.0.0.1`; they are not available to other devices
+on the network. Production admin is deployed separately at
+`https://admin.jit-studyhub.com`; the kiosk is never publicly deployed.
+
+The command above is for web UI development. To build and open the actual
+full-screen Electron application, stop the kiosk development server and run:
+
+```bash
+npm run desktop:kiosk
+```
 
 ## 6. Verify the setup
 
@@ -173,6 +201,11 @@ npm run supabase:reset
 # Run one application
 npm run dev:frontend
 npm run dev:admin
+npm run dev:kiosk
+
+# Build/open or package the Electron kiosk
+npm run desktop:kiosk
+npm run dist:kiosk:win
 
 # Validate all workspaces
 npm run lint

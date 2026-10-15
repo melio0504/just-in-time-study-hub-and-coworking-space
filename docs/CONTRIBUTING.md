@@ -110,7 +110,8 @@ Before submitting, confirm the following:
 
 - This app uses the Next.js App Router.
 - Public application code and assets live in `frontend/`.
-- Local administrator and kiosk code lives in `admin/`.
+- Remote administrator code lives in `admin/`; the Electron scanner lives in
+  `kiosk/`.
 - Shared database migrations and configuration live in `supabase/`.
 - Keep changes consistent with the existing design and component patterns.
 

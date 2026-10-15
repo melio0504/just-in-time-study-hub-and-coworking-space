@@ -5,7 +5,8 @@
 ```text
 .
 ├── frontend/          Public Next.js application
-├── admin/             Facility admin and kiosk Next.js application
+├── admin/             Remote staff dashboard Next.js application
+├── kiosk/             Electron front-desk scanner application
 ├── supabase/          Database, Auth, tests, and local service configuration
 ├── docs/              Developer and operator documentation
 ├── package.json       Workspace scripts and shared tool versions
@@ -62,7 +63,7 @@ Production migration commands and the first-administrator procedure are in
 
 ## Running production builds locally
 
-Build both applications:
+Build all applications:
 
 ```bash
 npm run build
@@ -73,15 +74,19 @@ Then start them in separate terminals:
 ```bash
 npm run start:frontend
 npm run start:admin
+npm run start:kiosk
 ```
 
-The admin server remains bound to `127.0.0.1` and is intended to run on the
-facility computer only.
+The frontend and admin commands start local servers. `start:kiosk` opens the
+previously exported kiosk UI in Electron; use `desktop:kiosk` to rebuild it
+first. Production admin is a separate Vercel deployment, while kiosk stays on
+the facility computer.
 
 ## Deployment boundaries
 
 - Deploy `frontend/` as the Vercel Root Directory.
-- Do not connect `admin/` to the public Vercel project.
+- Deploy `admin/` as a second Vercel project at `admin.jit-studyhub.com`.
+- Do not deploy `kiosk/` or create a public DNS record for it.
 - Apply database migrations through the documented Supabase workflow.
 - Do not seed production with `supabase/seed.sql`.
 - Configure hosted environment variables through the platform, following
@@ -124,8 +129,9 @@ defined in `supabase/config.toml`, including `54321` for the API, `54323` for
 Studio, and `54324` for the email viewer. Stop the conflicting local process or
 service before restarting the project.
 
-### Admin is unavailable from another device
+### Admin is unavailable from another device during local development
 
-This is expected. The admin scripts intentionally listen only on `127.0.0.1`.
-Use the facility computer to access the dashboard and kiosk.
+This is expected for `npm run dev:admin`, which listens only on `127.0.0.1`.
+Use `admin.jit-studyhub.com` for the deployed remote dashboard. The kiosk is a
+separate Electron application on the facility computer.
 

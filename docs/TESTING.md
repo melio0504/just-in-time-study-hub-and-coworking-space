@@ -1,12 +1,12 @@
 # Testing
 
-The repository has three automated test layers: fast TypeScript unit tests,
-browser smoke tests for both Next.js applications, and pgTAP tests for the
-database schema and row-level security (RLS).
+The repository has four automated test layers: TypeScript unit tests, Electron
+main-process tests, browser smoke tests for all three interfaces, and pgTAP
+tests for the database schema and row-level security (RLS).
 
 ## Unit tests
 
-Run every frontend and admin unit test:
+Run every application unit test, including the Electron static-server tests:
 
 ```bash
 npm test
@@ -20,7 +20,8 @@ npm run test:admin
 ```
 
 The equivalent npm workspace commands are `npm test --workspace
-@jit-studyhub/frontend` and `npm test --workspace @jit-studyhub/admin`.
+@jit-studyhub/frontend`, `npm test --workspace @jit-studyhub/admin`, and
+`npm test --workspace @jit-studyhub/kiosk`.
 
 During development, run the watcher for the application you are changing:
 
@@ -48,9 +49,9 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Playwright starts the public app on port 3000 and the admin app on port 3001.
-It verifies the primary public booking journey, pricing and 404 pages, the
-operations sign-in form, and the unauthenticated dashboard redirect.
+Playwright starts browser previews of the public app on port 3000, admin on
+port 3001, and kiosk on port 3002. It verifies the public booking journey,
+pricing and 404 pages, operations authentication, and kiosk authorization.
 
 To use a system Chromium or Chrome installation instead of Playwright's
 download, provide its absolute path:
@@ -67,6 +68,7 @@ Run one application's browser smoke tests independently:
 ```bash
 npm run test:e2e:frontend
 npm run test:e2e:admin
+npm run test:e2e:kiosk
 ```
 
 ## Database and RLS tests
@@ -102,9 +104,10 @@ npm run test:unit      # unit tests only
 npm run test:frontend  # frontend unit tests only
 npm run test:admin     # admin unit tests only
 npm run test:coverage  # unit tests with thresholds and reports
-npm run test:e2e       # public and admin browser smoke tests
+npm run test:e2e       # public, admin, and kiosk browser smoke tests
 npm run test:e2e:frontend # public browser tests only
 npm run test:e2e:admin # admin browser tests only
+npm run test:e2e:kiosk # kiosk browser tests only
 npm run test:db        # pgTAP schema and RLS tests
 ```
 
