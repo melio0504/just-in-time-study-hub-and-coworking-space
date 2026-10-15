@@ -10,6 +10,7 @@ test("the local kiosk opens directly to the QR scanner", async ({ page }) => {
   await expect(page.getByText("Authorized operator")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /minimize kiosk/i })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /full screen/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /try again|try camera/i })).toHaveCount(0);
 
   for (const viewport of [
     { width: 960, height: 640 },
@@ -23,4 +24,34 @@ test("the local kiosk opens directly to the QR scanner", async ({ page }) => {
     expect(camera!.x + camera!.width).toBeLessThanOrEqual(viewport.width);
     expect(camera!.y + camera!.height).toBeLessThanOrEqual(viewport.height);
   }
+});
+
+test("recent activity is restored when the kiosk starts", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.kioskDesktop = {
+      isElectron: true,
+      getActiveSessions: async () => ({
+        sessions: [],
+        activity: [
+          {
+            id: "persisted-check-in",
+            type: "check-in",
+            bookingId: "JIT-PERSISTED",
+            guestName: "Persisted Guest",
+            seats: ["SO01"],
+            timestamp: "2026-10-15T08:00:00.000Z",
+          },
+        ],
+      }),
+      scanBookingPass: async () => {
+        throw new Error("Not used in this test.");
+      },
+    };
+  });
+
+  await page.goto("/");
+
+  await expect(page.getByText("Recent activity")).toBeVisible();
+  await expect(page.getByText("Persisted Guest")).toBeVisible();
+  await expect(page.getByText(/SO01/)).toBeVisible();
 });
