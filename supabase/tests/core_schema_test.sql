@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(60);
+SELECT plan(64);
 
 SELECT has_table('public', 'profiles', 'profiles table exists');
 SELECT has_table('public', 'seats', 'seats table exists');
@@ -15,6 +15,7 @@ SELECT has_function('public', 'admin_cancel_booking', ARRAY['uuid', 'text'], 'ad
 SELECT has_function('public', 'log_admin_access', ARRAY['text'], 'admin access audit RPC exists');
 SELECT has_function('public', 'process_kiosk_scan', ARRAY['text'], 'kiosk scan RPC exists');
 SELECT has_function('public', 'get_kiosk_active_sessions', ARRAY[]::text[], 'kiosk active-session RPC exists');
+SELECT has_function('public', 'get_kiosk_recent_activity', ARRAY[]::text[], 'kiosk recent-activity RPC exists');
 SELECT has_table('public', 'booking_confirmation_tokens', 'local QR confirmation token table exists');
 SELECT has_function('public', 'create_booking_confirmation_token', ARRAY['uuid', 'uuid', 'text'], 'confirmation token creation RPC exists');
 SELECT has_function('public', 'confirm_booking_from_token', ARRAY['text', 'text'], 'local QR confirmation RPC exists');
@@ -79,6 +80,20 @@ SELECT ok(
   has_function_privilege('service_role', 'public.get_kiosk_active_sessions()', 'execute')
     AND has_function_privilege('service_role', 'private.get_kiosk_active_sessions()', 'execute'),
   'the server-side kiosk function can list active sessions'
+);
+SELECT ok(
+  NOT has_function_privilege('anon', 'public.get_kiosk_recent_activity()', 'execute')
+    AND NOT has_function_privilege('authenticated', 'public.get_kiosk_recent_activity()', 'execute'),
+  'browser roles cannot list kiosk activity history'
+);
+SELECT ok(
+  has_function_privilege('service_role', 'public.get_kiosk_recent_activity()', 'execute')
+    AND has_function_privilege('service_role', 'private.get_kiosk_recent_activity()', 'execute'),
+  'the server-side kiosk function can list recent activity'
+);
+SELECT ok(
+  (SELECT count(*) FROM public.get_kiosk_recent_activity()) >= 3,
+  'seeded check-in activity is available after kiosk restart'
 );
 SELECT ok('not_required' = ANY(enum_range(NULL::public.payment_status)::text[]), 'payment status supports bookings with no payment');
 

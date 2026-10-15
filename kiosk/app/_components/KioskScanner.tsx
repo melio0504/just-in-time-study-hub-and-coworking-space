@@ -24,6 +24,7 @@ import { CameraQrScanner } from "./CameraQrScanner";
 
 type KioskAction = "check-in" | "check-out";
 type ScanState = "idle" | "scanning" | "success" | "error";
+const ERROR_DISPLAY_SECONDS = 5;
 
 interface Booking {
   id: string;
@@ -75,8 +76,8 @@ const ERROR_MESSAGES: Record<ValidationError, { title: string; description: stri
     description: "Your reservation window has ended. Please book a new session at the front desk or online.",
   },
   not_yet_scheduled: {
-    title: "Not Yet Scheduled",
-    description: "Your booking is not active yet. Please return within 15 minutes of your start time.",
+    title: "Check-in Not Open Yet",
+    description: "Check-in opens 15 minutes before your reservation and remains available until it ends.",
   },
   confirmation_pending: {
     title: "Reservation Not Confirmed",
@@ -111,6 +112,14 @@ function getRemainingMinutes(endIso: string) {
   return Math.max(0, Math.floor((end - now) / 60000));
 }
 
+function getGuestErrorMessage(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : fallback;
+  return message.replace(
+    /^Error invoking remote method '[^']+': Error:\s*/i,
+    "",
+  );
+}
+
 export function KioskScanner() {
   // Keep the server render and the first client render identical. The live
   // value is filled in after hydration so crossing a second boundary cannot
@@ -123,6 +132,7 @@ export function KioskScanner() {
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [serverError, setServerError] = useState('');
+  const [errorSecondsRemaining, setErrorSecondsRemaining] = useState(ERROR_DISPLAY_SECONDS);
 
   const totalSeats = 50;
   const occupiedCount = sessions.reduce((count, session) => count + session.seats.length, 0);
@@ -144,10 +154,13 @@ export function KioskScanner() {
 
       try {
         const response = await desktop.getActiveSessions();
-        if (!cancelled) setSessions(response.sessions);
+        if (!cancelled) {
+          setSessions(response.sessions);
+          setActivity(response.activity ?? []);
+        }
       } catch (error) {
         if (!cancelled) {
-          setServerError(error instanceof Error ? error.message : "The kiosk service is unavailable.");
+          setServerError(getGuestErrorMessage(error, "The kiosk service is unavailable."));
         }
       }
     };
@@ -173,6 +186,20 @@ export function KioskScanner() {
     setLastAction(null);
   }, []);
 
+  useEffect(() => {
+    if (scanState !== "error") return;
+
+    const countdown = window.setInterval(() => {
+      setErrorSecondsRemaining((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    const resumeScanner = window.setTimeout(resetToIdle, ERROR_DISPLAY_SECONDS * 1000);
+
+    return () => {
+      window.clearInterval(countdown);
+      window.clearTimeout(resumeScanner);
+    };
+  }, [resetToIdle, scanState]);
+
   const processScan = useCallback(
     async (rawCode: string) => {
       const code = rawCode.trim();
@@ -185,6 +212,7 @@ export function KioskScanner() {
       if (!desktop) {
         setErrorType('access');
         setServerError('QR scanning is available in the installed desktop kiosk.');
+        setErrorSecondsRemaining(ERROR_DISPLAY_SECONDS);
         setScanState('error');
         return;
       }
@@ -193,11 +221,12 @@ export function KioskScanner() {
       try {
         data = await desktop.scanBookingPass(code);
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'The QR pass could not be processed.';
+        const message = getGuestErrorMessage(error, 'The QR pass could not be processed.');
         const lower = message.toLowerCase();
         const accessError = lower.includes('kiosk service') || lower.includes('credential') || lower.includes('configured');
-        setErrorType(accessError ? 'access' : lower.includes('not been confirmed') ? 'confirmation_pending' : lower.includes('expired') ? 'expired' : lower.includes('not ready') ? 'not_yet_scheduled' : lower.includes('invalid') || lower.includes('used') ? 'invalid' : 'server');
+        setErrorType(accessError ? 'access' : lower.includes('not been confirmed') ? 'confirmation_pending' : lower.includes('expired') ? 'expired' : lower.includes('not ready') || lower.includes('check-in opens') ? 'not_yet_scheduled' : lower.includes('invalid') || lower.includes('used') ? 'invalid' : 'server');
         setServerError(message);
+        setErrorSecondsRemaining(ERROR_DISPLAY_SECONDS);
         setScanState('error');
         return;
       }
@@ -455,13 +484,10 @@ export function KioskScanner() {
                 <p className="mb-6 max-w-lg shrink-0 text-lg leading-relaxed text-[#6b5e52] sm:text-xl">
                   {serverError || ERROR_MESSAGES[errorType].description}
                 </p>
-                <button
-                  type="button"
-                  onClick={resetToIdle}
-                  className="shrink-0 rounded-full bg-[#2d2520] px-8 py-4 text-xl font-medium text-white transition-all hover:shadow-lg"
-                >
-                  Try again
-                </button>
+                <p className="shrink-0 text-base font-medium text-[#2d2520] sm:text-lg" aria-live="polite">
+                  Scanner resuming in {errorSecondsRemaining}{" "}
+                  {errorSecondsRemaining === 1 ? "second" : "seconds"}…
+                </p>
               </motion.div>
             )}
           </AnimatePresence>

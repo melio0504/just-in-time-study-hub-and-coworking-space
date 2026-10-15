@@ -11,6 +11,8 @@ interface CameraQrScannerProps {
   onScan: (value: string) => void;
 }
 
+const CAMERA_RETRY_DELAY_MS = 5_000;
+
 const CAMERA_MESSAGES: Record<Exclude<CameraState, "starting" | "active">, string> = {
   denied: "Camera access was denied. Allow camera access in the browser, then try again.",
   unavailable: "No camera was found on this device.",
@@ -84,6 +86,17 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
 
   const cameraError = cameraState !== "starting" && cameraState !== "active";
 
+  useEffect(() => {
+    if (!cameraError || cameraState === "insecure") return;
+
+    const retryCamera = window.setTimeout(() => {
+      setCameraState("starting");
+      setAttempt((current) => current + 1);
+    }, CAMERA_RETRY_DELAY_MS);
+
+    return () => window.clearTimeout(retryCamera);
+  }, [cameraError, cameraState]);
+
   return (
     <div
       data-testid="camera-frame"
@@ -133,16 +146,7 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
           </div>
           <p className="mb-4 max-w-md text-lg leading-relaxed text-[#6b5e52]">{CAMERA_MESSAGES[cameraState]}</p>
           {cameraState !== "insecure" && (
-            <button
-              type="button"
-              onClick={() => {
-                setCameraState("starting");
-                setAttempt((current) => current + 1);
-              }}
-              className="rounded-full bg-[#2d2520] px-6 py-3 text-lg font-medium text-white transition-all hover:shadow-lg"
-            >
-              Try camera again
-            </button>
+            <p className="text-base font-medium text-[#2d2520]">Retrying camera automatically…</p>
           )}
         </div>
       )}

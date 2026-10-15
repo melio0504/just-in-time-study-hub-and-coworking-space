@@ -1,6 +1,17 @@
 import { withSupabase } from "@supabase/server";
 
 const encoder = new TextEncoder();
+const DISPLAY_TIME_ZONE = "Asia/Manila";
+
+const bookingDateTimeFormatter = new Intl.DateTimeFormat("en-PH", {
+  timeZone: DISPLAY_TIME_ZONE,
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -32,6 +43,34 @@ async function sha256Hex(value: string) {
   return [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function formatBookingDateTime(value: string | Date) {
+  return bookingDateTimeFormatter.format(new Date(value));
+}
+
+function parseCheckInWindow(details: string | null | undefined) {
+  if (!details) return null;
+
+  try {
+    const value = JSON.parse(details) as Record<string, unknown>;
+    if (
+      value.code !== "check_in_not_open" ||
+      typeof value.checkInOpensAt !== "string" ||
+      typeof value.scheduledStart !== "string" ||
+      typeof value.scheduledEnd !== "string"
+    ) {
+      return null;
+    }
+
+    return {
+      checkInOpensAt: value.checkInOpensAt,
+      scheduledStart: value.scheduledStart,
+      scheduledEnd: value.scheduledEnd,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default {
   fetch: withSupabase({ auth: "none" }, async (request, context) => {
     const kioskToken = Deno.env.get("KIOSK_ACCESS_TOKEN")?.trim() ?? "";
@@ -44,21 +83,33 @@ export default {
     }
 
     if (request.method === "GET") {
-      const { data, error } = await context.supabaseAdmin.rpc("get_kiosk_active_sessions");
+      const [sessionsResult, activityResult] = await Promise.all([
+        context.supabaseAdmin.rpc("get_kiosk_active_sessions"),
+        context.supabaseAdmin.rpc("get_kiosk_recent_activity"),
+      ]);
 
-      if (error) {
-        console.error("Unable to load kiosk sessions:", error.code, error.message);
-        return json({ error: "Active sessions could not be loaded." }, 500);
+      if (sessionsResult.error || activityResult.error) {
+        const error = sessionsResult.error ?? activityResult.error;
+        console.error("Unable to load kiosk state:", error?.code, error?.message);
+        return json({ error: "The kiosk state could not be loaded." }, 500);
       }
 
-      const sessions = (data ?? []).map((row) => ({
+      const sessions = (sessionsResult.data ?? []).map((row) => ({
         bookingId: row.booking_id,
         guestName: row.guest_name,
         seats: row.seats,
         checkedInAt: row.checked_in_at,
         scheduledEnd: row.scheduled_end,
       }));
-      return json({ sessions });
+      const activity = (activityResult.data ?? []).map((row) => ({
+        id: row.activity_id,
+        type: row.activity_type,
+        bookingId: row.booking_id,
+        guestName: row.guest_name,
+        seats: row.seats,
+        timestamp: row.occurred_at,
+      }));
+      return json({ sessions, activity });
     }
 
     if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
@@ -76,12 +127,35 @@ export default {
     }
 
     const token = rawCode.slice("JITPASS:".length);
+    const tokenHash = await sha256Hex(token);
     const { data, error } = await context.supabaseAdmin.rpc("process_kiosk_scan", {
-      p_token_hash: await sha256Hex(token),
+      p_token_hash: tokenHash,
     });
 
     if (error) {
       const status = error.code === "42501" ? 403 : 409;
+      if (error.message === "This reservation is not ready for check-in yet") {
+        const checkInWindow = parseCheckInWindow(error.details);
+        if (checkInWindow) {
+          const earlyMinutes = Math.round(
+            (new Date(checkInWindow.scheduledStart).getTime() -
+              new Date(checkInWindow.checkInOpensAt).getTime()) /
+              60_000,
+          );
+          const message =
+            `Your reservation starts on ${formatBookingDateTime(checkInWindow.scheduledStart)}. ` +
+            `Check-in opens on ${formatBookingDateTime(checkInWindow.checkInOpensAt)} ` +
+            `(${earlyMinutes} minutes before) and remains available until ` +
+            `${formatBookingDateTime(checkInWindow.scheduledEnd)}.`;
+
+          return json({
+            error: message,
+            code: "check_in_not_open",
+            ...checkInWindow,
+          }, status);
+        }
+      }
+
       return json({ error: error.message }, status);
     }
 
