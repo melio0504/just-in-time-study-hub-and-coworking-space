@@ -30,6 +30,11 @@ export default defineConfig({
       testMatch: /admin\.smoke\.spec\.ts/,
       use: { baseURL: "http://127.0.0.1:3001" },
     },
+    {
+      name: "kiosk",
+      testMatch: /kiosk\.smoke\.spec\.ts/,
+      use: { baseURL: "http://127.0.0.1:3002" },
+    },
   ],
   webServer: [
     {
@@ -44,7 +49,17 @@ export default defineConfig({
     },
     {
       command: "npm run dev:admin",
-      url: "http://127.0.0.1:3001/admin",
+      url: "http://127.0.0.1:3001",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+      env: {
+        NEXT_PUBLIC_SUPABASE_URL: "",
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "",
+      },
+    },
+    {
+      command: "npm run dev:kiosk",
+      url: "http://127.0.0.1:3002",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
