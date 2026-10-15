@@ -18,7 +18,11 @@ function redirectOrigin(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const origin = redirectOrigin(request);
   const code = request.nextUrl.searchParams.get("code");
-  const next = safeNextPath(request.nextUrl.searchParams.get("next"));
+  const requestedNext = safeNextPath(request.nextUrl.searchParams.get("next"));
+  const isPasswordRecovery =
+    request.nextUrl.searchParams.get("flow") === "recovery" ||
+    requestedNext === "/reset-password";
+  const next = isPasswordRecovery ? "/reset-password" : requestedNext;
 
   if (isSupabaseConfigured && code) {
     const supabase = await createClient();
@@ -29,8 +33,13 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const failureUrl = new URL("/register", origin);
-  failureUrl.searchParams.set("error", "Google sign-up could not be completed. Please try again.");
+  const failureUrl = new URL(isPasswordRecovery ? "/forgot-password" : "/register", origin);
+  failureUrl.searchParams.set(
+    "error",
+    isPasswordRecovery
+      ? "The password reset link is invalid or expired. Request a new one."
+      : "Google sign-up could not be completed. Please try again.",
+  );
   // A redirect without its own fragment inherits the fragment from the
   // incoming OAuth URL. Override it so provider error details and state do not
   // leak into the registration page URL.

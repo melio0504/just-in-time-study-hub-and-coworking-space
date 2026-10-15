@@ -24,8 +24,8 @@ Copy `frontend/.env.example` to `frontend/.env.local` and
 `kiosk/.env.local`; then copy the local `API_URL` and `PUBLISHABLE_KEY` printed
 by `npx supabase status` into all three files. The
 checked-in local Auth configuration requires email confirmation and sends the
-branded welcome email through Supabase Auth. Test messages are available in Mailpit at
-<http://127.0.0.1:54324>.
+branded welcome and password-recovery emails through Supabase Auth. Test
+messages are available in Mailpit at <http://127.0.0.1:54324>.
 
 Copy `supabase/functions/.env.example` to `supabase/functions/.env`, set a
 random QR token secret, and add the PayMongo test keys and test webhook signing
@@ -96,9 +96,12 @@ In the production Supabase Dashboard:
    URL and allow `http://localhost:3000/**` plus the deployed callback URL.
 2. Authentication > Providers > Email: enable **Confirm email** so registration
    sends the branded welcome and account activation message.
-3. Authentication > Email Templates > Confirm signup: copy the subject and HTML
-   from `supabase/templates/confirmation.html`. Local template files are not
-   automatically uploaded to hosted projects.
+3. Authentication > Email Templates: configure both branded Auth messages.
+   - **Confirm signup**: copy the subject from `supabase/config.toml` and the
+     HTML from `supabase/templates/confirmation.html`.
+   - **Reset password**: copy the subject from `supabase/config.toml` and the
+     HTML from `supabase/templates/recovery.html`.
+   Local template files are not automatically uploaded to hosted projects.
 4. Configure a production SMTP provider before launch. Supabase's default
    email sender is intended only for limited testing.
 5. Put the production URL and publishable key in Vercel as

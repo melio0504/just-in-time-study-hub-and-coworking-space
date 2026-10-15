@@ -257,6 +257,10 @@ otp_expiry = 3600
 subject = "Confirm your Just In Time Study Hub account"
 content_path = "./supabase/templates/confirmation.html"
 
+[auth.email.template.recovery]
+subject = "Reset your Just In Time Study Hub password"
+content_path = "./supabase/templates/recovery.html"
+
 [functions.confirm-booking]
 verify_jwt = false
 

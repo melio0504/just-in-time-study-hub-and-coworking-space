@@ -50,4 +50,33 @@ describe("GET /auth/callback", () => {
     expect(exchangeCodeForSession).toHaveBeenCalledWith("valid-code");
     expect(response.headers.get("location")).toBe("http://localhost:3000/account");
   });
+
+  it("exchanges a password recovery code and opens the reset form", async () => {
+    const exchangeCodeForSession = vi.fn().mockResolvedValue({ error: null });
+    createClientMock.mockResolvedValue({
+      auth: { exchangeCodeForSession },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/auth/callback?code=recovery-code&next=/account&flow=recovery",
+    );
+
+    const response = await GET(request);
+
+    expect(exchangeCodeForSession).toHaveBeenCalledWith("recovery-code");
+    expect(response.headers.get("location")).toBe("http://localhost:3000/reset-password");
+  });
+
+  it("returns an expired password recovery link to the request form", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/auth/callback?error=access_denied&error_code=otp_expired&flow=recovery&next=/reset-password",
+    );
+
+    const response = await GET(request);
+
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/forgot-password?error=The+password+reset+link+is+invalid+or+expired.+Request+a+new+one.#_",
+    );
+    expect(createClientMock).not.toHaveBeenCalled();
+  });
 });
