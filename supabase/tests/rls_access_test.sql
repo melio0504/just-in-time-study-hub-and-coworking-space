@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(16);
+SELECT plan(18);
 
 -- Add deterministic rows that should be hidden from public/customer roles.
 INSERT INTO public.seats (
@@ -98,6 +98,12 @@ SELECT throws_ok(
   'Seating access required',
   'customers cannot invoke seating operations'
 );
+SELECT throws_ok(
+  $$ SELECT public.process_kiosk_scan(repeat('0', 64)) $$,
+  '42501',
+  'This kiosk is not signed in with seating access',
+  'customers cannot invoke kiosk scans'
+);
 
 RESET ROLE;
 
@@ -122,6 +128,12 @@ SELECT is(
 SELECT ok(
   NOT EXISTS (SELECT 1 FROM public.announcements WHERE title = 'RLS draft announcement'),
   'seating staff cannot read draft announcements'
+);
+SELECT throws_ok(
+  $$ SELECT public.process_kiosk_scan(repeat('0', 64)) $$,
+  'P0001',
+  'Invalid or already used QR pass',
+  'seating staff pass kiosk authorization before token validation'
 );
 
 RESET ROLE;

@@ -2,11 +2,13 @@
 
 The Edge Functions provide the trusted server boundary for staff account
 creation, PayMongo dynamic QR Ph payments, confirmation email delivery, and
-kiosk QR scans. Never move a secret or service-role key into either
-Next.js browser application.
+kiosk QR scans. Kiosk scans require the private `KIOSK_ACCESS_TOKEN` shared
+with the installed Electron main process; the kiosk has no staff login screen.
+Never move a Supabase secret or service-role key into a browser application.
 
 Copy `.env.example` to `.env` in this directory for local development and fill
-in the test PayMongo keys, test webhook signing secret, and QR token secret.
+in the test PayMongo keys, test webhook signing secret, QR token secret, and
+kiosk device token. The same kiosk token must be set in `kiosk/.env.local`.
 Booking confirmations use the local Mailpit inbox by default at
 <http://127.0.0.1:54324>; Mailpit captures the message and inline kiosk QR
 without delivering it to a real inbox. This `.env` file is ignored by Git.
@@ -30,3 +32,7 @@ npx supabase functions deploy create-booking-confirmation --use-api
 npx supabase functions deploy confirm-booking --no-verify-jwt --use-api
 npx supabase functions deploy scan-booking-pass --no-verify-jwt --use-api
 ```
+
+Before deploying the kiosk function, add its production credential with
+`npx supabase secrets set KIOSK_ACCESS_TOKEN=<random-value>`. Install that same
+value only on the facility kiosk computer.

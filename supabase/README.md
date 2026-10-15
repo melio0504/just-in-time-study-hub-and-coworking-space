@@ -20,8 +20,9 @@ npx supabase status
 ```
 
 Copy `frontend/.env.example` to `frontend/.env.local` and
-`admin/.env.example` to `admin/.env.local`, then copy the local `API_URL` and
-`PUBLISHABLE_KEY` printed by `npx supabase status` into both files. The
+`admin/.env.example` to `admin/.env.local`, and `kiosk/.env.example` to
+`kiosk/.env.local`; then copy the local `API_URL` and `PUBLISHABLE_KEY` printed
+by `npx supabase status` into all three files. The
 checked-in local Auth configuration requires email confirmation and sends the
 branded welcome email through Supabase Auth. Test messages are available in Mailpit at
 <http://127.0.0.1:54324>.
@@ -41,7 +42,8 @@ to the guest's real inbox. For production, change `EMAIL_PROVIDER=resend`, set
 Useful local URLs:
 
 - Public application: <http://localhost:3000>
-- Facility operations: <http://127.0.0.1:3001>
+- Admin application: <http://127.0.0.1:3001/admin>
+- Facility kiosk: <http://127.0.0.1:3002>
 - Supabase Studio: <http://127.0.0.1:54323>
 - Mailpit: <http://127.0.0.1:54324>
 
@@ -79,7 +81,7 @@ npx supabase functions deploy create-paymongo-qr --use-api
 npx supabase functions deploy paymongo-webhook --no-verify-jwt --use-api
 npx supabase functions deploy create-booking-confirmation --use-api
 npx supabase functions deploy confirm-booking --no-verify-jwt --use-api
-npx supabase functions deploy scan-booking-pass --no-verify-jwt --use-api
+npx supabase functions deploy scan-booking-pass --use-api
 npx supabase secrets set --env-file supabase/functions/.env
 npx supabase migration list
 npx supabase db advisors --linked --type all --level warn --fail-on warn
