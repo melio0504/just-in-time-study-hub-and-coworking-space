@@ -1,10 +1,11 @@
 # Supabase Edge Functions
 
 The Edge Functions provide the trusted server boundary for staff account
-creation, PayMongo dynamic QR Ph payments, confirmation email delivery, and
-kiosk QR scans. Kiosk scans require the private `KIOSK_ACCESS_TOKEN` shared
-with the installed Electron main process; the kiosk has no staff login screen.
-Never move a Supabase secret or service-role key into a browser application.
+creation and lifecycle management, PayMongo dynamic QR Ph payments,
+confirmation email delivery, and kiosk QR scans. Kiosk scans require the
+private `KIOSK_ACCESS_TOKEN` shared with the installed Electron main process;
+the kiosk has no staff login screen. Never move a Supabase secret or
+service-role key into a browser application.
 
 Copy `.env.example` to `.env` in this directory for local development and fill
 in the test PayMongo keys, test webhook signing secret, QR token secret, and
@@ -30,6 +31,7 @@ Deploy it after linking the Supabase project:
 
 ```bash
 npx supabase functions deploy create-staff-account --use-api
+npx supabase functions deploy manage-staff-account --use-api
 npx supabase functions deploy create-paymongo-qr --use-api
 npx supabase functions deploy paymongo-webhook --no-verify-jwt --use-api
 npx supabase functions deploy create-booking-confirmation --use-api

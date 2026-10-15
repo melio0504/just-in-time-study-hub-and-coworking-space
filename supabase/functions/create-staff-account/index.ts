@@ -67,8 +67,8 @@ export default {
     if (name.length < 2 || name.length > 120 || !email || email.length > 254) {
       return json({ error: "Enter a valid employee name between 2 and 120 characters." }, 400);
     }
-    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-      return json({ error: "The temporary password must contain at least 8 characters, including a letter and a number." }, 400);
+    if (password.length < 8 || password.length > 72 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      return json({ error: "The temporary password must contain 8 to 72 characters, including a letter and a number." }, 400);
     }
     if (permissions.length === 0) {
       return json({ error: "Select at least one permission." }, 400);

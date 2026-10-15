@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(64);
+SELECT plan(67);
 
 SELECT has_table('public', 'profiles', 'profiles table exists');
 SELECT has_table('public', 'seats', 'seats table exists');
@@ -13,6 +13,7 @@ SELECT has_function('public', 'create_booking', ARRAY['text', 'text', 'date', 't
 SELECT has_function('public', 'toggle_walk_in_occupancy', ARRAY['text', 'text'], 'walk-in toggle RPC exists');
 SELECT has_function('public', 'admin_cancel_booking', ARRAY['uuid', 'text'], 'admin cancellation RPC exists');
 SELECT has_function('public', 'log_admin_access', ARRAY['text'], 'admin access audit RPC exists');
+SELECT has_function('public', 'revoke_staff_sessions', ARRAY['uuid'], 'staff session revocation RPC exists');
 SELECT has_function('public', 'process_kiosk_scan', ARRAY['text'], 'kiosk scan RPC exists');
 SELECT has_function('public', 'get_kiosk_active_sessions', ARRAY[]::text[], 'kiosk active-session RPC exists');
 SELECT has_function('public', 'get_kiosk_recent_activity', ARRAY[]::text[], 'kiosk recent-activity RPC exists');
@@ -187,6 +188,14 @@ SELECT ok(
     AND has_table_privilege('service_role', 'public.profiles', 'update')
     AND has_table_privilege('service_role', 'public.audit_logs', 'insert'),
   'account creation service has only its required table operations'
+);
+SELECT ok(
+  has_function_privilege('service_role', 'public.revoke_staff_sessions(uuid)', 'execute'),
+  'trusted server code can revoke staff sessions'
+);
+SELECT ok(
+  NOT has_function_privilege('authenticated', 'public.revoke_staff_sessions(uuid)', 'execute'),
+  'browser sessions cannot invoke staff session revocation directly'
 );
 
 SELECT * FROM finish();

@@ -743,6 +743,9 @@ isOneToOne: false
 "process_paymongo_refund_event":
 { Args: { "p_event_id": string,"p_event_type": string,"p_internal_refund_id"?: string,"p_livemode": boolean,"p_payload": Json,"p_refund_id": string,"p_status": string }; Returns: undefined
                            },
+"revoke_staff_sessions":
+{ Args: { "p_staff_id": string }; Returns: number
+                           },
 "save_paymongo_qr":
 { Args: { "p_booking_id": string,"p_livemode": boolean,"p_payment_intent_id": string,"p_payment_method_id": string,"p_provider_status": string,"p_qr_expires_at": string,"p_user_id": string }; Returns: undefined
                            },
