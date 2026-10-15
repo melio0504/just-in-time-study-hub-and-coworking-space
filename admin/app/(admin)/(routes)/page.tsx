@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Shield, Check } from 'lucide-react';
+import { Mail, Lock, Shield, Check, Eye, EyeOff } from 'lucide-react';
 import { defaultAdminPath, type AdminAccess, type StaffPermission } from '@/lib/admin-access';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
@@ -16,6 +16,7 @@ export default function AdminLogin() {
   });
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -157,15 +158,29 @@ export default function AdminLogin() {
                   <Lock className="inline w-4 h-4 mr-1" />
                   Admin Password
                 </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white text-[#2d2520] placeholder:text-[#6b5e52] focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all"
-                  placeholder="Enter your secure password"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    autoComplete="current-password"
+                    className="w-full rounded-xl border border-[#f3ede4] bg-white px-4 py-3 pr-12 text-[#2d2520] placeholder:text-[#6b5e52] transition-all focus:outline-none focus:ring-2 focus:ring-[#e5a930]"
+                    placeholder="Enter your secure password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    aria-label={`${showPassword ? 'Hide' : 'Show'} admin password`}
+                    aria-pressed={showPassword}
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition hover:text-[#2d2520] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#b47b0d]"
+                  >
+                    {showPassword
+                      ? <EyeOff className="h-4.5 w-4.5" aria-hidden="true" />
+                      : <Eye className="h-4.5 w-4.5" aria-hidden="true" />}
+                  </button>
+                </div>
               </div>
 
               <button
