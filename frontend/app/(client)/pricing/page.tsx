@@ -2,36 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Clock, Check, Calendar, CalendarOff } from 'lucide-react';
+import { Check, Calendar, CalendarOff } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { DAY_NAMES, formatHoursRange } from '@/lib/business-config';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/lib/supabase/database.types';
 
 export default function Pricing() {
   const [hourlyRates, setHourlyRates] = useState<Tables<'service_rate_plans'>[]>([]);
   const [packageRates, setPackageRates] = useState<Tables<'package_rate_plans'>[]>([]);
-  const [businessHours, setBusinessHours] = useState<Tables<'business_hours'>[]>([]);
   const [closures, setClosures] = useState<Tables<'business_closures'>[]>([]);
-  const [pricingError, setPricingError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
     const loadPricing = async () => {
       const supabase = createClient();
-      const [hourlyResult, packageResult, hoursResult, closureResult] = await Promise.all([
+      const [hourlyResult, packageResult, closureResult] = await Promise.all([
         supabase.from('service_rate_plans').select().eq('is_active', true).order('sort_order'),
         supabase.from('package_rate_plans').select().eq('is_active', true).order('sort_order'),
-        supabase.from('business_hours').select().order('day_of_week'),
         supabase.from('business_closures').select().eq('is_active', true).gte('ends_on', new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })).order('starts_on').limit(6),
       ]);
       if (cancelled) return;
-      const error = hourlyResult.error || packageResult.error || hoursResult.error || closureResult.error;
-      setPricingError(error?.message ?? '');
       setHourlyRates(hourlyResult.data ?? []);
       setPackageRates(packageResult.data ?? []);
-      setBusinessHours(hoursResult.data ?? []);
       setClosures(closureResult.data ?? []);
     };
     void loadPricing();
@@ -57,23 +50,6 @@ export default function Pricing() {
             <p className="text-xl text-[#6b5e52] leading-relaxed">
               Choose the plan that works best for your study schedule
             </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Operating Hours */}
-      <section className="py-12 px-6">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-          initial={false}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 border border-[#e5a930] text-center"
-          >
-            <Clock className="w-12 h-12 text-[#e5a930] mx-auto mb-4" />
-            <h3 className="text-2xl mb-4 text-[#2d2520]">Operating Hours</h3>
-            {pricingError ? <p role="alert" className="text-red-700">Operating hours are temporarily unavailable.</p> : businessHours.length === 0 ? <p className="text-[#6b5e52]">Loading current hours…</p> : <div className="mx-auto grid max-w-2xl gap-2 text-left sm:grid-cols-2">{businessHours.map((hours) => <div key={hours.day_of_week} className="flex items-center justify-between gap-4 rounded-xl bg-[#fffbf5] px-4 py-3"><span className="font-medium text-[#2d2520]">{DAY_NAMES[hours.day_of_week]}</span><span className={hours.is_open ? 'text-[#b47b0d]' : 'text-[#9b4c45]'}>{formatHoursRange(hours)}</span></div>)}</div>}
           </motion.div>
         </div>
       </section>
