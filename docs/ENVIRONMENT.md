@@ -48,6 +48,9 @@ npx supabase status
 Restart the affected Next.js development server after changing an environment
 file.
 
+Local Supabase Auth emails, including password-reset links, are captured by
+Mailpit at `http://127.0.0.1:54324`.
+
 ## Shared and production credentials
 
 Real hosted-environment values are deliberately omitted from Git. The project
@@ -84,6 +87,14 @@ Set them in each Vercel project's environment-variable settings rather than
 committing an environment file. Set `NEXT_PUBLIC_SITE_URL` to the corresponding
 public or admin domain. The kiosk receives the public Supabase values only in
 its local `kiosk/.env.local`; it is not deployed.
+
+In the hosted Supabase project's **Authentication > URL Configuration**, set
+the Site URL to the production frontend domain and allow that domain's
+`/auth/callback` URL as a Redirect URL. Password recovery uses that callback to
+exchange the single-use email code for a session before opening
+`/reset-password`. Configure a production SMTP provider under
+**Authentication > Email** so customer password-reset emails are not limited
+to Supabase's development mail service.
 
 PayMongo and transactional email credentials belong in **Supabase Edge
 Function secrets**, not in Vercel:
