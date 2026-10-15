@@ -7,6 +7,11 @@ const { getKioskConfig, requestKioskApi } = require("./kiosk-api.cjs");
 const embeddedKioskEnvironment = require("./build-config.cjs");
 
 const kioskConfig = getKioskConfig(embeddedKioskEnvironment);
+const KIOSK_APP_ID = "com.jitstudyhub.kiosk";
+
+if (process.platform === "linux") {
+  app.setDesktopName(`${KIOSK_APP_ID}.desktop`);
+}
 
 let kioskWindow = null;
 let staticServer = null;
@@ -53,11 +58,13 @@ async function createWindow() {
   const exportDirectory = app.isPackaged
     ? path.join(process.resourcesPath, "out")
     : path.join(__dirname, "..", "out");
+  const iconPath = path.join(__dirname, "icon.png");
   staticServer = createStaticServer(exportDirectory);
   rendererOrigin = await listenOnLoopback(staticServer);
 
   kioskWindow = new BrowserWindow({
     title: "Just In Time Kiosk",
+    icon: iconPath,
     width: 1366,
     height: 768,
     minWidth: 960,
@@ -125,6 +132,7 @@ if (!hasSingleInstanceLock) {
   });
 
   app.whenReady().then(async () => {
+    app.setAppUserModelId(KIOSK_APP_ID);
     Menu.setApplicationMenu(null);
 
     ipcMain.handle("kiosk-api:scan-booking-pass", async (event, code) => {
