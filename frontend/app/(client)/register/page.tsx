@@ -147,9 +147,9 @@ export default function Register() {
             </div>
 
             <div className="bg-[#fef3dc] rounded-2xl p-6 border border-[#e5a930]">
-              <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-2">Member Exclusive</p>
-              <p className="text-2xl text-[#2d2520] mb-2">Get 10% off your first booking</p>
-              <p className="text-[#6b5e52]">Plus earn 100 welcome points when you sign up today</p>
+              <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-2">Make Every Session Count</p>
+              <p className="text-2xl text-[#2d2520] mb-2">Plan your study time with ease</p>
+              <p className="text-[#6b5e52]">Manage bookings, review your sessions, and keep your study routine organized in one place.</p>
             </div>
           </div>
 
