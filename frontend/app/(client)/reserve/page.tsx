@@ -10,6 +10,7 @@ import {
   getReservationAvailabilityWindow,
   SEAT_AVAILABILITY_REFRESH_MS,
 } from '@/lib/seatAvailability';
+import { formatCountdown, getCountdownSeconds } from '@/lib/paymentCountdown';
 import { getManilaDateString, isReservationTimePast } from '@/lib/reservationTime';
 import { allSeatIds } from '@/lib/seats';
 import { cancelBooking, createBooking } from '@/lib/supabase/bookings';
@@ -116,6 +117,7 @@ function ReserveContent() {
   const [subtotalCents, setSubtotalCents] = useState(0);
   const [confirmationQr, setConfirmationQr] = useState('');
   const [qrExpiresAt, setQrExpiresAt] = useState('');
+  const [qrCountdownNow, setQrCountdownNow] = useState(0);
   const [confirmationError, setConfirmationError] = useState('');
   const [cancellationError, setCancellationError] = useState('');
   const [isConfirmationLoading, setIsConfirmationLoading] = useState(false);
@@ -220,6 +222,7 @@ function ReserveContent() {
     setSubtotalCents(0);
     setConfirmationQr('');
     setQrExpiresAt('');
+    setQrCountdownNow(0);
     setConfirmationError('');
     setCancellationError('');
     setIsConfirmationLoading(false);
@@ -307,6 +310,19 @@ function ReserveContent() {
     return () => { void supabase.removeChannel(channel); };
   }, [bookingId, isModalOpen]);
 
+  useEffect(() => {
+    if (!qrExpiresAt || !isModalOpen || confirmationStep !== 'pending') return;
+
+    const updateCountdown = () => setQrCountdownNow(Date.now());
+    const countdownInterval = window.setInterval(updateCountdown, 1000);
+    window.addEventListener('focus', updateCountdown);
+
+    return () => {
+      window.clearInterval(countdownInterval);
+      window.removeEventListener('focus', updateCountdown);
+    };
+  }, [confirmationStep, isModalOpen, qrExpiresAt]);
+
   const createPaymongoQr = async (id: string) => {
     const requestVersion = ++qrRequestVersionRef.current;
     setIsConfirmationLoading(true);
@@ -314,6 +330,7 @@ function ReserveContent() {
     setCancellationError('');
     setConfirmationQr('');
     setQrExpiresAt('');
+    setQrCountdownNow(0);
     setIsConfirmationEmailSent(false);
     setEmailDeliveryError('');
 
@@ -337,6 +354,7 @@ function ReserveContent() {
       if (requestVersion === qrRequestVersionRef.current) {
         setConfirmationQr(data.qrImage);
         setQrExpiresAt(data.expiresAt);
+        setQrCountdownNow(Date.now());
       }
     } catch (error) {
       if (requestVersion === qrRequestVersionRef.current) {
@@ -695,6 +713,9 @@ function ReserveContent() {
   const selectedCount = seats.filter(s => s.status === 'selected').length;
   const hoursUntilClosing = getHoursUntilClosing(formData.time);
   const availableDurationOptions = DURATION_OPTIONS.filter(([value]) => Number(value) <= hoursUntilClosing);
+  const qrSecondsRemaining = qrExpiresAt
+    ? getCountdownSeconds(qrExpiresAt, qrCountdownNow)
+    : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] to-[#fff8ed] pt-20 sm:pt-24">
@@ -957,7 +978,6 @@ function ReserveContent() {
                   </div>
 
                   <div className="mb-6">
-                    <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-3">QRPH</p>
                     <div className="bg-[#f9f9f9] border-2 border-dashed border-[#d1d5db] rounded-2xl p-4 sm:p-8 flex flex-col items-center justify-center">
                       {isConfirmationLoading ? (
                         <div className="flex h-48 items-center justify-center text-sm text-[#6b5e52]">Generating secure QR code…</div>
@@ -968,8 +988,13 @@ function ReserveContent() {
                       )}
                       <p className="mt-4 text-sm text-[#6b5e52] text-center">Scan with GCash, Maya, or a QR Ph-enabled banking app. The amount is fixed to this reservation.</p>
                       {qrExpiresAt && (
-                        <p className="mt-2 text-xs font-medium text-[#9b6810]">
-                          Expires {new Date(qrExpiresAt).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}
+                        <p
+                          role="timer"
+                          className={`mt-2 text-xs font-medium ${qrSecondsRemaining > 0 ? 'text-[#9b6810]' : 'text-red-700'}`}
+                        >
+                          {qrSecondsRemaining > 0
+                            ? `Expires in ${formatCountdown(qrSecondsRemaining)}`
+                            : 'QR code expired'}
                         </p>
                       )}
                     </div>
