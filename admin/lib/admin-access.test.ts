@@ -9,7 +9,7 @@ describe("admin access", () => {
     expect(hasAdminAccess(owner, "seating")).toBe(true);
     expect(hasAdminAccess(owner, "reservations")).toBe(true);
     expect(hasAdminAccess(owner, "announcements")).toBe(true);
-    expect(defaultAdminPath(owner)).toBe("/admin/dashboard");
+    expect(defaultAdminPath(owner)).toBe("/dashboard");
   });
 
   it("only grants a staff member's explicit permissions", () => {
@@ -18,15 +18,15 @@ describe("admin access", () => {
     expect(hasAdminAccess(staff, "seating")).toBe(false);
     expect(hasAdminAccess(staff, "reservations")).toBe(true);
     expect(hasAdminAccess(staff, "announcements")).toBe(false);
-    expect(defaultAdminPath(staff)).toBe("/admin/dashboard?section=reservations");
+    expect(defaultAdminPath(staff)).toBe("/reservations");
   });
 
-  it("routes announcement-only and empty staff access to content", () => {
+  it("routes announcement-only and empty staff access to announcements", () => {
     expect(defaultAdminPath({ role: "staff", permissions: ["announcements"] })).toBe(
-      "/admin/dashboard?section=content",
+      "/announcements",
     );
     expect(defaultAdminPath({ role: "staff", permissions: [] })).toBe(
-      "/admin/dashboard?section=content",
+      "/announcements",
     );
   });
 });

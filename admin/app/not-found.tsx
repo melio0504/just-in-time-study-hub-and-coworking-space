@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MonitorCog, QrCode } from "lucide-react";
+import { MonitorCog } from "lucide-react";
 
 export default function NotFound() {
   return (
@@ -10,22 +10,15 @@ export default function NotFound() {
         </p>
         <h1 className="mt-4 text-5xl font-semibold text-[#2d2520]">Page not found</h1>
         <p className="mt-4 text-[#6b5e52]">
-          Choose the administrator dashboard or return to the facility kiosk.
+          Return to the administrator sign-in page.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
-            href="/admin"
+            href="/"
             className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white transition hover:shadow-lg"
           >
             <MonitorCog className="h-4 w-4" />
             Admin
-          </Link>
-          <Link
-            href="/kiosk"
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-[#f3ede4] px-6 py-3 text-[#2d2520] transition hover:border-[#e5a930]"
-          >
-            <QrCode className="h-4 w-4" />
-            Kiosk
           </Link>
         </div>
       </section>

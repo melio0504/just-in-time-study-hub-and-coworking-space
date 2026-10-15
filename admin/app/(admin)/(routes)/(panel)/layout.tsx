@@ -11,7 +11,7 @@ export default async function AdminPanelLayout({
   children: React.ReactNode;
 }>) {
   if (!isSupabaseConfigured) {
-    redirect("/admin");
+    redirect("/");
   }
 
   const supabase = await createClient();
@@ -20,7 +20,7 @@ export default async function AdminPanelLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/admin");
+    redirect("/");
   }
 
   const { data: profile } = await supabase
@@ -34,7 +34,7 @@ export default async function AdminPanelLayout({
   }
 
   if (profile.must_change_password) {
-    redirect("/admin/change-password");
+    redirect("/change-password");
   }
 
   const access: AdminAccess = {

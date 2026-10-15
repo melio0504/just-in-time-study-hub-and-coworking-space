@@ -2,6 +2,9 @@ import {
   DashboardDataProvider,
   type DashboardAuditLog,
 } from "./_components/DashboardDataProvider";
+import { redirect } from "next/navigation";
+
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardLayout({
@@ -9,6 +12,8 @@ export default async function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  if (!isSupabaseConfigured) redirect("/");
+
   const supabase = await createClient();
   const [bookingResult, seatResult, walkInResult, announcementResult, logResult] = await Promise.all([
     supabase.from("bookings").select().order("created_at", { ascending: false }).limit(250),

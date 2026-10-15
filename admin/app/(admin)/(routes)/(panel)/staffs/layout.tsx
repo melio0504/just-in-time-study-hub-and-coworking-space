@@ -1,12 +1,15 @@
 import { redirect } from "next/navigation";
 
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function StaffManagementLayout({ children }: { children: React.ReactNode }) {
+  if (!isSupabaseConfigured) redirect("/");
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) redirect("/admin");
+  if (!user) redirect("/");
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -21,7 +24,7 @@ export default async function StaffManagementLayout({ children }: { children: Re
     !profile.is_active ||
     profile.must_change_password
   ) {
-    redirect("/admin/dashboard");
+    redirect("/dashboard");
   }
 
   return children;

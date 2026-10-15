@@ -34,7 +34,7 @@ export function hasAdminAccess(access: AdminAccess, permission: StaffPermission)
 }
 
 export function defaultAdminPath(access: AdminAccess) {
-  if (hasAdminAccess(access, "seating")) return "/admin/dashboard";
-  if (hasAdminAccess(access, "reservations")) return "/admin/dashboard?section=reservations";
-  return "/admin/dashboard?section=content";
+  if (hasAdminAccess(access, "seating")) return "/dashboard";
+  if (hasAdminAccess(access, "reservations")) return "/reservations";
+  return "/announcements";
 }

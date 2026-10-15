@@ -4,7 +4,7 @@ import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, KeyRound, Loader2, LockKeyhole } from "lucide-react";
 
-import { defaultAdminPath, hasAdminAccess, type AdminAccess, type StaffPermission } from "@/lib/admin-access";
+import { defaultAdminPath, type AdminAccess, type StaffPermission } from "@/lib/admin-access";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ChangeInitialPasswordPage() {
@@ -21,7 +21,7 @@ export default function ChangeInitialPasswordPage() {
     const supabase = createClient();
     void supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) {
-        router.replace("/admin");
+        router.replace("/");
         return;
       }
 
@@ -32,7 +32,7 @@ export default function ChangeInitialPasswordPage() {
         .single();
 
       if (!profile || profile.role !== "staff" || !profile.must_change_password) {
-        router.replace("/admin/dashboard");
+        router.replace("/dashboard");
         return;
       }
 
@@ -91,8 +91,7 @@ export default function ChangeInitialPasswordPage() {
       role: "staff",
       permissions: profile.staff_permissions as StaffPermission[],
     };
-    const requestedPath = new URLSearchParams(window.location.search).get("next");
-    router.replace(requestedPath === "/kiosk" && hasAdminAccess(access, "seating") ? "/kiosk" : defaultAdminPath(access));
+    router.replace(defaultAdminPath(access));
     router.refresh();
   };
 

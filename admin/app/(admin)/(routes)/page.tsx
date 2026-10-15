@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Shield, Check } from 'lucide-react';
-import { defaultAdminPath, hasAdminAccess, type AdminAccess, type StaffPermission } from '@/lib/admin-access';
+import { defaultAdminPath, type AdminAccess, type StaffPermission } from '@/lib/admin-access';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
@@ -57,8 +57,7 @@ export default function AdminLogin() {
     }
 
     if (profile.must_change_password) {
-      const requestedPath = new URLSearchParams(window.location.search).get('next');
-      router.push(requestedPath === '/kiosk' ? '/admin/change-password?next=%2Fkiosk' : '/admin/change-password');
+      router.push('/change-password');
       router.refresh();
       return;
     }
@@ -68,19 +67,6 @@ export default function AdminLogin() {
       role: profile.role as AdminAccess['role'],
       permissions: profile.staff_permissions as StaffPermission[],
     };
-    const requestedPath = new URLSearchParams(window.location.search).get('next');
-    if (requestedPath === '/kiosk') {
-      if (!hasAdminAccess(access, 'seating')) {
-        await supabase.auth.signOut({ scope: 'local' });
-        setIsSubmitting(false);
-        setErrorMessage('This account does not have seating access. Sign in with an authorized kiosk account.');
-        return;
-      }
-      router.push('/kiosk');
-      router.refresh();
-      return;
-    }
-
     router.push(defaultAdminPath(access));
     router.refresh();
   };

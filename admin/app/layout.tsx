@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Facility Operations | Just In Time Study Hub",
-  description: "Local administration and kiosk application for facility operations.",
+  title: "Administration | Just In Time Study Hub",
+  description: "Authenticated staff administration for Just In Time Study Hub.",
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({
