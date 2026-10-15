@@ -1,0 +1,46 @@
+{
+  "name": "jit-studyhub-kiosk-desktop",
+  "productName": "Just In Time Kiosk",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Desktop runtime for the Just In Time Study Hub kiosk",
+  "author": "Just In Time Study Hub Dev Team",
+  "main": "main.cjs",
+  "build": {
+    "appId": "com.jitstudyhub.kiosk",
+    "electronVersion": "44.7.0",
+    "asar": true,
+    "directories": {
+      "output": "../dist-electron"
+    },
+    "files": [
+      "**/*",
+      "!*.test.cjs"
+    ],
+    "extraResources": [
+      {
+        "from": "../out",
+        "to": "out",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Utility"
+    }
+  }
+}

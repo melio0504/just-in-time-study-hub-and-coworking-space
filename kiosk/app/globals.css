@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fffcf7;
+  --foreground: #2d2520;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+input {
+  color: #2d2520;
+  caret-color: #2d2520;
+}
+
+input::placeholder {
+  color: #76695e;
+  opacity: 1;
+}
