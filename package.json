@@ -46,7 +46,8 @@
   "license": "MIT",
   "workspaces": [
     "frontend",
-    "admin"
+    "admin",
+    "kiosk"
   ],
   "engines": {
     "node": ">=22.12.0"
@@ -54,9 +55,11 @@
   "scripts": {
     "dev:frontend": "npm run dev --workspace @jit-studyhub/frontend",
     "dev:admin": "npm run dev --workspace @jit-studyhub/admin",
+    "dev:kiosk": "npm run dev --workspace @jit-studyhub/kiosk",
     "build": "npm run build --workspaces --if-present",
     "build:frontend": "npm run build --workspace @jit-studyhub/frontend",
     "build:admin": "npm run build --workspace @jit-studyhub/admin",
+    "build:kiosk": "npm run build --workspace @jit-studyhub/kiosk",
     "test": "npm run test:unit",
     "test:unit": "npm run test --workspaces --if-present",
     "test:frontend": "npm test --workspace @jit-studyhub/frontend",
@@ -65,12 +68,18 @@
     "test:e2e": "playwright test",
     "test:e2e:frontend": "playwright test --project=frontend",
     "test:e2e:admin": "playwright test --project=admin",
+    "test:e2e:kiosk": "playwright test --project=kiosk",
     "test:e2e:ui": "playwright test --ui",
     "test:db": "supabase test db --local",
     "test:all": "npm run test:unit && npm run test:e2e && npm run test:db",
     "check": "npm run lint && npm run test:unit && npm run build",
     "start:frontend": "npm run start --workspace @jit-studyhub/frontend",
     "start:admin": "npm run start --workspace @jit-studyhub/admin",
+    "start:kiosk": "npm run start --workspace @jit-studyhub/kiosk",
+    "desktop:kiosk": "npm run desktop --workspace @jit-studyhub/kiosk",
+    "dist:kiosk": "npm run dist --workspace @jit-studyhub/kiosk",
+    "dist:kiosk:win": "npm run dist:win --workspace @jit-studyhub/kiosk",
+    "dist:kiosk:linux": "npm run dist:linux --workspace @jit-studyhub/kiosk",
     "lint": "npm run lint --workspaces --if-present",
     "supabase:start": "supabase start",
     "supabase:functions": "supabase functions serve",
