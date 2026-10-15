@@ -91,6 +91,7 @@ Function secrets**, not in Vercel:
 | Variable | Local value | Production value |
 | --- | --- | --- |
 | `PAYMONGO_MODE` | `test` | `live` |
+| `PAYMONGO_SIMULATE_REFUNDS` | `true` | `false` (required for real refunds) |
 | `PAYMONGO_SECRET_KEY` | PayMongo test secret key | PayMongo live secret key |
 | `PAYMONGO_PUBLIC_KEY` | PayMongo test public key | PayMongo live public key |
 | `PAYMONGO_WEBHOOK_SECRET` | Test endpoint signing secret | Live endpoint signing secret |

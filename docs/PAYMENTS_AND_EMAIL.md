@@ -25,6 +25,7 @@ Set these ignored local values in `supabase/functions/.env`:
 QR_ACCESS_TOKEN_SECRET=<at-least-32-random-characters>
 PUBLIC_SITE_URL=http://localhost:3000
 PAYMONGO_MODE=test
+PAYMONGO_SIMULATE_REFUNDS=true
 PAYMONGO_SECRET_KEY=sk_test_...
 PAYMONGO_PUBLIC_KEY=pk_test_...
 PAYMONGO_WEBHOOK_SECRET=<secret-for-the-test-webhook-endpoint>
@@ -72,6 +73,14 @@ desktop is available. To only print the URL, run:
 npm run paymongo:test-url -- --print-only
 ```
 
+PayMongo only supports refunds for live transactions. In test mode,
+`PAYMONGO_SIMULATE_REFUNDS=true` makes the cancellation Edge Function complete
+the same database workflow using a `ref_test_sim_...` identifier and a marked
+simulation payload; no money is moved and no refund request is sent to
+PayMongo. Restart `npm run supabase:functions` after changing the value. Set it
+to `false` (or remove it) in production; the function also refuses to start a
+live refund while simulation is enabled.
+
 ## Production: Supabase and Resend
 
 1. Verify the sending domain in Resend. Add the SPF and DKIM records Resend
@@ -84,6 +93,7 @@ npm run paymongo:test-url -- --print-only
    QR_ACCESS_TOKEN_SECRET
    PUBLIC_SITE_URL=https://your-vercel-domain.example
    PAYMONGO_MODE=live
+   PAYMONGO_SIMULATE_REFUNDS=false
    PAYMONGO_SECRET_KEY=sk_live_...
    PAYMONGO_PUBLIC_KEY=pk_live_...
    PAYMONGO_WEBHOOK_SECRET=<live-endpoint-signing-secret>
