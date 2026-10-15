@@ -2,7 +2,8 @@
 
 This Next.js application contains only customer-facing routes. Deploy this directory as the Root Directory of the Vercel project.
 
-The `/admin` and `/kiosk` routes belong to the sibling `admin/` application and are not included in this build.
+The admin dashboard and kiosk belong to the sibling `admin/` and `kiosk/`
+applications and are not included in this build.
 
 From the repository root, run:
 
