@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Calendar, Award, Clock, LogOut, TrendingUp, BookOpen, Play, Pause, RotateCcw, Plus, X, Settings, Trash2 } from 'lucide-react';
+import { User, Calendar, Clock, LogOut, TrendingUp, BookOpen, Play, Pause, RotateCcw, Plus, X, Settings, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import {
@@ -13,14 +13,11 @@ import {
 } from '@/lib/study-history';
 
 const STUDY_HISTORY_WEEKS = STUDY_HISTORY_DAYS / 7;
-const WELCOME_LOYALTY_POINTS = 500;
-const NEXT_REWARD_POINTS = 1000;
 
 export default function Account() {
   const router = useRouter();
   const [userName, setUserName] = useState('User');
   const [userEmail, setUserEmail] = useState('');
-  const [loyaltyPoints, setLoyaltyPoints] = useState(WELCOME_LOYALTY_POINTS);
   const [recentBookings, setRecentBookings] = useState<
     Array<{
       id: string;
@@ -74,7 +71,7 @@ export default function Account() {
       const [profileResult, recentBookingsResult, bookingHistoryResult] = await Promise.all([
         supabase
           .from('profiles')
-          .select('full_name, loyalty_points')
+          .select('full_name')
           .eq('id', user.id)
           .single(),
         supabase
@@ -99,7 +96,6 @@ export default function Account() {
       if (!cancelled) {
         setUserName(profile?.full_name || user.user_metadata.full_name || 'User');
         setUserEmail(user.email || '');
-        setLoyaltyPoints(profile?.loyalty_points ?? WELCOME_LOYALTY_POINTS);
         setRecentBookings(
           (bookings ?? []).map((booking) => ({
             id: booking.reservation_code,
@@ -246,8 +242,6 @@ export default function Account() {
 
   const totalHours = studyData.reduce((sum, day) => sum + day.hours, 0);
   const averageHours = (totalHours / STUDY_HISTORY_DAYS).toFixed(1);
-  const loyaltyProgress = Math.min((loyaltyPoints / NEXT_REWARD_POINTS) * 100, 100);
-  const pointsUntilReward = Math.max(NEXT_REWARD_POINTS - loyaltyPoints, 0);
   const currentFlashcard = flashcards[currentCardIndex];
 
   return (
@@ -334,7 +328,7 @@ export default function Account() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div className="bg-white rounded-2xl p-4 border border-[#f3ede4]">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 bg-[#fef3dc] rounded-lg flex items-center justify-center">
@@ -365,15 +359,6 @@ export default function Account() {
               <p className="text-2xl text-[#2d2520]">{bookingCount}</p>
             </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-[#f3ede4]">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 bg-[#fef3dc] rounded-lg flex items-center justify-center">
-                  <Award className="w-4 h-4 text-[#e5a930]" />
-                </div>
-                <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Loyalty Points</p>
-              </div>
-              <p className="text-2xl text-[#2d2520]">{loyaltyPoints.toLocaleString()}</p>
-            </div>
           </div>
         </div>
 
@@ -753,9 +738,8 @@ export default function Account() {
             </div>
           </div>
 
-          {/* Loyalty & Profile */}
-          <div className="space-y-8">
-            {/* Profile */}
+          {/* Profile */}
+          <div>
             <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-[#f3ede4]">
               <h2 className="text-2xl mb-6 text-[#2d2520]">Profile</h2>
               <div className="space-y-4">
@@ -774,24 +758,6 @@ export default function Account() {
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Loyalty Points */}
-            <div className="bg-gradient-to-br from-[#e5a930] to-[#d69520] rounded-3xl p-8 shadow-lg text-white">
-              <div className="flex items-center gap-3 mb-4">
-                <Award className="w-8 h-8" />
-                <h2 className="text-2xl">Loyalty Rewards</h2>
-              </div>
-              <p className="text-4xl mb-2">{loyaltyPoints.toLocaleString()} Points</p>
-              <p className="text-white/90 text-sm mb-4">
-                You&apos;re {pointsUntilReward.toLocaleString()} points away from your next reward!
-              </p>
-              <div className="bg-white/20 rounded-full h-2 mb-4">
-                <div className="bg-white rounded-full h-2" style={{ width: `${loyaltyProgress}%` }}></div>
-              </div>
-              <p className="text-xs text-white/80">
-                Earn 10 points per hour of study time
-              </p>
             </div>
           </div>
         </div>
