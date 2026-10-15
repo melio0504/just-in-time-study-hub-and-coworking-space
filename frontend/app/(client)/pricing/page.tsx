@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Check, Calendar, CalendarOff } from 'lucide-react';
+import { AlertCircle, Check, Calendar, CalendarOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
@@ -12,20 +12,36 @@ export default function Pricing() {
   const [hourlyRates, setHourlyRates] = useState<Tables<'service_rate_plans'>[]>([]);
   const [packageRates, setPackageRates] = useState<Tables<'package_rate_plans'>[]>([]);
   const [closures, setClosures] = useState<Tables<'business_closures'>[]>([]);
+  const [pricingLoading, setPricingLoading] = useState(true);
+  const [pricingError, setPricingError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
     const loadPricing = async () => {
-      const supabase = createClient();
-      const [hourlyResult, packageResult, closureResult] = await Promise.all([
-        supabase.from('service_rate_plans').select().eq('is_active', true).order('sort_order'),
-        supabase.from('package_rate_plans').select().eq('is_active', true).order('sort_order'),
-        supabase.from('business_closures').select().eq('is_active', true).gte('ends_on', new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })).order('starts_on').limit(6),
-      ]);
-      if (cancelled) return;
-      setHourlyRates(hourlyResult.data ?? []);
-      setPackageRates(packageResult.data ?? []);
-      setClosures(closureResult.data ?? []);
+      try {
+        const supabase = createClient();
+        const [hourlyResult, packageResult, closureResult] = await Promise.all([
+          supabase.from('service_rate_plans').select().eq('is_active', true).order('sort_order'),
+          supabase.from('package_rate_plans').select().eq('is_active', true).order('sort_order'),
+          supabase.from('business_closures').select().eq('is_active', true).gte('ends_on', new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })).order('starts_on').limit(6),
+        ]);
+        if (cancelled) return;
+
+        const firstError = hourlyResult.error || packageResult.error || closureResult.error;
+        setPricingError(firstError ? 'Some current pricing or closure information could not be loaded. Please try again shortly.' : '');
+        setHourlyRates(hourlyResult.data ?? []);
+        setPackageRates(packageResult.data ?? []);
+        setClosures(closureResult.data ?? []);
+      } catch {
+        if (!cancelled) {
+          setPricingError('Current pricing is temporarily unavailable. Please try again shortly.');
+          setHourlyRates([]);
+          setPackageRates([]);
+          setClosures([]);
+        }
+      } finally {
+        if (!cancelled) setPricingLoading(false);
+      }
     };
     void loadPricing();
     return () => { cancelled = true; };
@@ -54,6 +70,18 @@ export default function Pricing() {
         </div>
       </section>
 
+      {pricingError && (
+        <section className="px-6 pb-8">
+          <div role="alert" className="mx-auto flex max-w-4xl items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-950">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <p className="font-semibold">We couldn&apos;t load all current pricing information.</p>
+              <p className="mt-1 text-sm">{pricingError}</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {closures.length > 0 && <section className="px-6 pb-8"><div className="mx-auto max-w-4xl rounded-3xl border border-amber-200 bg-[#fff8e8] p-6"><div className="flex items-start gap-3"><CalendarOff className="mt-0.5 h-6 w-6 shrink-0 text-[#b47b0d]" /><div><h3 className="text-xl text-[#2d2520]">Upcoming closures</h3><div className="mt-3 space-y-2">{closures.map((closure) => <p key={closure.id} className="text-sm text-[#6b5e52]"><span className="font-semibold text-[#2d2520]">{closure.name}</span> · {closure.starts_on === closure.ends_on ? closure.starts_on : `${closure.starts_on}–${closure.ends_on}`}</p>)}</div></div></div></div></section>}
 
       {/* Hourly Rates */}
@@ -80,6 +108,15 @@ export default function Pricing() {
                   </tr>
                 </thead>
                 <tbody>
+                  {pricingLoading && (
+                    <tr>
+                      <td colSpan={2} className="p-8 text-center text-[#6b5e52]">
+                        <span role="status" className="inline-flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" /> Loading current hourly rates…
+                        </span>
+                      </td>
+                    </tr>
+                  )}
                   {hourlyRates.map((rate) => (
                     <tr
                       key={rate.id}
@@ -102,6 +139,13 @@ export default function Pricing() {
                       </td>
                     </tr>
                   ))}
+                  {!pricingLoading && hourlyRates.length === 0 && (
+                    <tr>
+                      <td colSpan={2} className="p-8 text-center text-[#6b5e52]">
+                        No hourly rates are currently available. Please contact us for assistance.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -118,6 +162,11 @@ export default function Pricing() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {pricingLoading && (
+              <div role="status" className="col-span-full flex min-h-48 items-center justify-center gap-2 rounded-3xl border border-[#f3ede4] bg-white/70 text-[#6b5e52]">
+                <Loader2 className="h-5 w-5 animate-spin" /> Loading current package deals…
+              </div>
+            )}
             {packageRates.map((pkg, index) => (
               <motion.div
                 key={pkg.id}
@@ -146,6 +195,11 @@ export default function Pricing() {
                 </div>
               </motion.div>
             ))}
+            {!pricingLoading && packageRates.length === 0 && (
+              <div className="col-span-full flex min-h-48 items-center justify-center rounded-3xl border border-[#f3ede4] bg-white/70 px-6 text-center text-[#6b5e52]">
+                No package deals are currently available. Please contact us for assistance.
+              </div>
+            )}
           </div>
         </div>
       </section>
