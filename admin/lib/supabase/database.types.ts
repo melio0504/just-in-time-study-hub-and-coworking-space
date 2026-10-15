@@ -145,14 +145,14 @@ isOneToOne: false
                   ]
                 },"bookings": {
                   Row: {
-                    "booking_date": string,"cancellation_reason": string | null,"cancelled_at": string | null,"confirmation_email_error": string | null,"confirmation_email_sent_at": string | null,"created_at": string,"duration_hours": number,"ends_at": string,"guest_email": string,"guest_name": string,"hold_expires_at": string | null,"id": string,"payment_status": Database["public"]['Enums']["payment_status"],"reservation_code": string,"seat_ids": (string)[],"space": string,"start_time": string,"starts_at": string,"status": Database["public"]['Enums']["booking_status"],"subtotal_cents": number,"updated_at": string,"user_id": string
+                    "booking_date": string,"cancellation_reason": string | null,"cancelled_at": string | null,"confirmation_email_error": string | null,"confirmation_email_sent_at": string | null,"created_at": string,"duration_hours": number,"ends_at": string,"guest_email": string,"guest_name": string,"hold_expires_at": string | null,"id": string,"payment_status": Database["public"]['Enums']["payment_status"],"reservation_code": string,"seat_ids": (string)[],"space": string,"start_time": string,"starts_at": string,"status": Database["public"]['Enums']["booking_status"],"subtotal_cents": number,"updated_at": string,"user_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "booking_date": string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"confirmation_email_error"?: string | null,"confirmation_email_sent_at"?: string | null,"created_at"?: string,"duration_hours": number,"ends_at": string,"guest_email": string,"guest_name": string,"hold_expires_at"?: string | null,"id"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"reservation_code": string,"seat_ids": (string)[],"space"?: string,"start_time": string,"starts_at": string,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_cents"?: number,"updated_at"?: string,"user_id": string
+                    "booking_date": string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"confirmation_email_error"?: string | null,"confirmation_email_sent_at"?: string | null,"created_at"?: string,"duration_hours": number,"ends_at": string,"guest_email": string,"guest_name": string,"hold_expires_at"?: string | null,"id"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"reservation_code": string,"seat_ids": (string)[],"space"?: string,"start_time": string,"starts_at": string,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_cents"?: number,"updated_at"?: string,"user_id"?: string | null
                   }
                   Update: {
-                    "booking_date"?: string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"confirmation_email_error"?: string | null,"confirmation_email_sent_at"?: string | null,"created_at"?: string,"duration_hours"?: number,"ends_at"?: string,"guest_email"?: string,"guest_name"?: string,"hold_expires_at"?: string | null,"id"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"reservation_code"?: string,"seat_ids"?: (string)[],"space"?: string,"start_time"?: string,"starts_at"?: string,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_cents"?: number,"updated_at"?: string,"user_id"?: string
+                    "booking_date"?: string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"confirmation_email_error"?: string | null,"confirmation_email_sent_at"?: string | null,"created_at"?: string,"duration_hours"?: number,"ends_at"?: string,"guest_email"?: string,"guest_name"?: string,"hold_expires_at"?: string | null,"id"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"reservation_code"?: string,"seat_ids"?: (string)[],"space"?: string,"start_time"?: string,"starts_at"?: string,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_cents"?: number,"updated_at"?: string,"user_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -411,14 +411,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "avatar_url": string | null,"created_at": string,"email": string | null,"full_name": string,"id": string,"is_active": boolean,"loyalty_points": number,"must_change_password": boolean,"phone": string | null,"role": Database["public"]['Enums']["profile_role"],"staff_permissions": (Database["public"]['Enums']["staff_permission"])[],"updated_at": string
+                    "avatar_url": string | null,"created_at": string,"email": string | null,"full_name": string,"id": string,"is_active": boolean,"loyalty_points": number,"must_change_password": boolean,"phone": string | null,"role": Database["public"]['Enums']["profile_role"],"staff_permissions": (Database["public"]['Enums']["staff_permission"])[],"updated_at": string,"username_changed_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "avatar_url"?: string | null,"created_at"?: string,"email"?: string | null,"full_name"?: string,"id": string,"is_active"?: boolean,"loyalty_points"?: number,"must_change_password"?: boolean,"phone"?: string | null,"role"?: Database["public"]['Enums']["profile_role"],"staff_permissions"?: (Database["public"]['Enums']["staff_permission"])[],"updated_at"?: string
+                    "avatar_url"?: string | null,"created_at"?: string,"email"?: string | null,"full_name"?: string,"id": string,"is_active"?: boolean,"loyalty_points"?: number,"must_change_password"?: boolean,"phone"?: string | null,"role"?: Database["public"]['Enums']["profile_role"],"staff_permissions"?: (Database["public"]['Enums']["staff_permission"])[],"updated_at"?: string,"username_changed_at"?: string | null
                   }
                   Update: {
-                    "avatar_url"?: string | null,"created_at"?: string,"email"?: string | null,"full_name"?: string,"id"?: string,"is_active"?: boolean,"loyalty_points"?: number,"must_change_password"?: boolean,"phone"?: string | null,"role"?: Database["public"]['Enums']["profile_role"],"staff_permissions"?: (Database["public"]['Enums']["staff_permission"])[],"updated_at"?: string
+                    "avatar_url"?: string | null,"created_at"?: string,"email"?: string | null,"full_name"?: string,"id"?: string,"is_active"?: boolean,"loyalty_points"?: number,"must_change_password"?: boolean,"phone"?: string | null,"role"?: Database["public"]['Enums']["profile_role"],"staff_permissions"?: (Database["public"]['Enums']["staff_permission"])[],"updated_at"?: string,"username_changed_at"?: string | null
                   }
                   Relationships: [
 
@@ -598,7 +598,7 @@ isOneToOne: false
 "status": Database["public"]['Enums']["booking_status"],
 "subtotal_cents": number,
 "updated_at": string,
-"user_id": string
+"user_id": string | null
             }
                           SetofOptions: {
         from: "*"
@@ -635,7 +635,7 @@ isOneToOne: false
 "status": Database["public"]['Enums']["booking_status"],
 "subtotal_cents": number,
 "updated_at": string,
-"user_id": string
+"user_id": string | null
             }
                           SetofOptions: {
         from: "*"

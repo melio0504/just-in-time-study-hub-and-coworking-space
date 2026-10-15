@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Calendar, Clock, LogOut, TrendingUp, BookOpen, Play, Pause, RotateCcw, Plus, X, Settings, Trash2 } from 'lucide-react';
+import { Calendar, Clock, LogOut, TrendingUp, BookOpen, Play, Pause, RotateCcw, Plus, X, Settings, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import {
@@ -12,6 +12,7 @@ import {
   type StudyDay,
 } from '@/lib/study-history';
 import { ReservationManager } from './_components/ReservationManager';
+import { AccountSettings } from './_components/AccountSettings';
 
 const STUDY_HISTORY_WEEKS = STUDY_HISTORY_DAYS / 7;
 
@@ -19,6 +20,8 @@ export default function Account() {
   const router = useRouter();
   const [userName, setUserName] = useState('User');
   const [userEmail, setUserEmail] = useState('');
+  const [usernameChangedAt, setUsernameChangedAt] = useState<string | null>(null);
+  const [accountClock, setAccountClock] = useState(() => Date.now());
   const [bookingCount, setBookingCount] = useState(0);
   const [studyData, setStudyData] = useState<StudyDay[]>([]);
 
@@ -63,7 +66,7 @@ export default function Account() {
       const [profileResult, bookingHistoryResult] = await Promise.all([
         supabase
           .from('profiles')
-          .select('full_name')
+          .select('full_name, username_changed_at')
           .eq('id', user.id)
           .single(),
         supabase
@@ -80,6 +83,7 @@ export default function Account() {
       if (!cancelled) {
         setUserName(profile?.full_name || user.user_metadata.full_name || 'User');
         setUserEmail(user.email || '');
+        setUsernameChangedAt(profile?.username_changed_at ?? null);
         setBookingCount(bookingHistory.length);
         setStudyData(buildStudyHistory(bookingHistory));
       }
@@ -90,6 +94,11 @@ export default function Account() {
       cancelled = true;
     };
   }, [router]);
+
+  useEffect(() => {
+    const clock = window.setInterval(() => setAccountClock(Date.now()), 60_000);
+    return () => window.clearInterval(clock);
+  }, []);
 
   // Timer logic
   useEffect(() => {
@@ -661,28 +670,17 @@ export default function Account() {
             <ReservationManager />
           </div>
 
-          {/* Profile */}
-          <div>
-            <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-[#f3ede4]">
-              <h2 className="text-2xl mb-6 text-[#2d2520]">Profile</h2>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <User className="w-5 h-5 text-[#6b5e52]" />
-                  <div>
-                    <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Username</p>
-                    <p className="text-[#2d2520]">{userName}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <User className="w-5 h-5 text-[#6b5e52]" />
-                  <div>
-                    <p className="text-xs text-[#6b5e52] uppercase tracking-wider">Email</p>
-                    <p className="text-[#2d2520]">{userEmail}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <AccountSettings
+            key={userEmail}
+            username={userName}
+            email={userEmail}
+            usernameChangedAt={usernameChangedAt}
+            currentTimestamp={accountClock}
+            onUsernameChanged={(nextUsername, changedAt) => {
+              setUserName(nextUsername);
+              setUsernameChangedAt(changedAt);
+            }}
+          />
         </div>
       </div>
     </div>

@@ -279,6 +279,9 @@ verify_jwt = true
 [functions.cancel-customer-booking]
 verify_jwt = true
 
+[functions.delete-account]
+verify_jwt = true
+
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
 enable_signup = false
