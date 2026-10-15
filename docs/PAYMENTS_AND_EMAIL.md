@@ -55,8 +55,22 @@ https://your-tunnel.example/functions/v1/paymongo-webhook
 
 Subscribe to `payment.paid`, `payment.failed`, and `qrph.expired`. Copy that
 endpoint's signing secret into `PAYMONGO_WEBHOOK_SECRET`, then restart the
-function server. Use PayMongo's test keys and dashboard test tools; a test QR
-does not move real money.
+function server. Use PayMongo's test keys and test controls. Do not scan the
+test QR code with a banking or e-wallet app; use PayMongo's `test_url` instead.
+
+After a reservation displays its test QR code, open PayMongo's approval and
+rejection controls for the latest active local Payment Intent with:
+
+```bash
+npm run paymongo:test-url
+```
+
+The command prints the test URL and opens it in the default browser when a
+desktop is available. To only print the URL, run:
+
+```bash
+npm run paymongo:test-url -- --print-only
+```
 
 ## Production: Supabase and Resend
 
