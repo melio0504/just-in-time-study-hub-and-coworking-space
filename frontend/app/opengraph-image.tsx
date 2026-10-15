@@ -1,17 +1,22 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
 
 export const alt = "Just In Time Study Hub and Coworking Space in Manila";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function OpenGraphImage() {
+export default async function OpenGraphImage() {
+  const logo = await readFile(
+    new URL("../public/images/logo.png", import.meta.url),
+  );
+  const logoUrl = `data:image/png;base64,${logo.toString("base64")}`;
+
   return new ImageResponse(
     (
       <div
         style={{
           alignItems: "center",
-          background:
-            "linear-gradient(135deg, #fffcf7 0%, #fff2d6 58%, #f6d58f 100%)",
+          background: "#fffcf7",
           color: "#2d2520",
           display: "flex",
           height: "100%",
@@ -56,31 +61,18 @@ export default function OpenGraphImage() {
         >
           <div
             style={{
-              alignItems: "center",
               display: "flex",
-              fontSize: 25,
-              fontWeight: 700,
-              letterSpacing: 2,
-              textTransform: "uppercase",
             }}
           >
-            <span
+            <img
+              alt="Just In Time Study Hub and Coworking Space"
+              src={logoUrl}
               style={{
-                alignItems: "center",
-                background: "#e5a930",
-                borderRadius: 18,
-                color: "white",
-                display: "flex",
-                fontSize: 24,
-                height: 64,
-                justifyContent: "center",
-                marginRight: 20,
-                width: 64,
+                height: 142,
+                objectFit: "contain",
+                width: 294,
               }}
-            >
-              JIT
-            </span>
-            Just In Time Study Hub
+            />
           </div>
           <div
             style={{
@@ -93,8 +85,8 @@ export default function OpenGraphImage() {
               marginTop: 50,
             }}
           >
-            <span>Your space for</span>
-            <span style={{ color: "#c4860e" }}>focused success.</span>
+            <span>You are</span>
+            <span style={{ color: "#c4860e" }}>just in time.</span>
           </div>
           <div
             style={{
@@ -104,7 +96,7 @@ export default function OpenGraphImage() {
               marginTop: 42,
             }}
           >
-            Study &amp; coworking spaces · Mendiola, Manila
+            Study Hub &amp; Coworking Spaces · Mendiola, Manila
           </div>
         </div>
       </div>
