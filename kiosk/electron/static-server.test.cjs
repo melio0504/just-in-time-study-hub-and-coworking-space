@@ -10,6 +10,7 @@ test("serves the exported kiosk only from loopback with security headers", async
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "jit-kiosk-server-"));
   fs.mkdirSync(path.join(root, "_next", "static"), { recursive: true });
   fs.writeFileSync(path.join(root, "index.html"), "<h1>Kiosk</h1>");
+  fs.writeFileSync(path.join(root, "success.mp3"), "audio fixture");
   fs.writeFileSync(path.join(root, "_next", "static", "app.js"), "console.log('kiosk')");
 
   const server = createStaticServer(root);
@@ -28,6 +29,10 @@ test("serves the exported kiosk only from loopback with security headers", async
   const asset = await fetch(`${origin}/_next/static/app.js`);
   assert.equal(asset.status, 200);
   assert.equal(asset.headers.get("cache-control"), "public, max-age=31536000, immutable");
+
+  const sound = await fetch(`${origin}/success.mp3`);
+  assert.equal(sound.status, 200);
+  assert.equal(sound.headers.get("content-type"), "audio/mpeg");
 });
 
 test("rejects missing files and paths outside the export directory", async () => {

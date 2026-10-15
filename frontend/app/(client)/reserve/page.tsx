@@ -108,6 +108,8 @@ function ReserveContent() {
   const [configurationLoading, setConfigurationLoading] = useState(isSupabaseConfigured);
   const [configurationError, setConfigurationError] = useState('');
   const qrRequestVersionRef = useRef(0);
+  const paymentSuccessSoundRef = useRef<HTMLAudioElement>(null);
+  const soundedBookingIdRef = useRef('');
 
   const initializeSeats = useCallback((_date: string, selectedSeats: string[] = []): Seat[] => {
     return allSeatIds.map(id => ({
@@ -322,6 +324,19 @@ function ReserveContent() {
       window.removeEventListener('focus', updateCountdown);
     };
   }, [confirmationStep, isModalOpen, qrExpiresAt]);
+
+  useEffect(() => {
+    if (confirmationStep !== 'success' || !bookingId || soundedBookingIdRef.current === bookingId) {
+      return;
+    }
+
+    soundedBookingIdRef.current = bookingId;
+    const sound = paymentSuccessSoundRef.current;
+    if (!sound) return;
+
+    sound.currentTime = 0;
+    void sound.play().catch(() => undefined);
+  }, [bookingId, confirmationStep]);
 
   const createPaymongoQr = async (id: string) => {
     const requestVersion = ++qrRequestVersionRef.current;
@@ -788,6 +803,8 @@ function ReserveContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] to-[#fff8ed] pt-20 sm:pt-24">
+      <audio ref={paymentSuccessSoundRef} src="/audio/success.mp3" preload="auto" aria-hidden="true" />
+
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 sm:py-16">
         <div className="mb-8 sm:mb-12">
           <h1 className="text-3xl sm:text-5xl mb-3 sm:mb-4 text-[#2d2520]">Reserve Your Desk</h1>

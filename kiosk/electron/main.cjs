@@ -9,6 +9,8 @@ const embeddedKioskEnvironment = require("./build-config.cjs");
 const kioskConfig = getKioskConfig(embeddedKioskEnvironment);
 const KIOSK_APP_ID = "com.jitstudyhub.kiosk";
 
+app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
+
 if (process.platform === "linux") {
   app.setDesktopName(`${KIOSK_APP_ID}.desktop`);
 }

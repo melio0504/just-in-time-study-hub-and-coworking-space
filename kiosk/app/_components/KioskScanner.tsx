@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   QrCode,
   Clock,
@@ -133,6 +133,8 @@ export function KioskScanner() {
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [serverError, setServerError] = useState('');
   const [errorSecondsRemaining, setErrorSecondsRemaining] = useState(ERROR_DISPLAY_SECONDS);
+  const successSoundRef = useRef<HTMLAudioElement>(null);
+  const errorSoundRef = useRef<HTMLAudioElement>(null);
 
   const totalSeats = 50;
   const occupiedCount = sessions.reduce((count, session) => count + session.seats.length, 0);
@@ -199,6 +201,18 @@ export function KioskScanner() {
       window.clearTimeout(resumeScanner);
     };
   }, [resetToIdle, scanState]);
+
+  useEffect(() => {
+    const sound = scanState === "success"
+      ? successSoundRef.current
+      : scanState === "error"
+        ? errorSoundRef.current
+        : null;
+    if (!sound) return;
+
+    sound.currentTime = 0;
+    void sound.play().catch(() => undefined);
+  }, [scanState]);
 
   const processScan = useCallback(
     async (rawCode: string) => {
@@ -295,6 +309,9 @@ export function KioskScanner() {
 
   return (
     <div className="flex h-dvh min-h-dvh w-full flex-col overflow-hidden bg-gradient-to-br from-[#fffcf7] via-[#fff8ed] to-[#fef3dc]">
+      <audio ref={successSoundRef} src="/audio/success.mp3" preload="auto" aria-hidden="true" />
+      <audio ref={errorSoundRef} src="/audio/error.mp3" preload="auto" aria-hidden="true" />
+
       {/* Top bar */}
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[#f3ede4] bg-white/80 px-3 py-2 backdrop-blur-md sm:gap-4 sm:px-5 sm:py-3 xl:px-7">
         <div className="flex min-w-0 items-center gap-3 sm:gap-4">
