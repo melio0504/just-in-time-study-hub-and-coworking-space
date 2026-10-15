@@ -1,3 +1,4 @@
+
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
@@ -130,14 +131,14 @@ isOneToOne: false
                   ]
                 },"booking_settings": {
                   Row: {
-                    "max_duration_hours": number,"max_seats_per_booking": number,"maximum_advance_days": number,"min_duration_hours": number,"minimum_notice_minutes": number,"singleton": boolean,"updated_at": string
+                    "max_duration_hours": number,"max_seats_per_booking": number,"maximum_advance_days": number,"min_duration_hours": number,"minimum_notice_minutes": number,"no_show_grace_minutes": number,"singleton": boolean,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "max_duration_hours"?: number,"max_seats_per_booking"?: number,"maximum_advance_days"?: number,"min_duration_hours"?: number,"minimum_notice_minutes"?: number,"singleton"?: boolean,"updated_at"?: string
+                    "max_duration_hours"?: number,"max_seats_per_booking"?: number,"maximum_advance_days"?: number,"min_duration_hours"?: number,"minimum_notice_minutes"?: number,"no_show_grace_minutes"?: number,"singleton"?: boolean,"updated_at"?: string
                   }
                   Update: {
-                    "max_duration_hours"?: number,"max_seats_per_booking"?: number,"maximum_advance_days"?: number,"min_duration_hours"?: number,"minimum_notice_minutes"?: number,"singleton"?: boolean,"updated_at"?: string
+                    "max_duration_hours"?: number,"max_seats_per_booking"?: number,"maximum_advance_days"?: number,"min_duration_hours"?: number,"minimum_notice_minutes"?: number,"no_show_grace_minutes"?: number,"singleton"?: boolean,"updated_at"?: string
                   }
                   Relationships: [
 

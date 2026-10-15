@@ -135,6 +135,7 @@ export function BusinessSettingsManager() {
       max_duration_hours: settings.max_duration_hours,
       minimum_notice_minutes: settings.minimum_notice_minutes,
       maximum_advance_days: settings.maximum_advance_days,
+      no_show_grace_minutes: settings.no_show_grace_minutes,
     }).eq("singleton", true);
     setMessage(error?.message ?? "Booking limits saved.");
     setSaving("");
@@ -298,7 +299,7 @@ export function BusinessSettingsManager() {
         </SettingsCard>
 
         {settings && <SettingsCard icon={Settings2} title="Booking limits" description="These rules are enforced by the database for new reservations and schedule changes." action={<SaveButton busy={saving === "settings"} onClick={() => void saveSettings()} label="Save limits" />}>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><NumberSetting label="Maximum seats" min={1} max={5} value={settings.max_seats_per_booking} onChange={(value) => setSettings({ ...settings, max_seats_per_booking: value })} suffix="per booking" /><NumberSetting label="Minimum duration" min={1} max={24} value={settings.min_duration_hours} onChange={(value) => setSettings({ ...settings, min_duration_hours: value })} suffix="hours" /><NumberSetting label="Maximum duration" min={settings.min_duration_hours} max={24} value={settings.max_duration_hours} onChange={(value) => setSettings({ ...settings, max_duration_hours: value })} suffix="hours" /><NumberSetting label="Minimum notice" min={0} max={10080} value={settings.minimum_notice_minutes} onChange={(value) => setSettings({ ...settings, minimum_notice_minutes: value })} suffix="minutes" /><NumberSetting label="Advance booking" min={1} max={365} value={settings.maximum_advance_days} onChange={(value) => setSettings({ ...settings, maximum_advance_days: value })} suffix="days" /></div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6"><NumberSetting label="Maximum seats" min={1} max={5} value={settings.max_seats_per_booking} onChange={(value) => setSettings({ ...settings, max_seats_per_booking: value })} suffix="per booking" /><NumberSetting label="Minimum duration" min={1} max={24} value={settings.min_duration_hours} onChange={(value) => setSettings({ ...settings, min_duration_hours: value })} suffix="hours" /><NumberSetting label="Maximum duration" min={settings.min_duration_hours} max={24} value={settings.max_duration_hours} onChange={(value) => setSettings({ ...settings, max_duration_hours: value })} suffix="hours" /><NumberSetting label="Minimum notice" min={0} max={10080} value={settings.minimum_notice_minutes} onChange={(value) => setSettings({ ...settings, minimum_notice_minutes: value })} suffix="minutes" /><NumberSetting label="Advance booking" min={1} max={365} value={settings.maximum_advance_days} onChange={(value) => setSettings({ ...settings, maximum_advance_days: value })} suffix="days" /><NumberSetting label="No-show grace" min={5} max={240} value={settings.no_show_grace_minutes} onChange={(value) => setSettings({ ...settings, no_show_grace_minutes: value })} suffix="minutes after start" /></div>
         </SettingsCard>}
       </div>
       {deleteTarget && <DeleteConfirmationModal target={deleteTarget} busy={deletionBusy} error={deleteError} onClose={() => { if (!deletionBusy) setDeleteTarget(null); }} onConfirm={() => void confirmDelete()} />}
