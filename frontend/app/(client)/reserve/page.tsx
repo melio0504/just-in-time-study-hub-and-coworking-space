@@ -10,6 +10,7 @@ import {
   getReservationAvailabilityWindow,
   SEAT_AVAILABILITY_REFRESH_MS,
 } from '@/lib/seatAvailability';
+import { getManilaDateString, isReservationTimePast } from '@/lib/reservationTime';
 import { allSeatIds } from '@/lib/seats';
 import { cancelBooking, createBooking } from '@/lib/supabase/bookings';
 import { createClient } from '@/lib/supabase/client';
@@ -37,6 +38,13 @@ interface ReservationDraft {
 const RESERVATION_DRAFT_KEY = 'jit-reservation-draft';
 const TIME_GROUPS = [
   {
+    label: 'After midnight',
+    options: [
+      ['00:00', '12:00 AM'], ['01:00', '1:00 AM'], ['02:00', '2:00 AM'],
+      ['03:00', '3:00 AM'], ['04:00', '4:00 AM'],
+    ],
+  },
+  {
     label: 'Morning',
     options: [
       ['08:00', '8:00 AM'], ['09:00', '9:00 AM'], ['10:00', '10:00 AM'],
@@ -57,13 +65,6 @@ const TIME_GROUPS = [
       ['21:00', '9:00 PM'], ['22:00', '10:00 PM'], ['23:00', '11:00 PM'],
     ],
   },
-  {
-    label: 'After midnight',
-    options: [
-      ['00:00', '12:00 AM'], ['01:00', '1:00 AM'], ['02:00', '2:00 AM'],
-      ['03:00', '3:00 AM'], ['04:00', '4:00 AM'],
-    ],
-  },
 ] as const;
 const DURATION_OPTIONS = [
   ['1', '1 hour'], ['2', '2 hours'], ['3', '3 hours'], ['4', '4 hours'],
@@ -80,21 +81,14 @@ const getHoursUntilClosing = (time: string) => {
   return 0;
 };
 
-const getTodayString = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
+const getDateString = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
-const startOfDay = (date: Date) => {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-};
-
-const isPastDate = (date: Date) => startOfDay(date) < startOfDay(new Date());
+const isPastDate = (date: Date) => getDateString(date) < getManilaDateString();
 
 function ReserveContent() {
   const searchParams = useSearchParams();
@@ -104,7 +98,7 @@ function ReserveContent() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    date: getTodayString(),
+    date: getManilaDateString(),
     time: '',
     duration: '',
     space: '',
@@ -134,6 +128,7 @@ function ReserveContent() {
   const [memberIdentity, setMemberIdentity] = useState<MemberIdentity | null>(null);
   const [isIdentityLoading, setIsIdentityLoading] = useState(isSupabaseConfigured);
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+  const [currentTime, setCurrentTime] = useState(() => new Date());
   const qrRequestVersionRef = useRef(0);
 
   const initializeSeats = useCallback((_date: string, selectedSeats: string[] = []): Seat[] => {
@@ -143,7 +138,28 @@ function ReserveContent() {
     }));
   }, []);
 
-  const [seats, setSeats] = useState<Seat[]>(initializeSeats(getTodayString()));
+  const [seats, setSeats] = useState<Seat[]>(initializeSeats(getManilaDateString()));
+
+  useEffect(() => {
+    const updateCurrentTime = () => {
+      const now = new Date();
+      setCurrentTime(now);
+      setFormData((current) => {
+        if (!current.time || !isReservationTimePast(current.date, current.time, now)) {
+          return current;
+        }
+
+        return { ...current, time: '', duration: '' };
+      });
+    };
+    const refreshInterval = window.setInterval(updateCurrentTime, 30_000);
+    window.addEventListener('focus', updateCurrentTime);
+
+    return () => {
+      window.clearInterval(refreshInterval);
+      window.removeEventListener('focus', updateCurrentTime);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -396,7 +412,7 @@ function ReserveContent() {
 
   useEffect(() => {
     const restoreDraft = window.setTimeout(() => {
-      let date = getTodayString();
+      let date = getManilaDateString();
       let time = '';
       let duration = '';
       let seatIds: string[] = [];
@@ -427,6 +443,11 @@ function ReserveContent() {
               ))
               .slice(0, 5)
             : [];
+
+          if (time && isReservationTimePast(date, time)) {
+            time = '';
+            duration = '';
+          }
         }
       } catch {
         window.localStorage.removeItem(RESERVATION_DRAFT_KEY);
@@ -501,6 +522,9 @@ function ReserveContent() {
     const { name, value } = e.target;
     setFormData((current) => {
       if (name === 'time') {
+        if (value && isReservationTimePast(current.date, value)) {
+          return { ...current, time: '', duration: '' };
+        }
         const hoursUntilClosing = getHoursUntilClosing(value);
         const duration = Number(current.duration) <= hoursUntilClosing ? current.duration : '';
         return { ...current, time: value, duration };
@@ -517,14 +541,18 @@ function ReserveContent() {
   const handleDateSelect = (date: Date) => {
     if (isPastDate(date)) return;
 
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateString = `${year}-${month}-${day}`;
+    const dateString = getDateString(date);
 
-    setFormData({
-      ...formData,
-      date: dateString,
+    setFormData((current) => {
+      const keepTime = Boolean(
+        current.time && !isReservationTimePast(dateString, current.time),
+      );
+      return {
+        ...current,
+        date: dateString,
+        time: keepTime ? current.time : '',
+        duration: keepTime ? current.duration : '',
+      };
     });
 
     const currentSelected = seats.filter(s => s.status === 'selected').map(s => s.id);
@@ -565,7 +593,7 @@ function ReserveContent() {
   };
 
   const canGoToPreviousMonth = () => {
-    const today = new Date();
+    const today = new Date(`${getManilaDateString()}T00:00:00`);
     const viewYear = currentMonth.getFullYear();
     const viewMonth = currentMonth.getMonth();
     return viewYear > today.getFullYear() || (viewYear === today.getFullYear() && viewMonth > today.getMonth());
@@ -603,6 +631,13 @@ function ReserveContent() {
 
     if (!isSupabaseConfigured) {
       setBookingError('Supabase is not configured. Add your project values to .env.');
+      return;
+    }
+
+    if (isReservationTimePast(formData.date, formData.time)) {
+      setBookingError('Please select a future reservation time.');
+      setFormData((current) => ({ ...current, time: '', duration: '' }));
+      timeSelectRef.current?.focus();
       return;
     }
 
@@ -808,13 +843,20 @@ function ReserveContent() {
                 <option value="">Select time</option>
                 {TIME_GROUPS.map((group) => (
                   <optgroup key={group.label} label={group.label}>
-                    {group.options.map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
+                    {group.options.map(([value, label]) => {
+                      const past = isReservationTimePast(formData.date, value, currentTime);
+                      return (
+                        <option key={value} value={value} disabled={past}>
+                          {label}{past ? ' (Past)' : ''}
+                        </option>
+                      );
+                    })}
                   </optgroup>
                 ))}
               </select>
-              <p className="mt-2 text-xs text-[#8b7355]">Open 8:00 AM–5:00 AM · Closed 5:00–8:00 AM</p>
+              <p className="mt-2 text-xs text-[#8b7355]">
+                Past times are unavailable for today. Open 8:00 AM–5:00 AM · Closed 5:00–8:00 AM
+              </p>
             </div>
             <div>
               <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
