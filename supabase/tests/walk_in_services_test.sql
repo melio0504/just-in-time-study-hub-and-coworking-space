@@ -20,11 +20,14 @@ SELECT set_config(
   ((((now() AT TIME ZONE 'Asia/Manila') - interval '8 hours')::date)::text),
   true
 );
+SELECT set_config('test.admin_id', (SELECT id::text FROM public.profiles WHERE email = 'admin@jit-studyhub.com'), true);
+SELECT set_config('test.maria_id', (SELECT id::text FROM public.profiles WHERE email = 'maria.santos.jit@gmail.com'), true);
+SELECT set_config('test.ramon_id', (SELECT id::text FROM public.profiles WHERE email = 'ramon.deleon@jit-studyhub.com'), true);
 
 -- Capture the existing seeded totals so these tests remain deterministic.
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"7d3b185a-905f-4f7a-93ec-a9e5276cdfe2","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.admin_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -54,7 +57,7 @@ SELECT set_config(
 RESET ROLE;
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"b1000000-0000-4000-8000-000000000001","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.maria_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -84,7 +87,7 @@ SELECT throws_ok(
 RESET ROLE;
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"f1000000-0000-4000-8000-000000000002","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.ramon_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -230,7 +233,7 @@ SELECT throws_ok(
 RESET ROLE;
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"7d3b185a-905f-4f7a-93ec-a9e5276cdfe2","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.admin_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;

@@ -24,6 +24,11 @@ VALUES ('RLS draft announcement', 'Only announcement staff should see this.', 'd
 SELECT set_config('test.total_bookings', (SELECT count(*)::text FROM public.bookings), true);
 SELECT set_config('test.total_profiles', (SELECT count(*)::text FROM public.profiles), true);
 SELECT set_config('test.total_metrics', (SELECT count(*)::text FROM public.daily_business_metrics), true);
+SELECT set_config('test.maria_id', (SELECT id::text FROM public.profiles WHERE email = 'maria.santos.jit@gmail.com'), true);
+SELECT set_config('test.juan_id', (SELECT id::text FROM public.profiles WHERE email = 'juan.delacruz.jit@gmail.com'), true);
+SELECT set_config('test.ramon_id', (SELECT id::text FROM public.profiles WHERE email = 'ramon.deleon@jit-studyhub.com'), true);
+SELECT set_config('test.sofia_id', (SELECT id::text FROM public.profiles WHERE email = 'sofia.mercado@jit-studyhub.com'), true);
+SELECT set_config('test.admin_id', (SELECT id::text FROM public.profiles WHERE email = 'admin@jit-studyhub.com'), true);
 
 -- Anonymous visitors only receive explicitly public rows.
 SELECT set_config('request.jwt.claims', '{"role":"anon"}', true);
@@ -43,7 +48,7 @@ RESET ROLE;
 -- A seeded customer can only read and update their own data.
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"b1000000-0000-4000-8000-000000000001","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.maria_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -57,7 +62,7 @@ SELECT ok(
   NOT EXISTS (
     SELECT 1
     FROM public.profiles
-    WHERE id = 'b1000000-0000-4000-8000-000000000002'::uuid
+    WHERE id = current_setting('test.juan_id')::uuid
   ),
   'customers cannot read another customer profile'
 );
@@ -65,7 +70,7 @@ SELECT ok(
   NOT EXISTS (
     SELECT 1
     FROM public.bookings
-    WHERE user_id <> 'b1000000-0000-4000-8000-000000000001'::uuid
+    WHERE user_id <> current_setting('test.maria_id')::uuid
   ),
   'customers cannot read another customer booking'
 );
@@ -74,22 +79,22 @@ SELECT ok(
   'customers cannot read draft announcements'
 );
 SELECT results_eq(
-  $$
+  format($$
     UPDATE public.profiles
     SET full_name = full_name
-    WHERE id = 'b1000000-0000-4000-8000-000000000001'::uuid
+    WHERE id = %L::uuid
     RETURNING id
-  $$,
-  $$ VALUES ('b1000000-0000-4000-8000-000000000001'::uuid) $$,
+  $$, current_setting('test.maria_id')),
+  format($$ VALUES (%L::uuid) $$, current_setting('test.maria_id')),
   'customers can update their own allowed profile fields'
 );
 SELECT is_empty(
-  $$
+  format($$
     UPDATE public.profiles
     SET full_name = full_name
-    WHERE id = 'b1000000-0000-4000-8000-000000000002'::uuid
+    WHERE id = %L::uuid
     RETURNING id
-  $$,
+  $$, current_setting('test.juan_id')),
   'customers cannot update another profile'
 );
 SELECT throws_ok(
@@ -110,7 +115,7 @@ RESET ROLE;
 -- Ramon is seeded with only the seating permission.
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"f1000000-0000-4000-8000-000000000002","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.ramon_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -141,7 +146,7 @@ RESET ROLE;
 -- Sofia is seeded with only the announcements permission.
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"f1000000-0000-4000-8000-000000000003","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.sofia_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -161,7 +166,7 @@ RESET ROLE;
 -- The seeded owner has all scoped access and owner-only analytics access.
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"7d3b185a-905f-4f7a-93ec-a9e5276cdfe2","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.admin_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;

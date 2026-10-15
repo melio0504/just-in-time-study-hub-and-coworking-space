@@ -1,6 +1,14 @@
 BEGIN;
 SELECT plan(22);
 
+-- Seeded Auth IDs are intentionally random; tests resolve stable fixture
+-- emails instead of coupling behavior to a particular UUID.
+SELECT set_config('test.maria_id', (SELECT id::text FROM public.profiles WHERE email = 'maria.santos.jit@gmail.com'), true);
+SELECT set_config('test.juan_id', (SELECT id::text FROM public.profiles WHERE email = 'juan.delacruz.jit@gmail.com'), true);
+SELECT set_config('test.angela_id', (SELECT id::text FROM public.profiles WHERE email = 'angela.reyes.jit@gmail.com'), true);
+SELECT set_config('test.ramon_id', (SELECT id::text FROM public.profiles WHERE email = 'ramon.deleon@jit-studyhub.com'), true);
+SELECT set_config('test.sofia_id', (SELECT id::text FROM public.profiles WHERE email = 'sofia.mercado@jit-studyhub.com'), true);
+
 -- A dedicated seat keeps the walk-in tests independent from seeded occupancy.
 INSERT INTO public.seats (
   code,
@@ -19,7 +27,7 @@ INSERT INTO public.seats (
 -- Exercise the same authenticated RPC used by the public booking application.
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"b1000000-0000-4000-8000-000000000001","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.maria_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -30,7 +38,7 @@ SELECT set_config(
     SELECT id::text
     FROM public.create_booking(
       '  Maria Transaction  ',
-      'MARIA.TRANSACTION@EXAMPLE.TEST',
+      'MARIA.TRANSACTION@GMAIL.COM',
       (current_date + 30),
       '09:00'::time,
       1::smallint,
@@ -48,7 +56,7 @@ SELECT is(
 );
 SELECT is(
   (SELECT guest_email FROM public.bookings WHERE id = current_setting('test.booking_id')::uuid),
-  'maria.transaction@example.test',
+  'maria.transaction@gmail.com',
   'booking creation normalizes the guest email'
 );
 SELECT is(
@@ -72,7 +80,7 @@ SELECT is(
 RESET ROLE;
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"b1000000-0000-4000-8000-000000000002","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.juan_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -80,7 +88,7 @@ SELECT throws_ok(
   $$
     SELECT public.create_booking(
       'Overlap Test',
-      'overlap@example.test',
+      'overlap.test@gmail.com',
       (current_date + 30),
       '09:30'::time,
       1::smallint,
@@ -97,7 +105,7 @@ SELECT throws_ok(
 RESET ROLE;
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"b1000000-0000-4000-8000-000000000003","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.angela_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -105,7 +113,7 @@ SELECT throws_ok(
   $$
     SELECT public.create_booking(
       'Duplicate Test',
-      'duplicate@example.test',
+      'duplicate.test@gmail.com',
       (current_date + 30),
       '11:00'::time,
       1::smallint,
@@ -121,7 +129,7 @@ SELECT throws_ok(
 RESET ROLE;
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"b1000000-0000-4000-8000-000000000001","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.maria_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -171,7 +179,7 @@ SELECT ok(
 RESET ROLE;
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"b1000000-0000-4000-8000-000000000002","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.juan_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -181,7 +189,7 @@ SELECT set_config(
     SELECT id::text
     FROM public.create_booking(
       'Juan Transaction',
-      'juan.transaction@example.test',
+      'juan.transaction@gmail.com',
       (current_date + 31),
       '11:00'::time,
       1::smallint,
@@ -195,7 +203,7 @@ SELECT set_config(
 RESET ROLE;
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"b1000000-0000-4000-8000-000000000001","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.maria_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -215,7 +223,7 @@ WHERE id = current_setting('test.other_booking_id')::uuid;
 
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"b1000000-0000-4000-8000-000000000002","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.juan_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -245,7 +253,7 @@ SELECT is(
 RESET ROLE;
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"f1000000-0000-4000-8000-000000000002","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.ramon_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
@@ -305,7 +313,7 @@ SELECT is(
 -- Sofia only has announcement access and cannot operate seating.
 SELECT set_config(
   'request.jwt.claims',
-  '{"sub":"f1000000-0000-4000-8000-000000000003","role":"authenticated"}',
+  jsonb_build_object('sub', current_setting('test.sofia_id'), 'role', 'authenticated')::text,
   true
 );
 SET LOCAL ROLE authenticated;
