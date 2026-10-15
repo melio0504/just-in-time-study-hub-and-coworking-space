@@ -18,6 +18,8 @@ node_modules/
 # next.js
 .next/
 out/
+/kiosk/dist-electron/
+/kiosk/electron/build-config.cjs
 
 # production
 build/
