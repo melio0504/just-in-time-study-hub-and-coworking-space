@@ -85,7 +85,8 @@
     "supabase:functions": "supabase functions serve",
     "supabase:stop": "supabase stop",
     "supabase:reset": "supabase db reset",
-    "supabase:types": "supabase gen types typescript --local > frontend/lib/supabase/database.types.ts && cp frontend/lib/supabase/database.types.ts admin/lib/supabase/database.types.ts"
+    "supabase:types": "supabase gen types typescript --local > frontend/lib/supabase/database.types.ts && cp frontend/lib/supabase/database.types.ts admin/lib/supabase/database.types.ts",
+    "paymongo:test-url": "bash scripts/open-paymongo-test-url.sh"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
