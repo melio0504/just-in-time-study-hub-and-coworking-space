@@ -121,8 +121,8 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
           >
             <ScanLine className="mb-4 h-16 w-16 text-[#e5a930]" />
           </motion.div>
-          <p className="text-lg text-[#2d2520]">Starting camera…</p>
-          <p className="mt-1 text-sm text-[#6b5e52]">Allow camera access when prompted.</p>
+          <p className="text-xl text-[#2d2520]">Starting camera…</p>
+          <p className="mt-1 text-base text-[#6b5e52]">Allow camera access when prompted.</p>
         </div>
       )}
 
@@ -131,7 +131,7 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#fee2e2]">
             <AlertCircle className="h-9 w-9 text-[#dc2626]" />
           </div>
-          <p className="mb-4 max-w-sm text-[#6b5e52]">{CAMERA_MESSAGES[cameraState]}</p>
+          <p className="mb-4 max-w-md text-lg leading-relaxed text-[#6b5e52]">{CAMERA_MESSAGES[cameraState]}</p>
           {cameraState !== "insecure" && (
             <button
               type="button"
@@ -139,7 +139,7 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
                 setCameraState("starting");
                 setAttempt((current) => current + 1);
               }}
-              className="rounded-full bg-[#2d2520] px-6 py-3 font-medium text-white transition-all hover:shadow-lg"
+              className="rounded-full bg-[#2d2520] px-6 py-3 text-lg font-medium text-white transition-all hover:shadow-lg"
             >
               Try camera again
             </button>

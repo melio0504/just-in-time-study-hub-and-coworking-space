@@ -7,7 +7,7 @@ and must not have a public hostname.
 
 ## Behavior
 
-- Opens in full-screen mode on every launch.
+- Opens maximized on every launch.
 - The kiosk header has no minimize or full-screen controls.
 - `F11` toggles full screen and `Escape` leaves full screen.
 - After leaving full screen, the native window can be moved, resized, maximized,

@@ -63,7 +63,7 @@ async function createWindow() {
     minWidth: 960,
     minHeight: 640,
     show: false,
-    fullScreen: true,
+    fullScreen: false,
     fullscreenable: true,
     minimizable: true,
     maximizable: true,
@@ -103,7 +103,10 @@ async function createWindow() {
     }
   });
 
-  kioskWindow.once("ready-to-show", () => kioskWindow?.show());
+  kioskWindow.once("ready-to-show", () => {
+    kioskWindow?.maximize();
+    kioskWindow?.show();
+  });
   kioskWindow.on("closed", () => {
     kioskWindow = null;
   });
