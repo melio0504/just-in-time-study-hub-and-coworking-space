@@ -1,6 +1,6 @@
 {
   "name": "@jit-studyhub/kiosk",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "description": "Desktop QR check-in kiosk for Just In Time Study Hub",
   "main": "electron/main.cjs",

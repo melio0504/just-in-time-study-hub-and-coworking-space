@@ -2,7 +2,7 @@
   "name": "just-in-time-study-hub-and-coworking-space",
   "version": "1.2.0",
   "private": true,
-  "description": "A full-stack reservation, customer management, and on-site check-in platform for Just In Time Study Hub and Coworking Space.",
+  "description": "A full-stack platform for Just In Time Study Hub and Coworking Space, featuring online seat reservations, customer self-service, staff administration, and QR-based kiosk check-ins.",
   "author": {
     "name": "Just in Time Study Hub Dev Team"
   },
