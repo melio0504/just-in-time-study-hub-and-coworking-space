@@ -34,7 +34,11 @@ function accountUrl() {
   }
 }
 
-export async function sendBookingConfirmationEmail(booking: Record<string, unknown>, accessToken: string) {
+export async function sendBookingConfirmationEmail(
+  booking: Record<string, unknown>,
+  accessToken: string,
+  options: { resend?: boolean; idempotencyKey?: string } = {},
+) {
   const qrDataUrl = await QRCode.toDataURL(`JITPASS:${accessToken}`, {
     errorCorrectionLevel: "M",
     margin: 2,
@@ -46,12 +50,16 @@ export async function sendBookingConfirmationEmail(booking: Record<string, unkno
   const reservationUrl = accountUrl();
   const email = {
     to: String(booking.guest_email),
-    subject: `Payment received — ${reservationCode}`,
+    subject: options.resend
+      ? `Your QR access pass — ${reservationCode}`
+      : `Payment received — ${reservationCode}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#2d2520">
         <h1 style="color:#b57b12">Reservation confirmed</h1>
         <p>Hello ${escapeHtml(String(booking.guest_name))},</p>
-        <p>We received your QR PH payment and confirmed your Just In Time Study Hub reservation.</p>
+        <p>${options.resend
+          ? "Here is the replacement QR pass you requested for your Just In Time Study Hub reservation."
+          : "We received your QR PH payment and confirmed your Just In Time Study Hub reservation."}</p>
         <div style="background:#fff8ed;border:1px solid #eadfce;border-radius:16px;padding:20px">
           <p><strong>Reservation:</strong> ${escapeHtml(reservationCode)}</p>
           <p><strong>Seats:</strong> ${escapeHtml(seats)}</p>
@@ -116,7 +124,7 @@ export async function sendBookingConfirmationEmail(booking: Record<string, unkno
     headers: {
       Authorization: `Bearer ${resendKey}`,
       "Content-Type": "application/json",
-      "Idempotency-Key": `booking-confirmation/${booking.booking_id}`,
+      "Idempotency-Key": options.idempotencyKey ?? `booking-confirmation/${booking.booking_id}`,
     },
     body: JSON.stringify({
       from: fromEmail,

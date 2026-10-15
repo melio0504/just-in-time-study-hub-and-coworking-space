@@ -11,6 +11,7 @@ import {
   STUDY_HISTORY_DAYS,
   type StudyDay,
 } from '@/lib/study-history';
+import { ReservationManager } from './_components/ReservationManager';
 
 const STUDY_HISTORY_WEEKS = STUDY_HISTORY_DAYS / 7;
 
@@ -18,15 +19,6 @@ export default function Account() {
   const router = useRouter();
   const [userName, setUserName] = useState('User');
   const [userEmail, setUserEmail] = useState('');
-  const [recentBookings, setRecentBookings] = useState<
-    Array<{
-      id: string;
-      date: string;
-      seats: string[];
-      duration: string;
-      status: string;
-    }>
-  >([]);
   const [bookingCount, setBookingCount] = useState(0);
   const [studyData, setStudyData] = useState<StudyDay[]>([]);
 
@@ -68,19 +60,12 @@ export default function Account() {
       }
 
       const { startDate, endDate } = getStudyHistoryDateRange();
-      const [profileResult, recentBookingsResult, bookingHistoryResult] = await Promise.all([
+      const [profileResult, bookingHistoryResult] = await Promise.all([
         supabase
           .from('profiles')
           .select('full_name')
           .eq('id', user.id)
           .single(),
-        supabase
-          .from('bookings')
-          .select('reservation_code, booking_date, seat_ids, duration_hours, status')
-          .eq('user_id', user.id)
-          .order('booking_date', { ascending: false })
-          .order('start_time', { ascending: false })
-          .limit(4),
         supabase
           .from('bookings')
           .select('booking_date, duration_hours')
@@ -90,21 +75,11 @@ export default function Account() {
       ]);
 
       const profile = profileResult.data;
-      const bookings = recentBookingsResult.data;
       const bookingHistory = bookingHistoryResult.data ?? [];
 
       if (!cancelled) {
         setUserName(profile?.full_name || user.user_metadata.full_name || 'User');
         setUserEmail(user.email || '');
-        setRecentBookings(
-          (bookings ?? []).map((booking) => ({
-            id: booking.reservation_code,
-            date: booking.booking_date,
-            seats: booking.seat_ids,
-            duration: `${booking.duration_hours} hour${booking.duration_hours === 1 ? '' : 's'}`,
-            status: booking.status.replace('_', ' ').replace(/^./, (letter) => letter.toUpperCase()),
-          })),
-        );
         setBookingCount(bookingHistory.length);
         setStudyData(buildStudyHistory(bookingHistory));
       }
@@ -236,8 +211,7 @@ export default function Account() {
   };
 
   const getLevelColor = (level: number) => {
-    const colors = ['#f3ede4', '#fef3dc', '#f4d98d', '#e5a930', '#d69520'];
-    return colors[level];
+    return level > 0 ? '#d69520' : '#f3ede4';
   };
 
   const totalHours = studyData.reduce((sum, day) => sum + day.hours, 0);
@@ -311,17 +285,9 @@ export default function Account() {
                   ))}
                 </div>
 
-                <div className="mt-4 flex items-center justify-end gap-1.5 text-xs text-[#6b5e52]">
-                  <span className="mr-1">Less</span>
-                  {[0, 1, 2, 3, 4].map((level) => (
-                    <span
-                      key={level}
-                      className="h-3 w-3 rounded-[3px]"
-                      style={{ backgroundColor: getLevelColor(level) }}
-                      aria-hidden="true"
-                    />
-                  ))}
-                  <span className="ml-1">More</span>
+                <div className="mt-4 flex items-center justify-end gap-4 text-xs text-[#6b5e52]" aria-label="Study history color legend">
+                  <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-[3px] bg-[#f3ede4]" aria-hidden="true" />No booking</span>
+                  <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-[3px] bg-[#d69520]" aria-hidden="true" />Booked</span>
                 </div>
               </div>
             </div>
@@ -690,52 +656,9 @@ export default function Account() {
           </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Recent Bookings */}
-          <div className="md:col-span-2 bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-[#f3ede4]">
-            <h2 className="text-3xl mb-6 text-[#2d2520]">Recent Bookings</h2>
-
-            <div className="space-y-4">
-              {recentBookings.length === 0 && (
-                <p className="rounded-2xl border border-dashed border-[#f3ede4] p-6 text-center text-[#6b5e52]">
-                  No bookings yet. Your reservations will appear here.
-                </p>
-              )}
-              {recentBookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  className="bg-white rounded-2xl p-6 border border-[#f3ede4] hover:border-[#e5a930] transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-1">
-                        {booking.id}
-                      </p>
-                      <p className="text-lg text-[#2d2520]">
-                        {new Date(booking.date).toLocaleDateString('en-US', {
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </p>
-                    </div>
-                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-                      {booking.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-6 text-sm text-[#6b5e52]">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      <span>Seats: {booking.seats.join(', ')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      <span>{booking.duration}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="grid items-start gap-8 md:grid-cols-3">
+          <div className="md:col-span-2">
+            <ReservationManager />
           </div>
 
           {/* Profile */}

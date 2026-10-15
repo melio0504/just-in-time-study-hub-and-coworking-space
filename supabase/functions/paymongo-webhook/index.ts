@@ -87,6 +87,18 @@ async function retrievePaymentIntent(intentId: string, secretKey: string) {
   return object(payload?.data);
 }
 
+async function retrieveRefund(refundId: string, secretKey: string) {
+  const response = await fetch(`${PAYMONGO_API}/refunds/${encodeURIComponent(refundId)}`, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Basic ${btoa(`${secretKey}:`)}`,
+    },
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(`Could not verify the PayMongo refund (${response.status}).`);
+  return object(payload?.data);
+}
+
 export default {
   fetch: withSupabase({ auth: "none" }, async (request, context) => {
     if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
@@ -118,17 +130,73 @@ export default {
     const resource = object(eventAttributes.data);
     const resourceAttributes = object(resource.attributes);
     const originalEventType = String(eventAttributes.type ?? "");
-    if (!["payment.paid", "payment.failed", "qrph.expired"].includes(originalEventType)) {
+    const refundEventTypes = [
+      "payment.refunded",
+      "payment.refund.updated",
+      "refund.succeeded",
+      "refund.failed",
+      "refund.updated",
+    ];
+    if (!["payment.paid", "payment.failed", "qrph.expired", ...refundEventTypes].includes(originalEventType)) {
       return json({ received: true, ignored: true });
     }
 
     const eventId = String(eventData.id ?? "");
+    if (!/^evt_[A-Za-z0-9_-]+$/.test(eventId)) {
+      return json({ error: "Webhook does not identify a PayMongo event." }, 422);
+    }
+
+    if (refundEventTypes.includes(originalEventType)) {
+      try {
+        const embeddedRefunds = Array.isArray(resourceAttributes.refunds)
+          ? resourceAttributes.refunds.map(object)
+          : [];
+        const refundCandidate = resource.type === "refund"
+          ? resource
+          : embeddedRefunds.at(-1) ?? {};
+        const refundId = String(refundCandidate.id ?? "");
+        if (!/^ref_[A-Za-z0-9_-]+$/.test(refundId)) {
+          throw new Error("Refund webhook does not identify a refund resource.");
+        }
+
+        const refund = await retrieveRefund(refundId, config.secretKey);
+        const refundAttributes = object(refund.attributes);
+        const refundMetadata = object(refundAttributes.metadata);
+        const refundStatus = String(refundAttributes.status ?? "");
+        const internalRefundId = String(refundMetadata.refund_id ?? "");
+        if (Boolean(refundAttributes.livemode) !== config.livemode) {
+          throw new Error("PayMongo refund environment mismatch.");
+        }
+        if (!["processing", "pending", "succeeded", "failed"].includes(refundStatus)) {
+          throw new Error("PayMongo returned an unsupported refund status.");
+        }
+
+        const { error } = await context.supabaseAdmin.rpc("process_paymongo_refund_event", {
+          p_event_id: eventId,
+          p_event_type: originalEventType,
+          p_refund_id: refundId,
+          p_status: refundStatus,
+          p_livemode: config.livemode,
+          p_payload: event,
+          p_internal_refund_id: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(internalRefundId)
+            ? internalRefundId
+            : null,
+        });
+        if (error) throw new Error(error.message);
+        return json({ received: true });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Refund webhook processing failed.";
+        console.error("PayMongo refund webhook failed", message);
+        return json({ error: message }, 500);
+      }
+    }
+
     const intentId = String(
       eventAttributes.payment_intent_id ??
       resourceAttributes.payment_intent_id ??
       (resource.type === "payment_intent" ? resource.id : ""),
     );
-    if (!/^evt_[A-Za-z0-9_-]+$/.test(eventId) || !/^pi_[A-Za-z0-9]+$/.test(intentId)) {
+    if (!/^pi_[A-Za-z0-9]+$/.test(intentId)) {
       return json({ error: "Webhook does not identify a Payment Intent." }, 422);
     }
 

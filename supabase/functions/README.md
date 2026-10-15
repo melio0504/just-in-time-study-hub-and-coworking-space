@@ -9,6 +9,10 @@ Never move a Supabase secret or service-role key into a browser application.
 Copy `.env.example` to `.env` in this directory for local development and fill
 in the test PayMongo keys, test webhook signing secret, QR token secret, and
 kiosk device token. The same kiosk token must be set in `kiosk/.env.local`.
+Keep `PAYMONGO_SIMULATE_REFUNDS=true` only in test environments: PayMongo does
+not create refunds for test transactions, so the cancellation function records
+a clearly marked simulated success instead of calling the provider. Live mode
+rejects this setting and always requires a real PayMongo refund.
 Booking confirmations use the local Mailpit inbox by default at
 <http://127.0.0.1:54324>; Mailpit captures the message and inline kiosk QR
 without delivering it to a real inbox. This `.env` file is ignored by Git.
@@ -30,6 +34,9 @@ npx supabase functions deploy create-paymongo-qr --use-api
 npx supabase functions deploy paymongo-webhook --no-verify-jwt --use-api
 npx supabase functions deploy create-booking-confirmation --use-api
 npx supabase functions deploy confirm-booking --no-verify-jwt --use-api
+npx supabase functions deploy resend-booking-pass --use-api
+npx supabase functions deploy get-booking-pass --use-api
+npx supabase functions deploy cancel-customer-booking --use-api
 npx supabase functions deploy scan-booking-pass --no-verify-jwt --use-api
 ```
 

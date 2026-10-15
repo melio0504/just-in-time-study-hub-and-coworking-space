@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "@supabase/server": "npm:@supabase/server@1.9.0",
+    "qrcode": "npm:qrcode@1.5.4"
+  }
+}

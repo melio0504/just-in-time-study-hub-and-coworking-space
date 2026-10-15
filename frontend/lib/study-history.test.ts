@@ -29,7 +29,7 @@ describe('buildStudyHistory', () => {
     expect(history.find((day) => day.date === '2026-10-10')).toEqual({
       date: '2026-10-10',
       hours: 5,
-      level: 3,
+      level: 1,
     });
     expect(history.at(-1)).toEqual({
       date: '2026-10-12',
@@ -44,7 +44,7 @@ describe('buildStudyHistory', () => {
     expect(history.every((day) => day.hours === 0 && day.level === 0)).toBe(true);
   });
 
-  it('uses progressively stronger colors for longer booked time', () => {
+  it('uses one booked state regardless of the number of booked hours', () => {
     const history = buildStudyHistory([
       { booking_date: '2026-10-08', duration_hours: 2 },
       { booking_date: '2026-10-09', duration_hours: 3 },
@@ -52,6 +52,6 @@ describe('buildStudyHistory', () => {
       { booking_date: '2026-10-11', duration_hours: 9 },
     ], TODAY);
 
-    expect(history.slice(-5, -1).map((day) => day.level)).toEqual([1, 2, 3, 4]);
+    expect(history.slice(-5, -1).map((day) => day.level)).toEqual([1, 1, 1, 1]);
   });
 });

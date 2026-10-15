@@ -39,21 +39,22 @@ export type Database = {
           event_name: string
           id: number
           occurred_at: string
-          properties: Json
+          properties: NonNullable<Json>
           user_id: string | null
         }
+        ComputedFields: never
         Insert: {
           event_name: string
           id?: never
           occurred_at?: string
-          properties?: Json
+          properties?: NonNullable<Json>
           user_id?: string | null
         }
         Update: {
           event_name?: string
           id?: never
           occurred_at?: string
-          properties?: Json
+          properties?: NonNullable<Json>
           user_id?: string | null
         }
         Relationships: [
@@ -78,6 +79,7 @@ export type Database = {
           title: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           body: string
           created_at?: string
@@ -115,16 +117,17 @@ export type Database = {
           action: string
           actor_id: string | null
           created_at: string
-          details: Json
+          details: NonNullable<Json>
           entity_id: string | null
           entity_type: string
           id: number
         }
+        ComputedFields: never
         Insert: {
           action: string
           actor_id?: string | null
           created_at?: string
-          details?: Json
+          details?: NonNullable<Json>
           entity_id?: string | null
           entity_type: string
           id?: never
@@ -133,7 +136,7 @@ export type Database = {
           action?: string
           actor_id?: string | null
           created_at?: string
-          details?: Json
+          details?: NonNullable<Json>
           entity_id?: string | null
           entity_type?: string
           id?: never
@@ -156,6 +159,7 @@ export type Database = {
           expires_at: string
           token_hash: string
         }
+        ComputedFields: never
         Insert: {
           booking_id: string
           confirmed_at?: string | null
@@ -188,6 +192,7 @@ export type Database = {
           reserved_during: unknown
           seat_id: string
         }
+        ComputedFields: never
         Insert: {
           active?: boolean
           booking_id: string
@@ -244,6 +249,7 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           booking_date: string
           cancellation_reason?: string | null
@@ -317,6 +323,7 @@ export type Database = {
           updated_at: string
           verified_by: string | null
         }
+        ComputedFields: never
         Insert: {
           booking_id: string
           checked_in_at?: string
@@ -384,6 +391,7 @@ export type Database = {
           revenue_cents: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           active_members?: number
           available_seat_hours?: number
@@ -423,6 +431,7 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           created_at?: string
           description?: string | null
@@ -457,6 +466,7 @@ export type Database = {
           reviewed_at: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           card_id: string
           id?: never
@@ -498,6 +508,7 @@ export type Database = {
           position: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           back: string
           created_at?: string
@@ -528,7 +539,7 @@ export type Database = {
       }
       hub_content: {
         Row: {
-          body: Json
+          body: NonNullable<Json>
           created_at: string
           created_by: string | null
           id: string
@@ -539,8 +550,9 @@ export type Database = {
           updated_at: string
           updated_by: string | null
         }
+        ComputedFields: never
         Insert: {
-          body?: Json
+          body?: NonNullable<Json>
           created_at?: string
           created_by?: string | null
           id?: string
@@ -552,7 +564,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
-          body?: Json
+          body?: NonNullable<Json>
           created_at?: string
           created_by?: string | null
           id?: string
@@ -580,19 +592,90 @@ export type Database = {
           },
         ]
       }
+      payment_refunds: {
+        Row: {
+          amount_cents: number
+          booking_id: string
+          created_at: string
+          currency: string
+          failure_code: string | null
+          failure_message: string | null
+          finalized_at: string | null
+          id: string
+          idempotency_key: string
+          payment_id: string
+          provider_payload: NonNullable<Json>
+          provider_refund_id: string | null
+          reason: string
+          status: string
+          updated_at: string
+        }
+        ComputedFields: never
+        Insert: {
+          amount_cents: number
+          booking_id: string
+          created_at?: string
+          currency?: string
+          failure_code?: string | null
+          failure_message?: string | null
+          finalized_at?: string | null
+          id?: string
+          idempotency_key: string
+          payment_id: string
+          provider_payload?: NonNullable<Json>
+          provider_refund_id?: string | null
+          reason?: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          booking_id?: string
+          created_at?: string
+          currency?: string
+          failure_code?: string | null
+          failure_message?: string | null
+          finalized_at?: string | null
+          id?: string
+          idempotency_key?: string
+          payment_id?: string
+          provider_payload?: NonNullable<Json>
+          provider_refund_id?: string | null
+          reason?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_refunds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_refunds_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_webhook_events: {
         Row: {
           event_type: string
           id: string
-          payload: Json
+          payload: NonNullable<Json>
           processed_at: string | null
           processing_error: string | null
           received_at: string
         }
+        ComputedFields: never
         Insert: {
           event_type: string
           id: string
-          payload: Json
+          payload: NonNullable<Json>
           processed_at?: string | null
           processing_error?: string | null
           received_at?: string
@@ -600,7 +683,7 @@ export type Database = {
         Update: {
           event_type?: string
           id?: string
-          payload?: Json
+          payload?: NonNullable<Json>
           processed_at?: string | null
           processing_error?: string | null
           received_at?: string
@@ -630,6 +713,7 @@ export type Database = {
           status: Database["public"]["Enums"]["payment_status"]
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           amount_cents: number
           booking_id: string
@@ -699,6 +783,7 @@ export type Database = {
           staff_permissions: Database["public"]["Enums"]["staff_permission"][]
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           avatar_url?: string | null
           created_at?: string
@@ -739,6 +824,7 @@ export type Database = {
           revoked_at: string | null
           token_hash: string
         }
+        ComputedFields: never
         Insert: {
           booking_id: string
           created_at?: string
@@ -780,6 +866,7 @@ export type Database = {
           updated_at: string
           zone: string
         }
+        ComputedFields: never
         Insert: {
           code: string
           created_at?: string
@@ -822,6 +909,7 @@ export type Database = {
           sort_order: number
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           category?: string
           code: string
@@ -867,6 +955,7 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        ComputedFields: never
         Insert: {
           completed?: boolean
           completed_minutes?: number | null
@@ -924,9 +1013,10 @@ export type Database = {
           status: string
           updated_at: string
         }
+        ComputedFields: never
         Insert: {
           billable_minutes?: number | null
-          business_date: string
+          business_date?: string
           charged_amount_cents?: number | null
           created_at?: string
           created_by: string
@@ -1121,8 +1211,78 @@ export type Database = {
         }
         Returns: string
       }
+      customer_update_booking: {
+        Args: {
+          p_booking_date: string
+          p_booking_id: string
+          p_seat_codes: string[]
+          p_start_time: string
+        }
+        Returns: {
+          booking_date: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          confirmation_email_error: string | null
+          confirmation_email_sent_at: string | null
+          created_at: string
+          duration_hours: number
+          ends_at: string
+          guest_email: string
+          guest_name: string
+          hold_expires_at: string | null
+          id: string
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          reservation_code: string
+          seat_ids: string[]
+          space: string
+          start_time: string
+          starts_at: string
+          status: Database["public"]["Enums"]["booking_status"]
+          subtotal_cents: number
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      finalize_customer_booking_refund: {
+        Args: {
+          p_failure_code?: string
+          p_failure_message?: string
+          p_provider_payload?: Json
+          p_provider_refund_id: string
+          p_refund_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
       get_available_seats: {
         Args: { p_ends_at: string; p_starts_at: string }
+        Returns: {
+          code: string
+          created_at: string
+          hourly_rate_cents: number
+          id: string
+          is_active: boolean
+          name: string
+          seat_type: string
+          status: Database["public"]["Enums"]["seat_status"]
+          updated_at: string
+          zone: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "seats"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_available_seats_for_booking: {
+        Args: { p_booking_id: string; p_ends_at: string; p_starts_at: string }
         Returns: {
           code: string
           created_at: string
@@ -1180,10 +1340,68 @@ export type Database = {
           walk_in_seat_hours: number
         }[]
       }
+      get_customer_booking_pass: {
+        Args: { p_booking_id: string; p_user_id: string }
+        Returns: {
+          booking_id: string
+          expires_at: string
+          reservation_code: string
+        }[]
+      }
+      get_kiosk_active_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          booking_id: string
+          checked_in_at: string
+          guest_name: string
+          scheduled_end: string
+          seats: string[]
+        }[]
+      }
+      get_kiosk_recent_activity: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          activity_id: string
+          activity_type: string
+          booking_id: string
+          guest_name: string
+          occurred_at: string
+          seats: string[]
+        }[]
+      }
       log_admin_access: { Args: { p_action?: string }; Returns: undefined }
       mark_booking_confirmation_email: {
         Args: { p_booking_id: string; p_error?: string }
         Returns: undefined
+      }
+      prepare_booking_pass_resend: {
+        Args: { p_booking_id: string; p_user_id: string }
+        Returns: {
+          booking_id: string
+          confirmation_email_sent_at: string
+          ends_at: string
+          guest_email: string
+          guest_name: string
+          reservation_code: string
+          seat_ids: string[]
+          starts_at: string
+          subtotal_cents: number
+        }[]
+      }
+      prepare_customer_booking_cancellation: {
+        Args: { p_booking_id: string; p_user_id: string }
+        Returns: {
+          amount_cents: number
+          booking_id: string
+          idempotency_key: string
+          payment_livemode: boolean
+          provider_payment_id: string
+          provider_refund_id: string
+          refund_id: string
+          refund_status: string
+          requires_refund: boolean
+          reservation_code: string
+        }[]
       }
       prepare_paymongo_payment: {
         Args: { p_booking_id: string; p_user_id: string }
@@ -1244,6 +1462,18 @@ export type Database = {
           starts_at: string
           subtotal_cents: number
         }[]
+      }
+      process_paymongo_refund_event: {
+        Args: {
+          p_event_id: string
+          p_event_type: string
+          p_internal_refund_id?: string
+          p_livemode: boolean
+          p_payload: Json
+          p_refund_id: string
+          p_status: string
+        }
+        Returns: undefined
       }
       save_paymongo_qr: {
         Args: {
@@ -1312,12 +1542,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1341,11 +1571,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1366,11 +1596,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1391,11 +1621,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1408,11 +1638,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1454,4 +1684,3 @@ export const Constants = {
     },
   },
 } as const
-
