@@ -26,6 +26,7 @@ type WalkInTarget = { seatCode: string; isOccupied: boolean };
 
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 const cleanForm: NoticeForm = { date: today(), title: '', description: '', status: 'published' };
+const announcementsPerPage = 6;
 const terminalStatuses = new Set(['cancelled', 'completed', 'declined', 'no_show']);
 const availabilityTimes = [
   ['00:00', '12:00 AM'], ['01:00', '1:00 AM'], ['02:00', '2:00 AM'], ['03:00', '3:00 AM'], ['04:00', '4:00 AM'],
@@ -76,6 +77,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const [statusFilter, setStatusFilter] = useState('all');
   const [announcementFilter, setAnnouncementFilter] = useState<AnnouncementFilter>('all');
   const [announcementSearch, setAnnouncementSearch] = useState('');
+  const [announcementPage, setAnnouncementPage] = useState(1);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
   const [cancelReason, setCancelReason] = useState('Cancelled by staff');
@@ -188,6 +190,12 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
       return matchesStatus && matchesSearch;
     });
   }, [announcementFilter, announcementSearch, announcements]);
+  const announcementPageCount = Math.max(1, Math.ceil(filteredAnnouncements.length / announcementsPerPage));
+  const currentAnnouncementPage = Math.min(announcementPage, announcementPageCount);
+  const paginatedAnnouncements = filteredAnnouncements.slice(
+    (currentAnnouncementPage - 1) * announcementsPerPage,
+    currentAnnouncementPage * announcementsPerPage,
+  );
 
   const beginAvailabilityWindowChange = () => {
     availabilityRequestRef.current += 1;
@@ -308,7 +316,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
 
     {section === 'reservations' && <><PageHeading eyebrow="Booking operations" title="Reservations" detail="Search, inspect, and cancel customer reservations. Changes sync to seat availability immediately." /><div className="rounded-3xl border border-[#e8dfd4] bg-white p-4 shadow-sm sm:p-6"><div className="mb-5 flex flex-col gap-3 sm:flex-row"><label className="flex flex-1 items-center gap-2 rounded-xl border border-[#e8dfd4] px-4"><Search className="h-4 w-4 text-[#6b5e52]" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search customer, code, email, or seat" className="w-full py-3 text-[#2d2520] outline-none placeholder:text-[#6b5e52]" /></label><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl border border-[#e8dfd4] bg-white px-4 py-3 text-[#2d2520]"><option value="all">All statuses</option>{['pending','confirmed','checked_in','completed','cancelled','declined','no_show'].map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}</select></div><BookingTable bookings={filteredBookings} onView={setSelectedBooking} onCancel={requestCancellation} /></div></>}
 
-    {section === 'announcements' && <><PageHeading eyebrow="Content management" title="Announcements" detail="Create, edit, publish, and archive updates shown on the customer landing page." /><div className="grid gap-6 xl:grid-cols-[minmax(320px,0.8fr)_1.5fr]"><form onSubmit={saveAnnouncement} className="h-fit self-start rounded-3xl border border-[#e8dfd4] bg-white p-6 shadow-sm xl:sticky xl:top-8"><div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-semibold text-[#2d2520]">{noticeForm.id ? 'Edit announcement' : 'New announcement'}</h2>{noticeForm.id && <button type="button" onClick={() => setNoticeForm(cleanForm)} className="text-sm text-[#9b6810]">Cancel edit</button>}</div><div className="space-y-4"><Field label="Date"><input type="date" required value={noticeForm.date} onChange={(e) => setNoticeForm({ ...noticeForm, date: e.target.value })} className="input" /></Field><Field label="Title"><input required maxLength={160} value={noticeForm.title} onChange={(e) => setNoticeForm({ ...noticeForm, title: e.target.value })} placeholder="Important update" className="input" /></Field><Field label="Description"><textarea required maxLength={5000} rows={6} value={noticeForm.description} onChange={(e) => setNoticeForm({ ...noticeForm, description: e.target.value })} placeholder="What should customers know?" className="input resize-y" /></Field><Field label="Publishing status"><select value={noticeForm.status} onChange={(e) => setNoticeForm({ ...noticeForm, status: e.target.value as NoticeForm['status'] })} className="input"><option value="published">Published</option><option value="draft">Draft</option><option value="archived">Archived</option></select></Field><button disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#e5a930] px-4 py-3 font-semibold text-white disabled:opacity-60">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}{noticeForm.id ? 'Save changes' : 'Publish announcement'}</button></div></form><div className="space-y-3"><AnnouncementFilters search={announcementSearch} onSearch={setAnnouncementSearch} filter={announcementFilter} onFilter={setAnnouncementFilter} announcements={announcements} resultCount={filteredAnnouncements.length} />{filteredAnnouncements.map((item) => <article key={item.id} className="rounded-3xl border border-[#e8dfd4] bg-white p-5 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="mb-2 flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle(item.status)}`}>{titleCase(item.status)}</span><span className="text-xs text-[#5f5248]">{new Date(item.starts_at || item.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium', timeZone: 'Asia/Manila' })}</span></div><h3 className="text-lg font-semibold text-[#2d2520]">{item.title}</h3><p className="mt-2 text-sm leading-6 text-[#6b5e52]">{item.body}</p></div><div className="flex shrink-0 gap-2"><button onClick={() => editAnnouncement(item)} className="rounded-xl border border-[#e8dfd4] p-2.5 text-[#8a671a] hover:bg-[#fff8e8]" title="Edit"><Pencil className="h-4 w-4" /></button>{item.status !== 'archived' && <button onClick={() => archiveAnnouncement(item)} className="rounded-xl border border-red-100 p-2.5 text-red-600 hover:bg-red-50" title="Archive"><Trash2 className="h-4 w-4" /></button>}</div></div></article>)}</div></div></>}
+    {section === 'announcements' && <><PageHeading eyebrow="Content management" title="Announcements" detail="Create, edit, publish, and archive updates shown on the customer landing page." /><div className="grid gap-6 xl:grid-cols-[minmax(320px,0.8fr)_1.5fr]"><form onSubmit={saveAnnouncement} className="h-fit self-start rounded-3xl border border-[#e8dfd4] bg-white p-6 shadow-sm xl:sticky xl:top-8"><div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-semibold text-[#2d2520]">{noticeForm.id ? 'Edit announcement' : 'New announcement'}</h2>{noticeForm.id && <button type="button" onClick={() => setNoticeForm(cleanForm)} className="text-sm text-[#9b6810]">Cancel edit</button>}</div><div className="space-y-4"><Field label="Date"><input type="date" required value={noticeForm.date} onChange={(e) => setNoticeForm({ ...noticeForm, date: e.target.value })} className="input" /></Field><Field label="Title"><input required maxLength={160} value={noticeForm.title} onChange={(e) => setNoticeForm({ ...noticeForm, title: e.target.value })} placeholder="Important update" className="input" /></Field><Field label="Description"><textarea required maxLength={5000} rows={6} value={noticeForm.description} onChange={(e) => setNoticeForm({ ...noticeForm, description: e.target.value })} placeholder="What should customers know?" className="input resize-y" /></Field><Field label="Publishing status"><select value={noticeForm.status} onChange={(e) => setNoticeForm({ ...noticeForm, status: e.target.value as NoticeForm['status'] })} className="input"><option value="published">Published</option><option value="draft">Draft</option><option value="archived">Archived</option></select></Field><button disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#e5a930] px-4 py-3 font-semibold text-white disabled:opacity-60">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}{noticeForm.id ? 'Save changes' : 'Publish announcement'}</button></div></form><div className="space-y-3"><AnnouncementFilters search={announcementSearch} onSearch={(value) => { setAnnouncementSearch(value); setAnnouncementPage(1); }} filter={announcementFilter} onFilter={(value) => { setAnnouncementFilter(value); setAnnouncementPage(1); }} announcements={announcements} resultCount={filteredAnnouncements.length} />{paginatedAnnouncements.map((item) => <article key={item.id} className="rounded-3xl border border-[#e8dfd4] bg-white p-5 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="mb-2 flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle(item.status)}`}>{titleCase(item.status)}</span><span className="text-xs text-[#5f5248]">{new Date(item.starts_at || item.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium', timeZone: 'Asia/Manila' })}</span></div><h3 className="text-lg font-semibold text-[#2d2520]">{item.title}</h3><p className="mt-2 text-sm leading-6 text-[#6b5e52]">{item.body}</p></div><div className="flex shrink-0 gap-2"><button onClick={() => editAnnouncement(item)} className="rounded-xl border border-[#e8dfd4] p-2.5 text-[#8a671a] hover:bg-[#fff8e8]" title="Edit"><Pencil className="h-4 w-4" /></button>{item.status !== 'archived' && <button onClick={() => archiveAnnouncement(item)} className="rounded-xl border border-red-100 p-2.5 text-red-600 hover:bg-red-50" title="Archive"><Trash2 className="h-4 w-4" /></button>}</div></div></article>)}<AnnouncementPagination currentPage={currentAnnouncementPage} pageCount={announcementPageCount} resultCount={filteredAnnouncements.length} onPageChange={setAnnouncementPage} /></div></div></>}
 
     {section === 'logs' && <><PageHeading eyebrow="Security & accountability" title="Access logs" detail="A realtime history of who accessed or changed the admin dashboard." /><div className="overflow-hidden rounded-3xl border border-[#e8dfd4] bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left"><thead className="bg-[#faf7f2] text-xs uppercase tracking-wider text-[#5f5248]"><tr><th className="px-5 py-4">Name</th><th className="px-5 py-4">Email</th><th className="px-5 py-4">Action</th><th className="px-5 py-4">Resource</th><th className="px-5 py-4">Date & time</th></tr></thead><tbody>{logs.map((log) => <tr key={log.id} className="border-t border-[#eee6dc]"><td className="px-5 py-4 font-medium text-[#2d2520]">{log.profile?.full_name || 'Former staff account'}</td><td className="px-5 py-4 text-sm text-[#6b5e52]">{log.profile?.email || '—'}</td><td className="px-5 py-4"><span className="rounded-full bg-[#fef3dc] px-3 py-1 text-sm text-[#8a671a]">{log.action}</span></td><td className="px-5 py-4 text-sm text-[#6b5e52]">{titleCase(log.entity_type)}</td><td className="px-5 py-4 text-sm text-[#6b5e52]">{formatDateTime(log.created_at)}</td></tr>)}</tbody></table></div>{logs.length === 0 && <EmptyState icon={ShieldCheck} text="No staff access has been logged yet." />}</div></>}
 
@@ -318,6 +326,64 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
 
     {cancelTarget && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm" onMouseDown={closeCancellation}><form onSubmit={confirmCancellation} className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="cancel-reservation-title"><div className="mb-5 flex items-start justify-between gap-4"><div className="flex items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700"><AlertTriangle className="h-5 w-5" /></span><div><p className="text-xs font-semibold uppercase tracking-wider text-red-700">Permanent status change</p><h2 id="cancel-reservation-title" className="mt-1 text-2xl font-semibold">Cancel reservation?</h2></div></div><button type="button" onClick={closeCancellation} disabled={cancelling} className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:opacity-50" aria-label="Close cancellation dialog"><X className="h-5 w-5" /></button></div><div className="mb-5 rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-4"><p className="font-semibold">{cancelTarget.guest_name}</p><p className="mt-1 text-sm text-[#574b42]">{cancelTarget.reservation_code} · {formatDateTime(cancelTarget.starts_at)}</p><p className="mt-1 text-sm text-[#574b42]">Seats: {cancelTarget.seat_ids.join(', ')}</p></div><label className="block"><span className="mb-2 block text-sm font-semibold text-[#3f3630]">Cancellation reason</span><textarea autoFocus required maxLength={500} rows={4} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} className="w-full resize-y rounded-xl border border-[#b9aa9b] bg-white px-4 py-3 text-[#2d2520] outline-none placeholder:text-[#6b5e52] focus:border-red-600 focus:ring-2 focus:ring-red-100" placeholder="Explain why this reservation is being cancelled" /></label><p className="mt-2 text-sm text-[#574b42]">The seat will become available immediately and the action will be recorded in access logs.</p>{cancelError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{cancelError}</p>}<div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={closeCancellation} disabled={cancelling} className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50">Keep reservation</button><button type="submit" disabled={cancelling || !cancelReason.trim()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50">{cancelling && <Loader2 className="h-4 w-4 animate-spin" />}{cancelling ? 'Cancelling…' : 'Confirm cancellation'}</button></div></form></div>}
   </div>;
+}
+
+function AnnouncementPagination({
+  currentPage,
+  pageCount,
+  resultCount,
+  onPageChange,
+}: {
+  currentPage: number;
+  pageCount: number;
+  resultCount: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (resultCount <= announcementsPerPage) return null;
+
+  const firstResult = (currentPage - 1) * announcementsPerPage + 1;
+  const lastResult = Math.min(currentPage * announcementsPerPage, resultCount);
+
+  return (
+    <nav aria-label="Announcement pagination" className="rounded-2xl border border-[#e8dfd4] bg-white p-4 shadow-sm">
+      <p className="mb-3 text-center text-sm font-medium text-[#5f5248] sm:text-left">
+        Showing {firstResult}–{lastResult} of {resultCount}
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+        <button
+          type="button"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="rounded-xl border border-[#cfc3b6] px-4 py-2 text-sm font-semibold text-[#4f443c] hover:bg-[#f7f1e8] disabled:cursor-not-allowed disabled:opacity-45"
+        >
+          Previous
+        </button>
+        {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
+          <button
+            key={page}
+            type="button"
+            onClick={() => onPageChange(page)}
+            aria-label={`Go to announcement page ${page}`}
+            aria-current={page === currentPage ? 'page' : undefined}
+            className={`min-w-10 rounded-xl border px-3 py-2 text-sm font-semibold ${page === currentPage
+              ? 'border-[#2d2520] bg-[#2d2520] text-white'
+              : 'border-[#cfc3b6] bg-white text-[#4f443c] hover:bg-[#f7f1e8]'
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === pageCount}
+          className="rounded-xl border border-[#cfc3b6] px-4 py-2 text-sm font-semibold text-[#4f443c] hover:bg-[#f7f1e8] disabled:cursor-not-allowed disabled:opacity-45"
+        >
+          Next
+        </button>
+      </div>
+    </nav>
+  );
 }
 
 function AnnouncementFilters({
