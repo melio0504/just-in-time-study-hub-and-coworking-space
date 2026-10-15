@@ -1,29 +1,42 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Clock, Check, Calendar } from 'lucide-react';
+import { Clock, Check, Calendar, CalendarOff } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { DAY_NAMES, formatHoursRange } from '@/lib/business-config';
+import { createClient } from '@/lib/supabase/client';
+import type { Tables } from '@/lib/supabase/database.types';
 
 export default function Pricing() {
-  const hourlyRates = [
-    { hours: '1 hour', price: 80 },
-    { hours: '2 hours', price: 120 },
-    { hours: '3 hours', price: 150 },
-    { hours: '4 hours', price: 170 },
-    { hours: '5 hours', price: 200 },
-    { hours: '6 hours', price: 230 },
-    { hours: '7-8 hours', price: 270 },
-    { hours: '9-10 hours', price: 320 },
-    { hours: 'Whole day (11hrs & up)', price: 370, popular: true },
-  ];
+  const [hourlyRates, setHourlyRates] = useState<Tables<'service_rate_plans'>[]>([]);
+  const [packageRates, setPackageRates] = useState<Tables<'package_rate_plans'>[]>([]);
+  const [businessHours, setBusinessHours] = useState<Tables<'business_hours'>[]>([]);
+  const [closures, setClosures] = useState<Tables<'business_closures'>[]>([]);
+  const [pricingError, setPricingError] = useState('');
 
-  const packageRates = [
-    { duration: '3 days', price: 900, validity: 'valid within 6 days' },
-    { duration: '7 days', price: 1800, validity: 'valid within 14 days' },
-    { duration: '15 days', price: 3000, validity: 'valid within one month' },
-    { duration: '30 days', price: 5000, validity: 'valid within two months', popular: true },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    const loadPricing = async () => {
+      const supabase = createClient();
+      const [hourlyResult, packageResult, hoursResult, closureResult] = await Promise.all([
+        supabase.from('service_rate_plans').select().eq('is_active', true).order('sort_order'),
+        supabase.from('package_rate_plans').select().eq('is_active', true).order('sort_order'),
+        supabase.from('business_hours').select().order('day_of_week'),
+        supabase.from('business_closures').select().eq('is_active', true).gte('ends_on', new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })).order('starts_on').limit(6),
+      ]);
+      if (cancelled) return;
+      const error = hourlyResult.error || packageResult.error || hoursResult.error || closureResult.error;
+      setPricingError(error?.message ?? '');
+      setHourlyRates(hourlyResult.data ?? []);
+      setPackageRates(packageResult.data ?? []);
+      setBusinessHours(hoursResult.data ?? []);
+      setClosures(closureResult.data ?? []);
+    };
+    void loadPricing();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] to-[#fff8ed] pt-24">
@@ -60,11 +73,12 @@ export default function Pricing() {
           >
             <Clock className="w-12 h-12 text-[#e5a930] mx-auto mb-4" />
             <h3 className="text-2xl mb-4 text-[#2d2520]">Operating Hours</h3>
-            <p className="text-3xl text-[#e5a930] mb-2">8:00 AM - 5:00 AM</p>
-            <p className="text-[#6b5e52]">Monday to Sunday</p>
+            {pricingError ? <p role="alert" className="text-red-700">Operating hours are temporarily unavailable.</p> : businessHours.length === 0 ? <p className="text-[#6b5e52]">Loading current hours…</p> : <div className="mx-auto grid max-w-2xl gap-2 text-left sm:grid-cols-2">{businessHours.map((hours) => <div key={hours.day_of_week} className="flex items-center justify-between gap-4 rounded-xl bg-[#fffbf5] px-4 py-3"><span className="font-medium text-[#2d2520]">{DAY_NAMES[hours.day_of_week]}</span><span className={hours.is_open ? 'text-[#b47b0d]' : 'text-[#9b4c45]'}>{formatHoursRange(hours)}</span></div>)}</div>}
           </motion.div>
         </div>
       </section>
+
+      {closures.length > 0 && <section className="px-6 pb-8"><div className="mx-auto max-w-4xl rounded-3xl border border-amber-200 bg-[#fff8e8] p-6"><div className="flex items-start gap-3"><CalendarOff className="mt-0.5 h-6 w-6 shrink-0 text-[#b47b0d]" /><div><h3 className="text-xl text-[#2d2520]">Upcoming closures</h3><div className="mt-3 space-y-2">{closures.map((closure) => <p key={closure.id} className="text-sm text-[#6b5e52]"><span className="font-semibold text-[#2d2520]">{closure.name}</span> · {closure.starts_on === closure.ends_on ? closure.starts_on : `${closure.starts_on}–${closure.ends_on}`}</p>)}</div></div></div></div></section>}
 
       {/* Hourly Rates */}
       <section className="py-16 px-6">
@@ -90,17 +104,17 @@ export default function Pricing() {
                   </tr>
                 </thead>
                 <tbody>
-                  {hourlyRates.map((rate, index) => (
+                  {hourlyRates.map((rate) => (
                     <tr
-                      key={index}
+                      key={rate.id}
                       className={`border-b border-[#f3ede4] transition-colors hover:bg-[#fef3dc]/30 ${
-                        rate.popular ? 'bg-[#fef3dc]/50' : ''
+                        rate.code === 'whole-day' ? 'bg-[#fef3dc]/50' : ''
                       }`}
                     >
                       <td className="p-6">
                         <div className="flex items-center gap-3">
-                          <span className="text-[#2d2520] text-lg">{rate.hours}</span>
-                          {rate.popular && (
+                          <span className="text-[#2d2520] text-lg">{rate.name}</span>
+                          {rate.code === 'whole-day' && (
                             <span className="bg-[#e5a930] text-[#2d2520] px-3 py-1 rounded-full text-xs">
                               Most Popular
                             </span>
@@ -108,7 +122,7 @@ export default function Pricing() {
                         </div>
                       </td>
                       <td className="p-6 text-right">
-                        <span className="text-2xl text-[#2d2520]">₱{rate.price}</span>
+                        <span className="text-2xl text-[#2d2520]">₱{(rate.price_cents / 100).toLocaleString('en-PH')}</span>
                       </td>
                     </tr>
                   ))}
@@ -130,29 +144,29 @@ export default function Pricing() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {packageRates.map((pkg, index) => (
               <motion.div
-                key={index}
+                key={pkg.id}
           initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className={`relative bg-white/70 backdrop-blur-sm p-8 rounded-3xl border transition-all hover:shadow-xl ${
-                  pkg.popular
+                  pkg.is_popular
                     ? 'border-[#e5a930] shadow-lg scale-105'
                     : 'border-[#f3ede4] hover:border-[#e5a930]'
                 }`}
               >
-                {pkg.popular && (
+                {pkg.is_popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#e5a930] text-[#2d2520] px-4 py-1 rounded-full text-sm">
                     Best Value
                   </div>
                 )}
                 <div className="text-center">
                   <Calendar className="w-10 h-10 text-[#e5a930] mx-auto mb-4" />
-                  <p className="text-xl text-[#2d2520] mb-2">{pkg.duration}</p>
+                  <p className="text-xl text-[#2d2520] mb-2">{pkg.name}</p>
                   <p className="text-4xl text-[#2d2520] mb-3">
-                    ₱{pkg.price.toLocaleString()}
+                    ₱{(pkg.price_cents / 100).toLocaleString('en-PH')}
                   </p>
-                  <p className="text-sm text-[#6b5e52] italic">{pkg.validity}</p>
+                  <p className="text-sm text-[#6b5e52] italic">valid within {pkg.validity_days} days</p>
                 </div>
               </motion.div>
             ))}

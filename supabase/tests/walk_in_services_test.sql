@@ -23,6 +23,17 @@ SELECT set_config(
 SELECT set_config('test.admin_id', (SELECT id::text FROM public.profiles WHERE email = 'admin@jit-studyhub.com'), true);
 SELECT set_config('test.maria_id', (SELECT id::text FROM public.profiles WHERE email = 'maria.santos.jit@gmail.com'), true);
 SELECT set_config('test.ramon_id', (SELECT id::text FROM public.profiles WHERE email = 'ramon.deleon@jit-studyhub.com'), true);
+SELECT set_config(
+  'test.public_rate_count',
+  (
+    SELECT count(*)::text
+    FROM public.service_rate_plans
+    WHERE is_active
+      AND effective_from <= current_date
+      AND (effective_until IS NULL OR effective_until >= current_date)
+  ),
+  true
+);
 
 -- Capture the existing seeded totals so these tests remain deterministic.
 SELECT set_config(
@@ -70,8 +81,8 @@ SELECT throws_ok(
 );
 SELECT is(
   (SELECT count(*) FROM public.service_rate_plans),
-  0::bigint,
-  'customers cannot read staff pricing tiers'
+  current_setting('test.public_rate_count')::bigint,
+  'customers can read current public pricing tiers'
 );
 SELECT throws_ok(
   format(

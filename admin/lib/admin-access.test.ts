@@ -21,12 +21,12 @@ describe("admin access", () => {
     expect(defaultAdminPath(staff)).toBe("/reservations");
   });
 
-  it("routes announcement-only and empty staff access to announcements", () => {
+  it("routes content-only and empty staff access to the CMS", () => {
     expect(defaultAdminPath({ role: "staff", permissions: ["announcements"] })).toBe(
-      "/announcements",
+      "/cms",
     );
     expect(defaultAdminPath({ role: "staff", permissions: [] })).toBe(
-      "/announcements",
+      "/cms",
     );
   });
 });

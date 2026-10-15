@@ -67,7 +67,7 @@ const nextConfig: NextConfig = {
       {
         source: "/admin/dashboard",
         has: [{ type: "query", key: "section", value: "content" }],
-        destination: "/announcements",
+        destination: "/cms",
         permanent: true,
       },
       {

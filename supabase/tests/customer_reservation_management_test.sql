@@ -210,7 +210,7 @@ select throws_ok(
     'SO04'
   ),
   '22023',
-  'Choose an hourly start time while the hub is open',
+  'The reservation must be within configured operating hours',
   'rescheduling enforces the hub operating window'
 );
 select throws_ok(

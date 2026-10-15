@@ -27,6 +27,7 @@ test("every protected admin route redirects to the root sign-in", async ({ page 
     "/dashboard",
     "/walk-ins",
     "/reservations",
+    "/cms",
     "/announcements",
     "/analytics",
     "/staffs",

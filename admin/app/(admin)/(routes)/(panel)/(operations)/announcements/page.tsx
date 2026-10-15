@@ -1,5 +1,5 @@
-import { AdminOperationsPage } from "../_components/AdminOperationsPage";
+import { redirect } from "next/navigation";
 
 export default function AnnouncementsPage() {
-  return <AdminOperationsPage section="announcements" />;
+  redirect("/cms");
 }

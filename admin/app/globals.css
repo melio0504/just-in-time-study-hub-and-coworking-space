@@ -40,6 +40,8 @@ textarea::placeholder {
 
 .input {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid #e8dfd4;
   border-radius: 0.75rem;
   background: white;

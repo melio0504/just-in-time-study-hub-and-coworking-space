@@ -1,6 +1,10 @@
 -- Development-only sample content. Facility seats are reference data and are
 -- inserted by the migration so they exist in both local and production.
 
+-- Some sample reservations are intentionally historical. This session-only
+-- flag lets the seed restore those fixtures without weakening application calls.
+select set_config('jit.seed_mode', 'on', false);
+
 -- Local development administrator. Never apply this seed file to production.
 -- This block is intentionally idempotent so running it again restores the
 -- documented local credentials instead of creating a duplicate Auth user.
@@ -401,6 +405,13 @@ $$;
 -- Operational demo data is anchored to the reset time. It intentionally spans
 -- every reservation state used by the admin filters, with several historical
 -- bookings and a few live/future holds for availability demos.
+-- Keep existing demo holds alive before the statement-level expiry trigger runs,
+-- so rerunning this idempotent seed can update the same pending fixtures.
+update public.bookings
+set hold_expires_at = now() + interval '30 minutes'
+where reservation_code like 'JIT-DEMO-%'
+  and status = 'pending';
+
 with clock as (
   select (now() at time zone 'Asia/Manila')::date as manila_today
 ), booking_seed as (
@@ -996,3 +1007,5 @@ on conflict (metric_date) do update set
   hourly_revenue_cents = excluded.hourly_revenue_cents,
   daily_pass_revenue_cents = excluded.daily_pass_revenue_cents,
   monthly_revenue_cents = excluded.monthly_revenue_cents;
+
+select set_config('jit.seed_mode', 'off', false);

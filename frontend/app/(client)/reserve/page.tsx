@@ -7,6 +7,20 @@ import Image from 'next/image';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { SeatingPlan } from '@/app/components/SeatingPlan';
 import {
+  closureForDate,
+  DEFAULT_BOOKING_SETTINGS,
+  formatHoursRange,
+  hoursAvailableFrom,
+  isClosureDate,
+  isRegularlyClosedDate,
+  maximumBookingDate,
+  meetsMinimumNotice,
+  reservationTimeOptions,
+  type BookingSettings,
+  type BusinessClosure,
+  type BusinessHours,
+} from '@/lib/business-config';
+import {
   getReservationAvailabilityWindow,
   SEAT_AVAILABILITY_REFRESH_MS,
 } from '@/lib/seatAvailability';
@@ -37,51 +51,6 @@ interface ReservationDraft {
 }
 
 const RESERVATION_DRAFT_KEY = 'jit-reservation-draft';
-const TIME_GROUPS = [
-  {
-    label: 'After midnight',
-    options: [
-      ['00:00', '12:00 AM'], ['01:00', '1:00 AM'], ['02:00', '2:00 AM'],
-      ['03:00', '3:00 AM'], ['04:00', '4:00 AM'],
-    ],
-  },
-  {
-    label: 'Morning',
-    options: [
-      ['08:00', '8:00 AM'], ['09:00', '9:00 AM'], ['10:00', '10:00 AM'],
-      ['11:00', '11:00 AM'],
-    ],
-  },
-  {
-    label: 'Afternoon',
-    options: [
-      ['12:00', '12:00 PM'], ['13:00', '1:00 PM'], ['14:00', '2:00 PM'],
-      ['15:00', '3:00 PM'], ['16:00', '4:00 PM'], ['17:00', '5:00 PM'],
-    ],
-  },
-  {
-    label: 'Evening',
-    options: [
-      ['18:00', '6:00 PM'], ['19:00', '7:00 PM'], ['20:00', '8:00 PM'],
-      ['21:00', '9:00 PM'], ['22:00', '10:00 PM'], ['23:00', '11:00 PM'],
-    ],
-  },
-] as const;
-const DURATION_OPTIONS = [
-  ['1', '1 hour'], ['2', '2 hours'], ['3', '3 hours'], ['4', '4 hours'],
-  ['6', '6 hours'], ['8', 'Full day (8 hours)'],
-] as const;
-const VALID_RESERVATION_TIMES = new Set<string>(TIME_GROUPS.flatMap((group) => group.options.map(([value]) => value)));
-const VALID_RESERVATION_DURATIONS = new Set<string>(DURATION_OPTIONS.map(([value]) => value));
-
-const getHoursUntilClosing = (time: string) => {
-  const hour = Number(time.split(':')[0]);
-  if (!Number.isInteger(hour)) return 0;
-  if (hour >= 8 && hour <= 23) return 29 - hour;
-  if (hour >= 0 && hour < 5) return 5 - hour;
-  return 0;
-};
-
 const getDateString = (date: Date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -133,6 +102,11 @@ function ReserveContent() {
   const [isIdentityLoading, setIsIdentityLoading] = useState(isSupabaseConfigured);
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
   const [currentTime, setCurrentTime] = useState(() => new Date());
+  const [businessHours, setBusinessHours] = useState<BusinessHours[]>([]);
+  const [closures, setClosures] = useState<BusinessClosure[]>([]);
+  const [bookingSettings, setBookingSettings] = useState<BookingSettings>(DEFAULT_BOOKING_SETTINGS);
+  const [configurationLoading, setConfigurationLoading] = useState(isSupabaseConfigured);
+  const [configurationError, setConfigurationError] = useState('');
   const qrRequestVersionRef = useRef(0);
 
   const initializeSeats = useCallback((_date: string, selectedSeats: string[] = []): Seat[] => {
@@ -143,6 +117,30 @@ function ReserveContent() {
   }, []);
 
   const [seats, setSeats] = useState<Seat[]>(initializeSeats(getManilaDateString()));
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      return;
+    }
+    let cancelled = false;
+    const loadConfiguration = async () => {
+      const supabase = createClient();
+      const [hoursResult, closureResult, settingsResult] = await Promise.all([
+        supabase.from('business_hours').select().order('day_of_week'),
+        supabase.from('business_closures').select('id, name, starts_on, ends_on, closure_type, is_active').eq('is_active', true),
+        supabase.from('booking_settings').select('max_seats_per_booking, min_duration_hours, max_duration_hours, minimum_notice_minutes, maximum_advance_days').eq('singleton', true).single(),
+      ]);
+      if (cancelled) return;
+      const error = hoursResult.error || closureResult.error || settingsResult.error;
+      setConfigurationError(error ? `Unable to load booking hours and limits: ${error.message}` : '');
+      setBusinessHours(hoursResult.data ?? []);
+      setClosures(closureResult.data ?? []);
+      if (settingsResult.data) setBookingSettings(settingsResult.data);
+      setConfigurationLoading(false);
+    };
+    void loadConfiguration();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const updateCurrentTime = () => {
@@ -438,6 +436,7 @@ function ReserveContent() {
   }, [formData.date, formData.duration, formData.time, hasRestoredDraft]);
 
   useEffect(() => {
+    if (configurationLoading) return;
     const restoreDraft = window.setTimeout(() => {
       let date = getManilaDateString();
       let time = '';
@@ -456,11 +455,13 @@ function ReserveContent() {
             && !isPastDate(parsedDate)
             ? draft.date as string
             : date;
-          time = typeof draft.time === 'string' && VALID_RESERVATION_TIMES.has(draft.time)
+          time = typeof draft.time === 'string' && /^([01]\d|2[0-3]):00$/.test(draft.time)
             ? draft.time
             : '';
           duration = typeof draft.duration === 'string'
-            && VALID_RESERVATION_DURATIONS.has(draft.duration)
+            && Number.isInteger(Number(draft.duration))
+            && Number(draft.duration) >= 1
+            && Number(draft.duration) <= 24
             ? draft.duration
             : '';
           seatIds = Array.isArray(draft.seatIds)
@@ -468,7 +469,7 @@ function ReserveContent() {
               .filter((seatId): seatId is string => (
                 typeof seatId === 'string' && allSeatIds.includes(seatId)
               ))
-              .slice(0, 5)
+              .slice(0, bookingSettings.max_seats_per_booking)
             : [];
 
           if (time && isReservationTimePast(date, time)) {
@@ -486,7 +487,7 @@ function ReserveContent() {
             .split(',')
             .map((seat) => seat.trim().toUpperCase())
             .filter((seat) => allSeatIds.includes(seat)),
-        )).slice(0, 5)
+        )).slice(0, bookingSettings.max_seats_per_booking)
         : [];
       const parsedRequestedDate = requestedDateParam && /^\d{4}-\d{2}-\d{2}$/.test(requestedDateParam)
         ? new Date(`${requestedDateParam}T00:00:00`)
@@ -503,6 +504,19 @@ function ReserveContent() {
         seatIds = requestedSeats;
       }
 
+      const availableHours = time ? hoursAvailableFrom(date, time, businessHours) : 0;
+      const durationHours = Number(duration);
+      if (isClosureDate(date, closures)
+        || isRegularlyClosedDate(date, businessHours)
+        || (time && !meetsMinimumNotice(date, time, bookingSettings.minimum_notice_minutes))
+        || availableHours === 0
+        || durationHours < bookingSettings.min_duration_hours
+        || durationHours > bookingSettings.max_duration_hours
+        || durationHours > availableHours) {
+        time = '';
+        duration = '';
+      }
+
       setFormData((current) => ({ ...current, date, time, duration }));
       setCurrentMonth(new Date(`${date}T00:00:00`));
       setSeats(initializeSeats(date, seatIds));
@@ -517,7 +531,7 @@ function ReserveContent() {
     }, 0);
 
     return () => window.clearTimeout(restoreDraft);
-  }, [initializeSeats, requestedDateParam, requestedSeatParam, shouldFocusSchedule]);
+  }, [bookingSettings, businessHours, closures, configurationLoading, initializeSeats, requestedDateParam, requestedSeatParam, shouldFocusSchedule]);
 
   useEffect(() => {
     if (!hasRestoredDraft) return;
@@ -553,10 +567,10 @@ function ReserveContent() {
     }
     setFormData((current) => {
       if (name === 'time') {
-        if (value && isReservationTimePast(current.date, value)) {
+        if (value && !meetsMinimumNotice(current.date, value, bookingSettings.minimum_notice_minutes)) {
           return { ...current, time: '', duration: '' };
         }
-        const hoursUntilClosing = getHoursUntilClosing(value);
+        const hoursUntilClosing = hoursAvailableFrom(current.date, value, businessHours);
         const duration = Number(current.duration) <= hoursUntilClosing ? current.duration : '';
         return { ...current, time: value, duration };
       }
@@ -570,15 +584,21 @@ function ReserveContent() {
   };
 
   const handleDateSelect = (date: Date) => {
-    if (isPastDate(date)) return;
+    const candidate = getDateString(date);
+    if (isPastDate(date)
+      || candidate > maximumBookingDate(getManilaDateString(), bookingSettings.maximum_advance_days)
+      || isClosureDate(candidate, closures)
+      || isRegularlyClosedDate(candidate, businessHours)) return;
 
-    const dateString = getDateString(date);
+    const dateString = candidate;
     setIsAvailabilityLoading(true);
     setAvailabilityError('');
 
     setFormData((current) => {
       const keepTime = Boolean(
-        current.time && !isReservationTimePast(dateString, current.time),
+        current.time
+        && meetsMinimumNotice(dateString, current.time, bookingSettings.minimum_notice_minutes)
+        && hoursAvailableFrom(dateString, current.time, businessHours) >= Number(current.duration || 1),
       );
       return {
         ...current,
@@ -633,7 +653,7 @@ function ReserveContent() {
   };
 
   const handleSeatClick = (seatId: string) => {
-    if (isAvailabilityLoading || availabilityError) return;
+    if (isAvailabilityLoading || availabilityError || configurationLoading || configurationError || selectedDateUnavailable) return;
     const seat = seats.find(s => s.id === seatId);
     if (!seat || seat.status === 'reserved') return;
 
@@ -643,7 +663,7 @@ function ReserveContent() {
       if (s.id === seatId) {
         if (s.status === 'selected') {
           return { ...s, status: 'available' };
-        } else if (selectedCount < 5) {
+        } else if (selectedCount < bookingSettings.max_seats_per_booking) {
           return { ...s, status: 'selected' };
         }
       }
@@ -674,6 +694,29 @@ function ReserveContent() {
       setBookingError('Please select a future reservation time.');
       setFormData((current) => ({ ...current, time: '', duration: '' }));
       timeSelectRef.current?.focus();
+      return;
+    }
+
+    if (!meetsMinimumNotice(formData.date, formData.time, bookingSettings.minimum_notice_minutes)) {
+      setBookingError(`Reservations require at least ${bookingSettings.minimum_notice_minutes} minutes notice.`);
+      setFormData((current) => ({ ...current, time: '', duration: '' }));
+      timeSelectRef.current?.focus();
+      return;
+    }
+
+    const closure = closureForDate(formData.date, closures);
+    if (closure) {
+      setBookingError(`Reservations are unavailable on this date: ${closure.name}.`);
+      return;
+    }
+
+    if (isRegularlyClosedDate(formData.date, businessHours)) {
+      setBookingError('Reservations are unavailable because the hub is closed on this day.');
+      return;
+    }
+
+    if (hoursAvailableFrom(formData.date, formData.time, businessHours) < Number(formData.duration)) {
+      setBookingError('Please choose a time and duration within the current operating hours.');
       return;
     }
 
@@ -721,7 +764,7 @@ function ReserveContent() {
         type="button"
         onClick={() => handleSeatClick(id)}
         className={`w-14 h-14 shrink-0 rounded-xl ${isAvailabilityLoading ? 'bg-[#d1d5db] cursor-wait text-white animate-pulse' : colors[status]} transition-all text-xs font-medium flex items-center justify-center`}
-        disabled={status === 'reserved' || isAvailabilityLoading || Boolean(availabilityError)}
+        disabled={status === 'reserved' || isAvailabilityLoading || configurationLoading || Boolean(availabilityError) || Boolean(configurationError) || selectedDateUnavailable}
       >
         {id}
       </button>
@@ -729,8 +772,16 @@ function ReserveContent() {
   };
 
   const selectedCount = seats.filter(s => s.status === 'selected').length;
-  const hoursUntilClosing = getHoursUntilClosing(formData.time);
-  const availableDurationOptions = DURATION_OPTIONS.filter(([value]) => Number(value) <= hoursUntilClosing);
+  const hoursUntilClosing = hoursAvailableFrom(formData.date, formData.time, businessHours);
+  const availableDurationOptions = Array.from(
+    { length: Math.max(0, Math.min(bookingSettings.max_duration_hours, hoursUntilClosing) - bookingSettings.min_duration_hours + 1) },
+    (_, index) => bookingSettings.min_duration_hours + index,
+  ).map((hours) => [String(hours), `${hours} hour${hours === 1 ? '' : 's'}`] as const);
+  const availableTimeOptions = reservationTimeOptions(formData.date, businessHours);
+  const selectedClosure = closureForDate(formData.date, closures);
+  const selectedDayHours = businessHours.find((hours) => hours.day_of_week === new Date(`${formData.date}T12:00:00`).getDay());
+  const selectedDayClosed = isRegularlyClosedDate(formData.date, businessHours);
+  const selectedDateUnavailable = Boolean(selectedClosure) || selectedDayClosed;
   const qrSecondsRemaining = qrExpiresAt
     ? getCountdownSeconds(qrExpiresAt, qrCountdownNow)
     : 0;
@@ -741,7 +792,7 @@ function ReserveContent() {
         <div className="mb-8 sm:mb-12">
           <h1 className="text-3xl sm:text-5xl mb-3 sm:mb-4 text-[#2d2520]">Reserve Your Desk</h1>
           <p className="text-base sm:text-lg text-[#6b5e52] max-w-xl">
-            Select your preferred seat from the floor plan below. You can choose up to 5 seats.
+            Select your preferred seat from the floor plan below. You can choose up to {bookingSettings.max_seats_per_booking} seats.
           </p>
         </div>
 
@@ -761,7 +812,7 @@ function ReserveContent() {
                 </div>
                 <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
                   <div className="w-6 h-6 sm:w-8 sm:h-8 shrink-0 bg-[#3b82f6] rounded-lg"></div>
-                  <span className="text-[#6b5e52]">Selected ({selectedCount}/5)</span>
+                  <span className="text-[#6b5e52]">Selected ({selectedCount}/{bookingSettings.max_seats_per_booking})</span>
                 </div>
               </div>
             </div>
@@ -812,16 +863,28 @@ function ReserveContent() {
 
                   <div className="grid grid-cols-7 gap-1">
                     {getDaysInMonth(currentMonth).map((day, index) => {
-                      const past = day ? isPastDate(day) : false;
+                      const dateString = day ? getDateString(day) : '';
+                      const closure = day ? closureForDate(dateString, closures) : undefined;
+                      const regularlyClosed = day ? isRegularlyClosedDate(dateString, businessHours) : false;
+                      const closed = Boolean(closure) || regularlyClosed;
+                      const unavailable = day ? isPastDate(day)
+                        || dateString > maximumBookingDate(getManilaDateString(), bookingSettings.maximum_advance_days)
+                        || closed : false;
+                      const unavailableReason = closure?.name
+                        ?? (regularlyClosed ? 'Closed on this day' : undefined);
                       return (
                         <div key={index}>
                           {day ? (
                             <button
                               type="button"
                               onClick={() => handleDateSelect(day)}
-                              disabled={past}
-                              className={`w-full aspect-square rounded-lg text-sm transition-all ${past
-                                ? 'text-[#c4b8ab] cursor-not-allowed'
+                              disabled={unavailable}
+                              title={unavailableReason}
+                              aria-label={unavailableReason ? `${formatDate(dateString)} — ${unavailableReason}` : formatDate(dateString)}
+                              className={`w-full aspect-square rounded-lg text-sm transition-all ${unavailable
+                                ? closed
+                                  ? 'cursor-not-allowed bg-[#e4e1dd] text-[#968c82] line-through'
+                                  : 'cursor-not-allowed text-[#c4b8ab]'
                                 : isSameDay(day, formData.date)
                                   ? 'bg-[#e5a930] text-white'
                                   : 'hover:bg-[#f3ede4] text-[#2d2520]'
@@ -836,6 +899,10 @@ function ReserveContent() {
                       );
                     })}
                   </div>
+                  <div className="mt-3 flex items-center gap-2 border-t border-[#f3ede4] pt-3 text-xs text-[#6b5e52]">
+                    <span className="h-4 w-4 rounded bg-[#e4e1dd]" aria-hidden="true" />
+                    Closed
+                  </div>
                 </div>
               )}
             </div>
@@ -845,7 +912,7 @@ function ReserveContent() {
             <p className="text-sm text-[#6b5e52] mb-1 sm:mb-4 px-1 sm:px-0">
               {isAvailabilityLoading
                 ? 'Checking live seat availability…'
-                : 'Layout follows the in-store floor plan — tap a seat to select (up to 5).'}
+                : `Layout follows the in-store floor plan — tap a seat to select (up to ${bookingSettings.max_seats_per_booking}).`}
             </p>
             {availabilityError && <p className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-800" role="alert">{availabilityError} Seat selection is disabled until it reconnects.</p>}
             <p className="text-xs text-[#8b7355] mb-3 px-1 sm:hidden">
@@ -880,24 +947,23 @@ function ReserveContent() {
                 value={formData.time}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-[#2d2520]"
+                disabled={configurationLoading || Boolean(configurationError) || selectedDateUnavailable}
+                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-[#2d2520] disabled:bg-[#eee9e2]"
               >
                 <option value="">Select time</option>
-                {TIME_GROUPS.map((group) => (
-                  <optgroup key={group.label} label={group.label}>
-                    {group.options.map(([value, label]) => {
-                      const past = isReservationTimePast(formData.date, value, currentTime);
-                      return (
-                        <option key={value} value={value} disabled={past}>
-                          {label}{past ? ' (Past)' : ''}
-                        </option>
-                      );
-                    })}
-                  </optgroup>
-                ))}
+                {availableTimeOptions.map(([value, label]) => {
+                  const tooSoon = !meetsMinimumNotice(formData.date, value, bookingSettings.minimum_notice_minutes, currentTime);
+                  return <option key={value} value={value} disabled={tooSoon}>{label}{tooSoon ? ' (Too soon)' : ''}</option>;
+                })}
               </select>
               <p className="mt-2 text-xs text-[#8b7355]">
-                Past times are unavailable for today. Open 8:00 AM–5:00 AM · Closed 5:00–8:00 AM
+                {selectedClosure
+                  ? `Closed: ${selectedClosure.name}`
+                  : selectedDayClosed
+                    ? 'Closed on this day based on the regular operating schedule.'
+                    : selectedDayHours
+                      ? `${formatHoursRange(selectedDayHours)} · Past times are unavailable.`
+                      : 'Loading current operating hours…'}
               </p>
             </div>
             <div>
@@ -919,7 +985,7 @@ function ReserveContent() {
               </select>
               {formData.time && (
                 <p className="mt-2 text-xs text-[#8b7355]">
-                  Available until the 5:00 AM closing time.
+                  {hoursUntilClosing} hour{hoursUntilClosing === 1 ? '' : 's'} available before closing.
                 </p>
               )}
             </div>
@@ -949,10 +1015,12 @@ function ReserveContent() {
             </p>
           )}
 
+          {configurationError && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{configurationError}</p>}
+
           <button
             type="submit"
-            disabled={selectedCount === 0 || isSubmitting || isAvailabilityLoading || Boolean(availabilityError)}
-            className={`w-full min-h-12 cursor-pointer bg-[#e5a930] text-white px-5 sm:px-8 py-3 sm:py-4 rounded-full transition-[background-color,box-shadow] duration-200 enabled:hover:bg-[#d69520] enabled:hover:shadow-lg ${selectedCount === 0 || isSubmitting || isAvailabilityLoading || availabilityError ? 'opacity-50 cursor-not-allowed' : ''
+            disabled={selectedCount === 0 || isSubmitting || isAvailabilityLoading || configurationLoading || Boolean(availabilityError) || Boolean(configurationError) || selectedDateUnavailable}
+            className={`w-full min-h-12 cursor-pointer bg-[#e5a930] text-white px-5 sm:px-8 py-3 sm:py-4 rounded-full transition-[background-color,box-shadow] duration-200 enabled:hover:bg-[#d69520] enabled:hover:shadow-lg ${selectedCount === 0 || isSubmitting || isAvailabilityLoading || configurationLoading || availabilityError || configurationError || selectedDateUnavailable ? 'opacity-50 cursor-not-allowed' : ''
               }`}
           >
             {isSubmitting

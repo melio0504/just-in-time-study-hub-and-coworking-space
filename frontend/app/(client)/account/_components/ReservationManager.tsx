@@ -18,6 +18,17 @@ import {
   X,
 } from 'lucide-react';
 import { SeatingPlan } from '@/app/components/SeatingPlan';
+import {
+  closureForDate,
+  DEFAULT_BOOKING_SETTINGS,
+  hoursAvailableFrom,
+  maximumBookingDate,
+  meetsMinimumNotice,
+  reservationTimeOptions,
+  type BookingSettings,
+  type BusinessClosure,
+  type BusinessHours,
+} from '@/lib/business-config';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/lib/supabase/database.types';
 
@@ -47,12 +58,6 @@ type EditDraft = { date: string; time: string; seats: string[] };
 
 const pageSize = 5;
 const terminalStatuses = new Set(['completed', 'cancelled', 'declined', 'no_show']);
-const reservationTimes = [
-  ['00:00', '12:00 AM'], ['01:00', '1:00 AM'], ['02:00', '2:00 AM'], ['03:00', '3:00 AM'], ['04:00', '4:00 AM'],
-  ['08:00', '8:00 AM'], ['09:00', '9:00 AM'], ['10:00', '10:00 AM'], ['11:00', '11:00 AM'],
-  ['12:00', '12:00 PM'], ['13:00', '1:00 PM'], ['14:00', '2:00 PM'], ['15:00', '3:00 PM'], ['16:00', '4:00 PM'], ['17:00', '5:00 PM'],
-  ['18:00', '6:00 PM'], ['19:00', '7:00 PM'], ['20:00', '8:00 PM'], ['21:00', '9:00 PM'], ['22:00', '10:00 PM'], ['23:00', '11:00 PM'],
-] as const;
 
 function titleCase(value: string) {
   return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -129,11 +134,6 @@ function manilaWindow(date: string, time: string, durationHours: number) {
     startsAt: startsAt.toISOString(),
     endsAt: new Date(startsAt.getTime() + durationHours * 60 * 60 * 1000).toISOString(),
   };
-}
-
-function hoursUntilClosing(time: string) {
-  const hour = Number(time.split(':')[0]);
-  return hour >= 8 ? 29 - hour : 5 - hour;
 }
 
 function canChangeBooking(booking: ManagedBooking, now: number) {
@@ -255,6 +255,11 @@ export function ReservationManager() {
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [action, setAction] = useState<'cancel' | 'save' | 'resend' | 'receipt' | null>(null);
+  const [businessHours, setBusinessHours] = useState<BusinessHours[]>([]);
+  const [closures, setClosures] = useState<BusinessClosure[]>([]);
+  const [bookingSettings, setBookingSettings] = useState<BookingSettings>(DEFAULT_BOOKING_SETTINGS);
+  const [configurationLoading, setConfigurationLoading] = useState(true);
+  const [configurationError, setConfigurationError] = useState('');
 
   const loadBookings = useCallback(async () => {
     setLoading(true);
@@ -276,8 +281,37 @@ export function ReservationManager() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    const loadConfiguration = async () => {
+      const client = createClient();
+      const [hoursResult, closuresResult, settingsResult] = await Promise.all([
+        client.from('business_hours').select('day_of_week, is_open, opens_at, closes_at').order('day_of_week'),
+        client.from('business_closures').select('id, name, starts_on, ends_on, closure_type, is_active').eq('is_active', true),
+        client.from('booking_settings').select('max_seats_per_booking, min_duration_hours, max_duration_hours, minimum_notice_minutes, maximum_advance_days').eq('singleton', true).single(),
+      ]);
+      if (!active) return;
+      const queryError = hoursResult.error || closuresResult.error || settingsResult.error;
+      setConfigurationError(queryError ? `Unable to load current business hours: ${queryError.message}` : '');
+      setBusinessHours(hoursResult.data ?? []);
+      setClosures(closuresResult.data ?? []);
+      if (settingsResult.data) setBookingSettings(settingsResult.data);
+      setConfigurationLoading(false);
+    };
+    void loadConfiguration();
+    return () => { active = false; };
+  }, []);
+
   const selected = bookings.find((booking) => booking.id === selectedId) ?? null;
   const selectedRefund = selected ? firstRelation(selected.payment_refunds) : null;
+  const rescheduleTimes = selected && draft?.date
+    ? reservationTimeOptions(draft.date, businessHours)
+      .filter(([time]) => (
+        selected.duration_hours <= hoursAvailableFrom(draft.date, time, businessHours)
+        && meetsMinimumNotice(draft.date, time, bookingSettings.minimum_notice_minutes)
+      ))
+    : [];
+  const selectedClosure = draft ? closureForDate(draft.date, closures) : undefined;
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
       if (filter === 'all') return true;
@@ -364,9 +398,15 @@ export function ReservationManager() {
 
   const beginEdit = () => {
     if (!selected) return;
+    const currentTime = selected.start_time.slice(0, 5);
+    const validTimes = reservationTimeOptions(selected.booking_date, businessHours)
+      .filter(([time]) => (
+        selected.duration_hours <= hoursAvailableFrom(selected.booking_date, time, businessHours)
+        && meetsMinimumNotice(selected.booking_date, time, bookingSettings.minimum_notice_minutes)
+      ));
     setDraft({
       date: selected.booking_date,
-      time: selected.start_time.slice(0, 5),
+      time: validTimes.some(([time]) => time === currentTime) ? currentTime : validTimes[0]?.[0] ?? '',
       seats: [...selected.seat_ids].sort(),
     });
     setEditing(true);
@@ -384,6 +424,12 @@ export function ReservationManager() {
 
   const saveChanges = async () => {
     if (!selected || !draft) return;
+    if (configurationError || selectedClosure || !draft.time) {
+      setError(selectedClosure
+        ? `${selectedClosure.name} is marked as a closure. Please choose another date.`
+        : configurationError || 'Choose an available start time.');
+      return;
+    }
     setAction('save');
     setError('');
     const { error: updateError } = await createClient().rpc('customer_update_booking', {
@@ -624,16 +670,19 @@ export function ReservationManager() {
               <h3 className="text-xl font-semibold text-[#2d2520]">Change schedule or seats</h3>
               <p className="mt-2 text-sm leading-6 text-[#6b5e52]">The duration and paid total stay unchanged. You may select up to {selected.seat_ids.length} seat{selected.seat_ids.length === 1 ? '' : 's'}, matching the number originally paid for.</p>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <label className="text-sm font-semibold text-[#4f443c]">Date<input type="date" min={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })} value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} className="mt-2 w-full rounded-xl border border-[#d8c9b9] bg-white px-4 py-3 font-normal text-[#2d2520] outline-none focus:border-[#e5a930]" /></label>
-                <label className="text-sm font-semibold text-[#4f443c]">Start time<select value={draft.time} onChange={(event) => setDraft({ ...draft, time: event.target.value })} className="mt-2 w-full rounded-xl border border-[#d8c9b9] bg-white px-4 py-3 font-normal text-[#2d2520] outline-none focus:border-[#e5a930]">{reservationTimes.map(([value, label]) => <option key={value} value={value} disabled={selected.duration_hours > hoursUntilClosing(value)}>{label}</option>)}</select></label>
+                <label className="text-sm font-semibold text-[#4f443c]">Date<input type="date" min={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })} max={maximumBookingDate(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }), bookingSettings.maximum_advance_days)} value={draft.date} onChange={(event) => { const date = event.target.value; const validTimes = reservationTimeOptions(date, businessHours).filter(([time]) => selected.duration_hours <= hoursAvailableFrom(date, time, businessHours) && meetsMinimumNotice(date, time, bookingSettings.minimum_notice_minutes)); setDraft({ ...draft, date, time: validTimes.some(([time]) => time === draft.time) ? draft.time : validTimes[0]?.[0] ?? '' }); }} disabled={configurationLoading} className="mt-2 w-full rounded-xl border border-[#d8c9b9] bg-white px-4 py-3 font-normal text-[#2d2520] outline-none focus:border-[#e5a930] disabled:opacity-60" /></label>
+                <label className="text-sm font-semibold text-[#4f443c]">Start time<select value={draft.time} onChange={(event) => setDraft({ ...draft, time: event.target.value })} disabled={configurationLoading || Boolean(selectedClosure) || rescheduleTimes.length === 0} className="mt-2 w-full rounded-xl border border-[#d8c9b9] bg-white px-4 py-3 font-normal text-[#2d2520] outline-none focus:border-[#e5a930] disabled:opacity-60"><option value="">Choose a time</option>{rescheduleTimes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
               </div>
+              {selectedClosure && <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><strong>{selectedClosure.name}:</strong> This date is closed. Please choose another date.</p>}
+              {!selectedClosure && !configurationLoading && rescheduleTimes.length === 0 && <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">The selected date does not have enough operating hours for this reservation.</p>}
+              {configurationError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{configurationError}</p>}
               <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><h4 className="font-semibold text-[#4f443c]">Choose seats from the floor plan</h4>{availabilityLoading && <span className="flex items-center gap-1.5 text-xs text-[#8a671a]"><Loader2 className="h-3.5 w-3.5 animate-spin" />Checking live availability…</span>}</div>
               <div className="mt-3 flex flex-wrap gap-4 text-xs text-[#6b5e52]"><span className="flex items-center gap-2"><span className="h-5 w-5 rounded-md bg-[#e8e8e8]" />Available</span><span className="flex items-center gap-2"><span className="h-5 w-5 rounded-md bg-[#9ca3af]" />Reserved</span><span className="flex items-center gap-2"><span className="h-5 w-5 rounded-md bg-[#3b82f6]" />Selected ({draft.seats.length}/{selected.seat_ids.length})</span></div>
               <div className="mt-4 rounded-2xl border border-[#e2d8ca] bg-[#f3f0eb] p-2 sm:p-4"><p className="mb-3 px-1 text-xs text-[#7b6b5d] sm:hidden">Swipe sideways to explore the full floor plan.</p><SeatingPlan renderSeat={renderEditSeat} /></div>
               {!availabilityLoading && availableSeatCodes.size === 0 && <p className="mt-3 text-sm text-[#6b5e52]">No seats are available for this time.</p>}
               <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-4 py-3 text-sm"><span className="text-[#6b5e52]">Selected: {draft.seats.join(', ') || 'None'}</span><span className={selectedSeatTotal === selected.subtotal_cents ? 'font-semibold text-emerald-700' : 'font-semibold text-red-700'}>{formatPeso(selectedSeatTotal)} / {formatPeso(selected.subtotal_cents)}</span></div>
             </div>
-            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={() => { setEditing(false); setDraft(null); setError(''); }} disabled={Boolean(action)} className="rounded-full border border-[#d8c9b9] bg-white px-5 py-3 text-sm font-semibold text-[#4f443c]">Discard changes</button><button type="button" onClick={() => void saveChanges()} disabled={Boolean(action) || availabilityLoading || !editHasChanges || draft.seats.length === 0 || selectedSeatTotal !== selected.subtotal_cents} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-5 py-3 text-sm font-semibold text-white hover:bg-[#d69520] disabled:cursor-not-allowed disabled:opacity-45">{action === 'save' && <Loader2 className="h-4 w-4 animate-spin" />}Save reservation</button></div>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={() => { setEditing(false); setDraft(null); setError(''); }} disabled={Boolean(action)} className="rounded-full border border-[#d8c9b9] bg-white px-5 py-3 text-sm font-semibold text-[#4f443c]">Discard changes</button><button type="button" onClick={() => void saveChanges()} disabled={Boolean(action) || configurationLoading || Boolean(configurationError) || Boolean(selectedClosure) || !draft.time || availabilityLoading || !editHasChanges || draft.seats.length === 0 || selectedSeatTotal !== selected.subtotal_cents} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-5 py-3 text-sm font-semibold text-white hover:bg-[#d69520] disabled:cursor-not-allowed disabled:opacity-45">{action === 'save' && <Loader2 className="h-4 w-4 animate-spin" />}Save reservation</button></div>
           </>}
         </div>
       </div>, document.body)}

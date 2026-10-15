@@ -24,8 +24,8 @@ export const STAFF_PERMISSION_OPTIONS: Array<{
   },
   {
     value: "announcements",
-    label: "Announcements",
-    description: "Create, edit, publish, and archive announcements.",
+    label: "Content",
+    description: "Manage announcements, operating hours, closures, prices, and booking limits.",
   },
 ];
 
@@ -36,5 +36,5 @@ export function hasAdminAccess(access: AdminAccess, permission: StaffPermission)
 export function defaultAdminPath(access: AdminAccess) {
   if (hasAdminAccess(access, "seating")) return "/dashboard";
   if (hasAdminAccess(access, "reservations")) return "/reservations";
-  return "/announcements";
+  return "/cms";
 }

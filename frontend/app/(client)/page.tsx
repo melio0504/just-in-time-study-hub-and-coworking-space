@@ -16,12 +16,14 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useState } from "react";
+import { DAY_NAMES, formatHoursRange } from "@/lib/business-config";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables } from "@/lib/supabase/database.types";
 
 export default function Home() {
   const [announcement, setAnnouncement] = useState<Tables<"announcements"> | null>(null);
   const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const [businessHours, setBusinessHours] = useState<Tables<"business_hours">[]>([]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -31,6 +33,9 @@ export default function Home() {
       setShowAnnouncement(Boolean(data));
     };
     void loadLatest();
+    void supabase.from("business_hours").select().order("day_of_week").then(({ data }) => {
+      setBusinessHours(data ?? []);
+    });
     const channel = supabase.channel("public-announcements").on("postgres_changes", { event: "*", schema: "public", table: "announcements" }, () => void loadLatest()).subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, []);
@@ -569,10 +574,16 @@ export default function Home() {
                   <Clock className="w-6 h-6 text-[#e5a930] mt-1" />
                   <div>
                     <p className="text-[#2d2520] mb-1">Operating Hours</p>
-                    <p className="text-[#6b5e52]">
-                      Mon - Sat: 08:00 AM - 12:00 AM
-                    </p>
-                    <p className="text-[#6b5e52]">Sun: 10:00 AM - 08:00 PM</p>
+                    {businessHours.length > 0 ? (
+                      <div className="grid gap-x-5 gap-y-1 sm:grid-cols-2">
+                        {businessHours.map((hours) => (
+                          <p key={hours.day_of_week} className="text-sm text-[#6b5e52]">
+                            <span className="font-medium text-[#4f443c]">{DAY_NAMES[hours.day_of_week]}:</span>{" "}
+                            {formatHoursRange(hours)}
+                          </p>
+                        ))}
+                      </div>
+                    ) : <p className="text-[#6b5e52]">View current hours on our Pricing page.</p>}
                   </div>
                 </div>
               </div>

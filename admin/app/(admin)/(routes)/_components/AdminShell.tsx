@@ -22,7 +22,7 @@ const navItems: NavItem[] = [
   { label: 'Live overview', description: 'Seats and activity', href: '/dashboard', icon: LayoutDashboard, permission: 'seating' },
   { label: 'Walk-ins', description: 'Sessions and billing', href: '/walk-ins', icon: UsersRound, permission: 'seating' },
   { label: 'Reservations', description: 'Manage bookings', href: '/reservations', icon: CalendarDays, permission: 'reservations' },
-  { label: 'Announcements', description: 'Customer updates', href: '/announcements', icon: FileText, permission: 'announcements' },
+  { label: 'Content', description: 'Updates and business settings', href: '/cms', icon: FileText, permission: 'announcements' },
   { label: 'Analytics', description: 'Business performance', href: '/analytics', icon: BarChart3, ownerOnly: true },
   { label: 'Employee accounts', description: 'Create staff access', href: '/staffs', icon: UserCog, ownerOnly: true },
   { label: 'Access logs', description: 'Staff activity', href: '/logs', icon: ShieldCheck, ownerOnly: true },
