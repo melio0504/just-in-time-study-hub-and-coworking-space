@@ -1,12 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, Armchair, CalendarDays, Eye, Loader2, Pencil, Plus, Radio, Search, ShieldCheck, Trash2, X } from 'lucide-react';
 import { SeatingPlanMini } from '../../../_components/SeatingPlanMini';
 import { useAdminAccess } from '../../../_components/AdminShell';
 import { useDashboardInitialData, type DashboardAuditLog } from './DashboardDataProvider';
 import { hasAdminAccess } from '@/lib/admin-access';
+import {
+  getReservationAvailabilityWindow,
+  SEAT_AVAILABILITY_REFRESH_MS,
+} from '@/lib/seatAvailability';
 import { allSeatIds } from '@/lib/seats';
 import { createClient } from '@/lib/supabase/client';
 import type { Tables } from '@/lib/supabase/database.types';
@@ -23,6 +27,21 @@ type WalkInTarget = { seatCode: string; isOccupied: boolean };
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 const cleanForm: NoticeForm = { date: today(), title: '', description: '', status: 'published' };
 const terminalStatuses = new Set(['cancelled', 'completed', 'declined', 'no_show']);
+const availabilityTimes = [
+  ['00:00', '12:00 AM'], ['01:00', '1:00 AM'], ['02:00', '2:00 AM'], ['03:00', '3:00 AM'], ['04:00', '4:00 AM'],
+  ['08:00', '8:00 AM'], ['09:00', '9:00 AM'], ['10:00', '10:00 AM'], ['11:00', '11:00 AM'],
+  ['12:00', '12:00 PM'], ['13:00', '1:00 PM'], ['14:00', '2:00 PM'], ['15:00', '3:00 PM'], ['16:00', '4:00 PM'], ['17:00', '5:00 PM'],
+  ['18:00', '6:00 PM'], ['19:00', '7:00 PM'], ['20:00', '8:00 PM'], ['21:00', '9:00 PM'], ['22:00', '10:00 PM'], ['23:00', '11:00 PM'],
+] as const;
+const availabilityDurations = [['1', '1 hour'], ['2', '2 hours'], ['3', '3 hours'], ['4', '4 hours'], ['6', '6 hours'], ['8', '8 hours']] as const;
+
+function getHoursUntilClosing(time: string) {
+  const hour = Number(time.split(':')[0]);
+  if (!Number.isInteger(hour)) return 0;
+  if (hour >= 8 && hour <= 23) return 29 - hour;
+  if (hour >= 0 && hour < 5) return 5 - hour;
+  return 0;
+}
 
 function titleCase(value: string) { return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
 function formatDateTime(value: string) { return new Date(value).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' }); }
@@ -47,6 +66,12 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const [announcements, setAnnouncements] = useState<Announcement[]>(initialData.announcements);
   const [logs, setLogs] = useState<DashboardAuditLog[]>(initialData.logs);
   const [selectedDate, setSelectedDate] = useState(today());
+  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState('');
+  const [availableSeatCodes, setAvailableSeatCodes] = useState<Set<string> | null>(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(true);
+  const [availabilityError, setAvailabilityError] = useState('');
+  const availabilityRequestRef = useRef(0);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [announcementFilter, setAnnouncementFilter] = useState<AnnouncementFilter>('all');
@@ -63,6 +88,30 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(initialData.error);
   const [noticeForm, setNoticeForm] = useState<NoticeForm>(cleanForm);
+
+  const loadSeatAvailability = useCallback(async () => {
+    const requestId = ++availabilityRequestRef.current;
+    setAvailabilityLoading(true);
+    setAvailabilityError('');
+    const { startsAt, endsAt } = getReservationAvailabilityWindow(
+      selectedDate,
+      selectedTime,
+      selectedDuration,
+    );
+    const { data, error } = await createClient().rpc('get_available_seats', {
+      p_starts_at: startsAt,
+      p_ends_at: endsAt,
+    });
+    if (requestId !== availabilityRequestRef.current) return;
+
+    if (error) {
+      setAvailableSeatCodes(null);
+      setAvailabilityError(`Unable to refresh seat availability: ${error.message}`);
+    } else {
+      setAvailableSeatCodes(new Set((data ?? []).map((seat) => seat.code)));
+    }
+    setAvailabilityLoading(false);
+  }, [selectedDate, selectedDuration, selectedTime]);
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
@@ -84,32 +133,49 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
 
   useEffect(() => {
     const supabase = createClient();
+    const reloadOperations = () => {
+      void loadData();
+      void loadSeatAvailability();
+    };
     const channel = supabase.channel('admin-operations')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => void loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'walk_in_occupancies' }, () => void loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, reloadOperations)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'booking_seats' }, reloadOperations)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'seats' }, reloadOperations)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'walk_in_occupancies' }, reloadOperations)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => void loadData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'audit_logs' }, () => void loadData())
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') void loadData();
+        if (status === 'SUBSCRIBED') reloadOperations();
       });
     return () => { void supabase.removeChannel(channel); };
-  }, [loadData]);
+  }, [loadData, loadSeatAvailability]);
+
+  useEffect(() => {
+    const refreshAvailability = () => void loadSeatAvailability();
+    const refreshInterval = window.setInterval(refreshAvailability, SEAT_AVAILABILITY_REFRESH_MS);
+    const initialRefresh = window.setTimeout(refreshAvailability, 0);
+    window.addEventListener('focus', refreshAvailability);
+    return () => {
+      window.clearTimeout(initialRefresh);
+      window.clearInterval(refreshInterval);
+      window.removeEventListener('focus', refreshAvailability);
+    };
+  }, [loadSeatAvailability]);
 
   const seatCodeById = useMemo(() => new Map(seats.map((seat) => [seat.id, seat.code])), [seats]);
   const activeWalkInByCode = useMemo(() => new Map(walkIns.map((walkIn) => [seatCodeById.get(walkIn.seat_id), walkIn]).filter((entry): entry is [string, WalkIn] => Boolean(entry[0]))), [walkIns, seatCodeById]);
   const activeWalkInCodes = useMemo(() => new Set(walkIns.map((walkIn) => seatCodeById.get(walkIn.seat_id)).filter(Boolean)), [walkIns, seatCodeById]);
-  const selectedBookings = useMemo(() => bookings.filter((booking) => booking.booking_date === selectedDate && !terminalStatuses.has(booking.status)), [bookings, selectedDate]);
   const checkedInCodes = useMemo(() => new Set(bookings.filter((booking) => booking.status === 'checked_in').flatMap((booking) => booking.seat_ids)), [bookings]);
-  const reservedCodes = useMemo(() => new Set(selectedBookings.filter((booking) => booking.status !== 'checked_in').flatMap((booking) => booking.seat_ids)), [selectedBookings]);
   const seatPlan = useMemo(() => allSeatIds.map((id) => {
     const databaseSeat = seats.find((seat) => seat.code === id);
     const status = databaseSeat?.status === 'maintenance' ? 'maintenance' as const
       : selectedDate === today() && (activeWalkInCodes.has(id) || checkedInCodes.has(id)) ? 'occupied' as const
-      : reservedCodes.has(id) ? 'reserved' as const : 'available' as const;
+      : availableSeatCodes?.has(id) ? 'available' as const : 'reserved' as const;
     return { id, status };
-  }), [activeWalkInCodes, checkedInCodes, reservedCodes, seats, selectedDate]);
+  }), [activeWalkInCodes, availableSeatCodes, checkedInCodes, seats, selectedDate]);
 
   const seatSummary = useMemo(() => seatPlan.reduce((result, seat) => ({ ...result, [seat.status]: (result[seat.status] || 0) + 1 }), {} as Record<string, number>), [seatPlan]);
+  const availableDurationOptions = availabilityDurations.filter(([value]) => Number(value) <= getHoursUntilClosing(selectedTime));
   const filteredBookings = useMemo(() => bookings.filter((booking) => {
     const needle = search.toLowerCase();
     return (statusFilter === 'all' || booking.status === statusFilter) && (!needle || `${booking.guest_name} ${booking.guest_email} ${booking.reservation_code} ${booking.seat_ids.join(' ')}`.toLowerCase().includes(needle));
@@ -122,6 +188,13 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
       return matchesStatus && matchesSearch;
     });
   }, [announcementFilter, announcementSearch, announcements]);
+
+  const beginAvailabilityWindowChange = () => {
+    availabilityRequestRef.current += 1;
+    setAvailableSeatCodes(null);
+    setAvailabilityError('');
+    setAvailabilityLoading(true);
+  };
 
   const requestWalkInChange = (seatCode: string) => {
     const hasActiveWalkIn = activeWalkInCodes.has(seatCode);
@@ -225,11 +298,11 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     {message && <div className="mb-5 flex items-center justify-between rounded-2xl border border-[#ecd8ad] bg-[#fff8e8] px-4 py-3 text-sm text-[#775919]"><span>{message}</span><button onClick={() => setMessage('')}><X className="h-4 w-4" /></button></div>}
 
     {section === 'dashboard' && <>
-      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-emerald-700"><Radio className="h-3.5 w-3.5" />Live operations</p><h1 className="text-3xl font-semibold tracking-tight text-[#2d2520] sm:text-4xl">Seating overview</h1><p className="mt-2 text-[#5f5248]">Reservations and walk-ins update automatically from the shared database.</p></div><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]">Viewing date <input type="date" min={today()} value={selectedDate} onChange={(e) => setSelectedDate(e.target.value < today() ? today() : e.target.value)} className="ml-3 bg-transparent font-semibold text-[#2d2520] outline-none" /></label></div>
+      <div className="mb-7 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between"><div><p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-emerald-700"><Radio className="h-3.5 w-3.5" />Live operations</p><h1 className="text-3xl font-semibold tracking-tight text-[#2d2520] sm:text-4xl">Seating overview</h1><p className="mt-2 text-[#5f5248]">Reservations and walk-ins update automatically from the shared database.</p></div><div className="grid gap-3 sm:grid-cols-3"><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]"><span className="mb-1 block text-xs font-semibold uppercase tracking-wider">Viewing date</span><input type="date" min={today()} value={selectedDate} onChange={(event) => { beginAvailabilityWindowChange(); setSelectedDate(event.target.value < today() ? today() : event.target.value); }} className="w-full bg-transparent font-semibold text-[#2d2520] outline-none" /></label><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]"><span className="mb-1 block text-xs font-semibold uppercase tracking-wider">Start time</span><select value={selectedTime} onChange={(event) => { beginAvailabilityWindowChange(); const value = event.target.value; setSelectedTime(value); setSelectedDuration(value ? '1' : ''); }} className="w-full bg-transparent font-semibold text-[#2d2520] outline-none"><option value="">All operating day</option>{availabilityTimes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]"><span className="mb-1 block text-xs font-semibold uppercase tracking-wider">Duration</span><select value={selectedDuration} disabled={!selectedTime} onChange={(event) => { beginAvailabilityWindowChange(); setSelectedDuration(event.target.value); }} className="w-full bg-transparent font-semibold text-[#2d2520] outline-none disabled:text-[#9b9188]"><option value="">{selectedTime ? 'Select duration' : 'All day'}</option>{availableDurationOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div></div>
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
         ['Available', seatSummary.available || 0, 'bg-emerald-50 text-emerald-700'], ['Reserved', seatSummary.reserved || 0, 'bg-slate-100 text-slate-700'], ['Occupied now', seatSummary.occupied || 0, 'bg-amber-50 text-amber-700'], ['Total active seats', seats.filter((seat) => seat.is_active).length, 'bg-white text-[#2d2520]'],
       ].map(([label, value, color]) => <div key={String(label)} className={`rounded-3xl border border-[#e8dfd4] p-5 shadow-sm ${color}`}><p className="text-xs font-semibold uppercase tracking-[.14em] opacity-70">{label}</p><p className="mt-2 text-4xl font-semibold">{value}</p></div>)}</div>
-      <div className="rounded-3xl border border-[#e8dfd4] bg-white p-4 shadow-sm sm:p-6"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold text-[#2d2520]">Live floor plan</h2><p className="mt-1 text-sm text-[#5f5248]">{selectedDate === today() ? 'Select a seat to update its live walk-in occupancy.' : 'Return to today to manage live walk-in occupancy.'}</p></div><div className="flex flex-wrap gap-3 text-xs text-[#6b5e52]"><span>● <b className="text-emerald-600">Available</b></span><span>● Reserved</span><span className="text-amber-600">● Occupied</span></div></div><SeatingPlanMini seats={seatPlan} onSeatClick={selectedDate === today() ? requestWalkInChange : undefined} busySeatId={busySeat} /></div>
+      <div className="rounded-3xl border border-[#e8dfd4] bg-white p-4 shadow-sm sm:p-6"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold text-[#2d2520]">Live floor plan</h2><p className="mt-1 text-sm text-[#5f5248]">{selectedTime ? `Availability for ${selectedTime}, ${selectedDuration || '—'} hour${selectedDuration === '1' ? '' : 's'}. This matches the customer seat plan for the same schedule.` : 'Showing seats reserved at any time during the operating day. Choose a start time to compare a customer schedule.'}</p>{availabilityLoading && <p className="mt-1 text-xs font-medium text-[#8a671a]">Refreshing availability…</p>}{availabilityError && <p className="mt-2 text-sm font-medium text-red-700" role="alert">{availabilityError}</p>}</div><div className="flex flex-wrap gap-3 text-xs text-[#6b5e52]"><span>● <b className="text-emerald-600">Available</b></span><span>● Reserved</span><span className="text-amber-600">● Occupied</span></div></div><SeatingPlanMini seats={seatPlan} onSeatClick={selectedDate === today() && !availabilityLoading && !availabilityError ? requestWalkInChange : undefined} busySeatId={busySeat} /></div>
       <div className="mt-6 rounded-3xl border border-[#e8dfd4] bg-white p-5 shadow-sm"><h2 className="mb-4 text-xl font-semibold text-[#2d2520]">Recent reservations</h2><BookingTable bookings={bookings.slice(0, 8)} onView={setSelectedBooking} onCancel={canManageReservations ? requestCancellation : undefined} /></div>
     </>}
 

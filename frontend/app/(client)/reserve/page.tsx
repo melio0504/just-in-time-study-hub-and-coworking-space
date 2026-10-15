@@ -126,6 +126,8 @@ function ReserveContent() {
   const [emailDeliveryError, setEmailDeliveryError] = useState('');
   const [lastSelectedSeats, setLastSelectedSeats] = useState<string[]>([]);
   const [bookingError, setBookingError] = useState('');
+  const [availabilityError, setAvailabilityError] = useState('');
+  const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(isSupabaseConfigured);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [memberIdentity, setMemberIdentity] = useState<MemberIdentity | null>(null);
   const [isIdentityLoading, setIsIdentityLoading] = useState(isSupabaseConfigured);
@@ -386,6 +388,8 @@ function ReserveContent() {
     if (!hasRestoredDraft || !formData.date) return;
     let cancelled = false;
     const loadAvailability = async () => {
+      setIsAvailabilityLoading(true);
+      setAvailabilityError('');
       const { startsAt, endsAt } = getReservationAvailabilityWindow(
         formData.date,
         formData.time,
@@ -396,7 +400,11 @@ function ReserveContent() {
         p_ends_at: endsAt,
       });
       if (cancelled) return;
-      if (error) { setBookingError(error.message); return; }
+      if (error) {
+        setAvailabilityError(`Unable to refresh seat availability: ${error.message}`);
+        setIsAvailabilityLoading(false);
+        return;
+      }
       const available = new Set((data ?? []).map((seat) => seat.code));
       setSeats((currentSeats) => {
         const selected = new Set(
@@ -412,6 +420,7 @@ function ReserveContent() {
             : 'reserved',
         }));
       });
+      setIsAvailabilityLoading(false);
     };
     const refreshAvailability = () => void loadAvailability();
     const refreshInterval = window.setInterval(
@@ -538,6 +547,10 @@ function ReserveContent() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    if (name === 'date' || name === 'time' || name === 'duration') {
+      setIsAvailabilityLoading(true);
+      setAvailabilityError('');
+    }
     setFormData((current) => {
       if (name === 'time') {
         if (value && isReservationTimePast(current.date, value)) {
@@ -560,6 +573,8 @@ function ReserveContent() {
     if (isPastDate(date)) return;
 
     const dateString = getDateString(date);
+    setIsAvailabilityLoading(true);
+    setAvailabilityError('');
 
     setFormData((current) => {
       const keepTime = Boolean(
@@ -618,6 +633,7 @@ function ReserveContent() {
   };
 
   const handleSeatClick = (seatId: string) => {
+    if (isAvailabilityLoading || availabilityError) return;
     const seat = seats.find(s => s.id === seatId);
     if (!seat || seat.status === 'reserved') return;
 
@@ -636,7 +652,9 @@ function ReserveContent() {
   };
 
   const handleClearSelectedSeats = () => {
-    setSeats(initializeSeats(formData.date));
+    setSeats((currentSeats) => currentSeats.map((seat) => (
+      seat.status === 'selected' ? { ...seat, status: 'available' } : seat
+    )));
   };
 
   const getSeatStatus = (seatId: string): SeatStatus => {
@@ -702,8 +720,8 @@ function ReserveContent() {
         key={id}
         type="button"
         onClick={() => handleSeatClick(id)}
-        className={`w-14 h-14 shrink-0 rounded-xl ${colors[status]} transition-all text-xs font-medium flex items-center justify-center`}
-        disabled={status === 'reserved'}
+        className={`w-14 h-14 shrink-0 rounded-xl ${isAvailabilityLoading ? 'bg-[#d1d5db] cursor-wait text-white animate-pulse' : colors[status]} transition-all text-xs font-medium flex items-center justify-center`}
+        disabled={status === 'reserved' || isAvailabilityLoading || Boolean(availabilityError)}
       >
         {id}
       </button>
@@ -825,8 +843,11 @@ function ReserveContent() {
 
           <div className="rounded-xl sm:rounded-2xl border border-[#e8e0d4] bg-[#f3f0eb] p-2 sm:p-6">
             <p className="text-sm text-[#6b5e52] mb-1 sm:mb-4 px-1 sm:px-0">
-              Layout follows the in-store floor plan — tap a seat to select (up to 5).
+              {isAvailabilityLoading
+                ? 'Checking live seat availability…'
+                : 'Layout follows the in-store floor plan — tap a seat to select (up to 5).'}
             </p>
+            {availabilityError && <p className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-800" role="alert">{availabilityError} Seat selection is disabled until it reconnects.</p>}
             <p className="text-xs text-[#8b7355] mb-3 px-1 sm:hidden">
               Swipe sideways to explore the full floor plan.
             </p>
@@ -930,8 +951,8 @@ function ReserveContent() {
 
           <button
             type="submit"
-            disabled={selectedCount === 0 || isSubmitting}
-            className={`w-full min-h-12 cursor-pointer bg-[#e5a930] text-white px-5 sm:px-8 py-3 sm:py-4 rounded-full transition-[background-color,box-shadow] duration-200 enabled:hover:bg-[#d69520] enabled:hover:shadow-lg ${selectedCount === 0 || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+            disabled={selectedCount === 0 || isSubmitting || isAvailabilityLoading || Boolean(availabilityError)}
+            className={`w-full min-h-12 cursor-pointer bg-[#e5a930] text-white px-5 sm:px-8 py-3 sm:py-4 rounded-full transition-[background-color,box-shadow] duration-200 enabled:hover:bg-[#d69520] enabled:hover:shadow-lg ${selectedCount === 0 || isSubmitting || isAvailabilityLoading || availabilityError ? 'opacity-50 cursor-not-allowed' : ''
               }`}
           >
             {isSubmitting

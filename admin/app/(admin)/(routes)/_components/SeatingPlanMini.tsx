@@ -83,7 +83,7 @@ export function SeatingPlanMini({ seats, onSeatClick, busySeatId }: SeatingPlanM
           </div>
 
           <div className="absolute top-[22%] left-[27%] flex h-[15%] w-[11%] items-center justify-center rounded-xl border-2 border-dashed border-[#8b7355]/70 bg-white/50">
-            <span className="text-sm font-medium tracking-wide text-[#6b5e52]">CASHIER</span>
+            <span className="text-sm font-medium tracking-wide text-[#6b5e52]">FRONT DESK</span>
           </div>
 
           <div className="absolute top-[4%] left-[38%] grid grid-cols-4 gap-x-2 gap-y-2">
