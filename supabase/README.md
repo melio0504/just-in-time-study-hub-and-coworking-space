@@ -50,9 +50,13 @@ Useful local URLs:
 ## Test PayMongo QR Ph locally
 
 PayMongo must reach the signed webhook before the local database confirms the
-reservation. Expose the local `paymongo-webhook` function through an HTTPS
-tunnel, register the tunnel URL as a test-mode PayMongo webhook, and subscribe
-to `payment.paid`, `payment.failed`, and `qrph.expired`.
+reservation. Install `cloudflared`, keep `npm run supabase:functions` running,
+and run `npm run paymongo:tunnel` in another terminal. Copy the generated
+`https://<random>.trycloudflare.com` base URL, append
+`/functions/v1/paymongo-webhook`, and replace the webhook URL in PayMongo's
+test-mode dashboard. Quick Tunnel URLs change after every restart, so update
+PayMongo each time. Subscribe to `payment.paid`, `payment.failed`, and
+`qrph.expired`.
 
 See [PayMongo QR Ph and confirmation email setup](../docs/PAYMENTS_AND_EMAIL.md)
 for the complete local Mailpit and production Resend instructions.

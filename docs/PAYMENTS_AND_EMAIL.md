@@ -43,21 +43,50 @@ npm run supabase:functions
 npm run dev:frontend
 ```
 
+Install the `cloudflared` system dependency before testing PayMongo webhooks.
+Follow the official [Cloudflare Tunnel installation instructions](https://developers.cloudflare.com/tunnel/downloads/),
+then verify the executable is available:
+
+```bash
+cloudflared --version
+```
+
 Mailpit is available at <http://127.0.0.1:54324>. It captures confirmation
 emails locally and never delivers them to the customer's real inbox.
 
-PayMongo cannot call a localhost webhook. For an end-to-end test, expose the
-local function through an HTTPS tunnel and register this URL as a **test-mode**
-webhook endpoint:
+PayMongo cannot call a localhost webhook. Keep the local Edge Functions server
+running, then start a Cloudflare Quick Tunnel in another terminal:
 
-```text
-https://your-tunnel.example/functions/v1/paymongo-webhook
+```bash
+npm run paymongo:tunnel
 ```
 
-Subscribe to `payment.paid`, `payment.failed`, and `qrph.expired`. Copy that
-endpoint's signing secret into `PAYMONGO_WEBHOOK_SECRET`, then restart the
-function server. Use PayMongo's test keys and test controls. Do not scan the
-test QR code with a banking or e-wallet app; use PayMongo's `test_url` instead.
+The command exposes `http://127.0.0.1:54321` and prints a temporary base URL
+similar to `https://random-words.trycloudflare.com`. Append the Edge Function
+path and register the complete URL as the **test-mode** PayMongo webhook:
+
+```text
+https://random-words.trycloudflare.com/functions/v1/paymongo-webhook
+```
+
+Update the existing webhook URL in the PayMongo test-mode dashboard before
+authorizing a payment. A Quick Tunnel URL stops working when the command stops,
+and every new run generates a different hostname; replace the PayMongo webhook
+URL after every restart. Keep the tunnel terminal open throughout the test.
+
+Subscribe to `payment.paid`, `payment.failed`, and `qrph.expired`. If you create
+a new webhook instead of updating the existing one, copy its signing secret
+into `PAYMONGO_WEBHOOK_SECRET`, then restart `npm run supabase:functions`. Use
+PayMongo's test keys and test controls. Do not scan the test QR code with a
+banking or e-wallet app; use PayMongo's `test_url` instead.
+
+The local PayMongo test workflow therefore needs three long-running processes:
+
+```bash
+npm run supabase:functions # terminal 1
+npm run paymongo:tunnel    # terminal 2; update PayMongo with the printed URL
+npm run dev:frontend       # terminal 3
+```
 
 After a reservation displays its test QR code, open PayMongo's approval and
 rejection controls for the latest active local Payment Intent with:

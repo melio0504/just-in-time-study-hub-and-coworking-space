@@ -86,6 +86,7 @@
     "supabase:stop": "supabase stop",
     "supabase:reset": "supabase db reset",
     "supabase:types": "supabase gen types typescript --local > frontend/lib/supabase/database.types.ts && cp frontend/lib/supabase/database.types.ts admin/lib/supabase/database.types.ts",
+    "paymongo:tunnel": "cloudflared tunnel --url http://127.0.0.1:54321",
     "paymongo:test-url": "bash scripts/open-paymongo-test-url.sh"
   },
   "devDependencies": {
