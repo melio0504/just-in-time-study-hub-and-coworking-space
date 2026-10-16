@@ -1,23 +1,8 @@
-"use client";
-
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Facebook, Instagram, Mail, Phone, MapPin, Clock } from 'lucide-react';
-import { formatHoursRange, type BusinessHours } from '@/lib/business-config';
-import { createClient } from '@/lib/supabase/client';
 
 export function Footer() {
-  const [todayHours, setTodayHours] = useState<BusinessHours | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const dayOfWeek = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' })).getDay();
-    void createClient().from('business_hours').select().eq('day_of_week', dayOfWeek).single()
-      .then(({ data }) => { if (!cancelled) setTodayHours(data); });
-    return () => { cancelled = true; };
-  }, []);
-
   return (
     <footer className="bg-[#fffcf7] border-t border-[#f3ede4]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
@@ -55,7 +40,7 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-[#e5a930] flex-shrink-0" />
-                <p className="text-[#6b5e52] text-sm">Today: {todayHours ? formatHoursRange(todayHours) : 'View current hours on Pricing'}</p>
+                <p className="text-[#6b5e52] text-sm">Daily: 8:00 AM - 5:00 AM</p>
               </div>
               <div className="flex mt-6 gap-4">
                 <a

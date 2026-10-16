@@ -244,7 +244,7 @@ export default function Home() {
               </div>
               <h2 className="text-lg mb-2 text-[#2d2520]">Extended Hours</h2>
               <p className="text-[#6b5e52]">
-                Mon-Sat: 8AM - 12AM · Sun: 10AM - 8PM
+                Daily: 8:00 AM - 5:00 AM
               </p>
             </div>
 
