@@ -81,10 +81,12 @@ export default function Home() {
                   <div className="w-8 h-8 bg-[#fef3dc] rounded-full flex items-center justify-center flex-shrink-0">
                     <Megaphone className="w-4 h-4 text-[#e5a930]" />
                   </div>
-                  <h3 className="text-[#2d2520] font-semibold text-sm">{announcement.title}</h3>
+                  <p className="text-[#2d2520] font-semibold text-sm">{announcement.title}</p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowAnnouncement(false)}
+                  aria-label="Dismiss announcement"
                   className="w-6 h-6 hover:bg-[#f3ede4] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
                 >
                   <X className="w-3 h-3 text-[#6b5e52]" />
@@ -230,7 +232,7 @@ export default function Home() {
               <div className="w-12 h-12 bg-[#fef3dc] rounded-xl flex items-center justify-center mb-4">
                 <MapPin className="w-6 h-6 text-[#e5a930]" />
               </div>
-              <h3 className="text-lg mb-2 text-[#2d2520]">Central Location</h3>
+              <h2 className="text-lg mb-2 text-[#2d2520]">Central Location</h2>
               <p className="text-[#6b5e52]">
                 Mendiola, Manila · 5 min from campus
               </p>
@@ -240,7 +242,7 @@ export default function Home() {
               <div className="w-12 h-12 bg-[#fef3dc] rounded-xl flex items-center justify-center mb-4">
                 <Clock className="w-6 h-6 text-[#e5a930]" />
               </div>
-              <h3 className="text-lg mb-2 text-[#2d2520]">Extended Hours</h3>
+              <h2 className="text-lg mb-2 text-[#2d2520]">Extended Hours</h2>
               <p className="text-[#6b5e52]">
                 Mon-Sat: 8AM - 12AM · Sun: 10AM - 8PM
               </p>
@@ -250,9 +252,9 @@ export default function Home() {
               <div className="w-12 h-12 bg-[#fef3dc] rounded-xl flex items-center justify-center mb-4">
                 <ArrowRight className="w-6 h-6 text-[#e5a930]" />
               </div>
-              <h3 className="text-lg mb-2 text-[#2d2520]">
+              <h2 className="text-lg mb-2 text-[#2d2520]">
                 Ready When You Are
-              </h3>
+              </h2>
               <p className="text-[#6b5e52]">Book online · Walk-ins welcome</p>
             </div>
           </motion.div>
@@ -425,7 +427,11 @@ export default function Home() {
                 <p className="mb-6 flex-1 leading-relaxed text-[#2d2520] italic">
                   &ldquo;{review.review}&rdquo;
                 </p>
-                <div className="mb-4 flex items-center gap-1" aria-label="5 out of 5 stars">
+                <div
+                  className="mb-4 flex items-center gap-1"
+                  role="img"
+                  aria-label="5 out of 5 stars"
+                >
                   {Array.from({ length: 5 }).map((_, starIndex) => (
                     <Star
                       key={starIndex}
