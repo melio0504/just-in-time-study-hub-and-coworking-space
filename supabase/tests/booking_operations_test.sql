@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(22);
+SELECT plan(25);
 
 -- Seeded Auth IDs are intentionally random; tests resolve stable fixture
 -- emails instead of coupling behavior to a particular UUID.
@@ -283,6 +283,26 @@ SELECT ok(
   ),
   'an active walk-in is excluded from customer availability'
 );
+RESET ROLE;
+SET LOCAL ROLE anon;
+SELECT ok(
+  NOT EXISTS (
+    SELECT 1
+    FROM public.get_available_seats(
+      ((now() at time zone 'Asia/Manila')::date)::timestamp AT TIME ZONE 'Asia/Manila',
+      (((now() at time zone 'Asia/Manila')::date + 1)::timestamp) AT TIME ZONE 'Asia/Manila'
+    )
+    WHERE code = 'TZ99'
+  ),
+  'anonymous reserve-page availability excludes an active walk-in'
+);
+RESET ROLE;
+SELECT set_config(
+  'request.jwt.claims',
+  jsonb_build_object('sub', current_setting('test.ramon_id'), 'role', 'authenticated')::text,
+  true
+);
+SET LOCAL ROLE authenticated;
 SELECT is(
   public.toggle_walk_in_occupancy('TZ99', NULL),
   false,
@@ -308,6 +328,94 @@ SELECT is(
   ),
   2::bigint,
   'walk-in transitions create an audit record for check-in and checkout'
+);
+
+-- A checked-in guest remains an active occupant after the scheduled range
+-- ends. This mirrors the admin floor plan's live status.
+SELECT set_config('test.checked_in_booking_id', gen_random_uuid()::text, true);
+SELECT set_config('test.candidate_booking_id', gen_random_uuid()::text, true);
+SELECT set_config('jit.seed_mode', 'on', true);
+INSERT INTO public.bookings (
+  id, reservation_code, user_id, guest_name, guest_email, booking_date,
+  start_time, starts_at, ends_at, duration_hours, space, seat_ids,
+  status, payment_status, subtotal_cents
+) VALUES (
+  current_setting('test.checked_in_booking_id')::uuid,
+  'JIT-CHECKEDIN-TEST',
+  current_setting('test.maria_id')::uuid,
+  'Checked-in Test',
+  'checked-in-test@example.com',
+  (now() at time zone 'Asia/Manila')::date,
+  time '00:00',
+  (((now() at time zone 'Asia/Manila')::date)::timestamp at time zone 'Asia/Manila'),
+  (((now() at time zone 'Asia/Manila')::date)::timestamp at time zone 'Asia/Manila') + interval '1 hour',
+  1,
+  'study-seat',
+  ARRAY['TZ99'],
+  'checked_in',
+  'paid',
+  5000
+);
+INSERT INTO public.booking_seats (booking_id, seat_id, reserved_during)
+SELECT
+  current_setting('test.checked_in_booking_id')::uuid,
+  seat.id,
+  tstzrange(
+    (((now() at time zone 'Asia/Manila')::date)::timestamp at time zone 'Asia/Manila'),
+    (((now() at time zone 'Asia/Manila')::date)::timestamp at time zone 'Asia/Manila') + interval '1 hour',
+    '[)'
+  )
+FROM public.seats seat
+WHERE seat.code = 'TZ99';
+
+INSERT INTO public.bookings (
+  id, reservation_code, user_id, guest_name, guest_email, booking_date,
+  start_time, starts_at, ends_at, duration_hours, space, seat_ids,
+  status, payment_status, subtotal_cents
+) VALUES (
+  current_setting('test.candidate_booking_id')::uuid,
+  'JIT-CANDIDATE-TEST',
+  current_setting('test.juan_id')::uuid,
+  'Candidate Test',
+  'candidate-test@example.com',
+  (now() at time zone 'Asia/Manila')::date,
+  time '02:00',
+  (((now() at time zone 'Asia/Manila')::date)::timestamp at time zone 'Asia/Manila') + interval '2 hours',
+  (((now() at time zone 'Asia/Manila')::date)::timestamp at time zone 'Asia/Manila') + interval '3 hours',
+  1,
+  'study-seat',
+  ARRAY['TZ99'],
+  'pending',
+  'pending',
+  5000
+);
+SELECT set_config('jit.seed_mode', 'off', true);
+
+SET LOCAL ROLE anon;
+SELECT ok(
+  NOT EXISTS (
+    SELECT 1
+    FROM public.get_available_seats(
+      (((now() at time zone 'Asia/Manila')::date)::timestamp at time zone 'Asia/Manila'),
+      ((((now() at time zone 'Asia/Manila')::date + 1)::timestamp) at time zone 'Asia/Manila')
+    )
+    WHERE code = 'TZ99'
+  ),
+  'anonymous reserve-page availability excludes a checked-in guest after the scheduled range'
+);
+RESET ROLE;
+SELECT throws_ok(
+  format(
+    'insert into public.booking_seats (booking_id, seat_id, reserved_during) '
+      || 'select %L::uuid, id, tstzrange('
+      || '(((now() at time zone ''Asia/Manila'')::date)::timestamp at time zone ''Asia/Manila'') + interval ''2 hours'', '
+      || '(((now() at time zone ''Asia/Manila'')::date)::timestamp at time zone ''Asia/Manila'') + interval ''3 hours'', ''[)'') '
+      || 'from public.seats where code = ''TZ99''',
+    current_setting('test.candidate_booking_id')
+  ),
+  '23P01',
+  'Seat is currently occupied by a checked-in reservation',
+  'the write path rejects a current-day booking for a checked-in seat'
 );
 
 -- Sofia only has announcement access and cannot operate seating.
