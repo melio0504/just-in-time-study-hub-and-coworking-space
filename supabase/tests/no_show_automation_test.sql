@@ -24,6 +24,14 @@ select ok(
 );
 
 select set_config('jit.seed_mode', 'on', true);
+
+-- The processor intentionally scans every confirmed booking. Keep this test
+-- independent of time-sensitive seed data by excluding pre-existing bookings
+-- from its candidate set for the duration of this rolled-back transaction.
+update public.bookings
+set status = 'checked_in'
+where status = 'confirmed';
+
 insert into public.seats (id, code, name, zone, seat_type, hourly_rate_cents)
 values
   ('f6100000-0000-4000-8000-000000000001', 'NS91', 'No-show release seat', 'Test zone', 'individual', 5000),
