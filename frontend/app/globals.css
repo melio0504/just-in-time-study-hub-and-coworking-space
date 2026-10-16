@@ -35,17 +35,43 @@ body {
   border: 1px solid transparent;
   border-bottom-color: rgb(243 237 228 / 60%);
   border-radius: 0;
-  background-color: rgb(255 252 247 / 65%);
+  background-color: transparent;
   box-shadow: 0 0 0 rgb(0 0 0 / 0%);
-  will-change: top, width, border-radius, background-color, box-shadow;
+  will-change: top, width, border-radius, box-shadow;
   transition:
-    background-color 900ms cubic-bezier(0.22, 1, 0.36, 1),
     border-color 900ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.site-header::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background-color: rgb(255 252 247 / 65%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  content: "";
+  pointer-events: none;
+  transition:
+    background-color 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    -webkit-backdrop-filter 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    backdrop-filter 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .site-header[data-scrolled="true"] {
   border-color: #f3ede4;
-  background-color: rgb(255 252 247 / 78%);
   box-shadow: 0 10px 15px -3px rgb(45 37 32 / 10%), 0 4px 6px -4px rgb(45 37 32 / 10%);
+}
+
+.site-header[data-scrolled="true"]::before {
+  background-color: rgb(255 252 247 / 78%);
+  -webkit-backdrop-filter: blur(24px) saturate(165%);
+  backdrop-filter: blur(24px) saturate(165%);
+}
+
+.mobile-navigation-menu {
+  background-color: rgb(255 252 247 / 68%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  backdrop-filter: blur(28px) saturate(170%);
 }

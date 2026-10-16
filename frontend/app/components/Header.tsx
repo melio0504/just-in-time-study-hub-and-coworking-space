@@ -111,7 +111,7 @@ export function Header() {
   }, []);
 
   return (
-    <header ref={headerRef} className="site-header fixed z-50 pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150">
+    <header ref={headerRef} className="site-header fixed z-50 pt-[env(safe-area-inset-top)]">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
         <Link href="/" className="flex min-w-0 items-center" onClick={closeMobileMenu}>
           <Image src="/images/logo.png" alt="Study Hub Logo" width={245} height={118} priority loading="eager" className="h-9 w-auto max-w-35 shrink-0 object-contain sm:h-12 sm:max-w-45" draggable="false" />
@@ -131,13 +131,13 @@ export function Header() {
             Reserve
           </Link>
 
-          <details ref={mobileMenuRef} className="group relative lg:hidden">
+          <details ref={mobileMenuRef} className="group lg:hidden">
             <summary className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-full border border-[#f3ede4] bg-white/80 p-2 text-[#6b5e52] hover:border-[#e5a930] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5a930] [&::-webkit-details-marker]:hidden" aria-label="Toggle navigation menu">
               <Menu className="h-6 w-6 group-open:hidden" />
               <X className="hidden h-6 w-6 group-open:block" />
             </summary>
 
-            <nav id="mobile-navigation" aria-label="Mobile navigation" className="absolute right-0 top-[calc(100%+0.5rem)] z-[70] w-[min(28rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] max-h-[calc(100dvh-6rem)] overscroll-contain overflow-y-auto rounded-3xl border border-[#f3ede4] bg-[#fffcf7] p-5 shadow-2xl sm:p-6">
+            <nav id="mobile-navigation" aria-label="Mobile navigation" className="mobile-navigation-menu absolute left-1/2 top-[calc(100%+0.5rem)] z-[70] max-h-[calc(100dvh-6rem)] w-[min(28rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] -translate-x-1/2 overscroll-contain overflow-y-auto rounded-3xl border border-[#f3ede4] p-5 shadow-2xl sm:p-6">
               <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#6b5e52]">Menu</p>
               <ul className="space-y-1">
                 {MOBILE_NAV_LINKS.map((item) => (
