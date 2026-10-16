@@ -25,6 +25,8 @@ Electron kiosk, all backed by one Supabase project.
 
 ![Kiosk check-in error](docs/assets/kiosk-check-in-error.png)
 
+![Kiosk check-out](docs/assets/kiosk-check-out.png)
+
 ```text
 studyhub/
 ├── frontend/    Public customer website; deploy to jit-studyhub.com
