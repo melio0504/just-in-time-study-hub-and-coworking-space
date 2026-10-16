@@ -11,6 +11,7 @@ import {
   Wifi,
   Check,
   Quote,
+  Star,
   Megaphone,
   X,
 } from "lucide-react";
@@ -18,6 +19,33 @@ import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables } from "@/lib/supabase/database.types";
+
+const googleReviews = [
+  {
+    name: "Freceia H.I. Gases",
+    profilePicture:
+      "https://lh3.googleusercontent.com/a-/ALV-UjV6FevloXio983dQ5e0f3pQ8MDrOjpB3owlHh4Dn3b22ucmcNfz=w90-h90-p-rp-mo-ba12-br100",
+    review:
+      "First time to try studying with such ambiance and love it! Ate was very accommodating and explained things to me. The WiFi is good for me and the room is well air-conditioned. Spacious for one desk and I can borrow stuff. Love the laptop stand! I will definitely go again.",
+    reviewUrl: "https://maps.app.goo.gl/6foJXJF9fZV211K99",
+  },
+  {
+    name: "Grace Anne Lui",
+    profilePicture:
+      "https://lh3.googleusercontent.com/a-/ALV-UjXSGMB7k2AGNfTX3NdTayNjdrpoH0QTteW54KY6_BY3TTvq9wVy=w45-h45-p-rp-mo-br100",
+    review:
+      "Worth the money! Clean and large-enough space. Very organized check-in and check-out process and the hub’s complete with free coffee, pantry, and other amenities.",
+    reviewUrl: "https://maps.app.goo.gl/nfmAF87eozv67rcY6",
+  },
+  {
+    name: "Phil",
+    profilePicture:
+      "https://lh3.googleusercontent.com/a-/ALV-UjX0-VphhWAbN_jLs4moIDRPoCWkm7mBxHgcQ1N9i4YMk75RgW2U7Q=w45-h45-p-rp-mo-ba12-br100",
+    review:
+      "Quiet and free drinks!!! You can also bring your own food. I got really productive from working here. Also, rates are very affordable",
+    reviewUrl: "https://maps.app.goo.gl/dis6fUnS3gDDYgMV6",
+  },
+] as const;
 
 export default function Home() {
   const [announcement, setAnnouncement] = useState<Tables<"announcements"> | null>(null);
@@ -384,80 +412,55 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <motion.div
-          initial={false}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="bg-white/70 backdrop-blur-sm p-8 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-all"
-            >
-              <Quote className="w-10 h-10 text-[#e5a930] mb-4" />
-              <p className="text-[#2d2520] mb-6 leading-relaxed italic">
-                &quot;Best study space in Manila! The quiet zones are absolutely
-                perfect for exam prep. Finally found a place where I can
-                actually focus.&quot;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-[#fef3dc] rounded-full flex items-center justify-center">
-                  <span className="text-[#e5a930]">AS</span>
+            {googleReviews.map((review, index) => (
+              <motion.div
+                key={review.name}
+                initial={false}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="flex h-full flex-col rounded-3xl border border-[#f3ede4] bg-white/70 p-8 backdrop-blur-sm transition-all hover:border-[#e5a930]"
+              >
+                <Quote className="mb-4 h-10 w-10 text-[#e5a930]" />
+                <p className="mb-6 flex-1 leading-relaxed text-[#2d2520] italic">
+                  &ldquo;{review.review}&rdquo;
+                </p>
+                <div className="mb-4 flex items-center gap-1" aria-label="5 out of 5 stars">
+                  {Array.from({ length: 5 }).map((_, starIndex) => (
+                    <Star
+                      key={starIndex}
+                      className="h-4 w-4 fill-[#e5a930] text-[#e5a930]"
+                      aria-hidden="true"
+                    />
+                  ))}
                 </div>
-                <div>
-                  <p className="text-[#2d2520]">Ana Santos</p>
-                  <p className="text-sm text-[#6b5e52]">@anasantos • Twitter</p>
+                <div className="flex items-center gap-3">
+                  <Image
+                    src={review.profilePicture}
+                    alt={`${review.name}'s Google Maps profile picture`}
+                    width={48}
+                    height={48}
+                    className="h-12 w-12 rounded-full bg-[#fef3dc] object-cover"
+                  />
+                  <div>
+                    <p className="font-medium text-[#2d2520]">{review.name}</p>
+                    <a
+                      href={review.reviewUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-[#6b5e52] underline-offset-4 transition-colors hover:text-[#b47b0d] hover:underline"
+                      aria-label={`Read ${review.name}'s review on Google Maps`}
+                    >
+                      Review on Google Maps
+                    </a>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-          initial={false}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="bg-white/70 backdrop-blur-sm p-8 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-all"
-            >
-              <Quote className="w-10 h-10 text-[#e5a930] mb-4" />
-              <p className="text-[#2d2520] mb-6 leading-relaxed italic">
-                &quot;The unlimited coffee is a game changer! Great ambiance,
-                fast wifi, and super accessible from UST. Highly
-                recommend!&quot;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-[#fef3dc] rounded-full flex items-center justify-center">
-                  <span className="text-[#e5a930]">MR</span>
-                </div>
-                <div>
-                  <p className="text-[#2d2520]">Miguel Reyes</p>
-                  <p className="text-sm text-[#6b5e52]">
-                    @miggy.reyes • Instagram
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-          initial={false}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-white/70 backdrop-blur-sm p-8 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-all"
-            >
-              <Quote className="w-10 h-10 text-[#e5a930] mb-4" />
-              <p className="text-[#2d2520] mb-6 leading-relaxed italic">
-                &quot;My go-to place for thesis writing. The private pods give
-                me the privacy I need, and the environment is so conducive.
-                Worth every peso!&quot;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-[#fef3dc] rounded-full flex items-center justify-center">
-                  <span className="text-[#e5a930]">LC</span>
-                </div>
-                <div>
-                  <p className="text-[#2d2520]">Lea Cruz</p>
-                  <p className="text-sm text-[#6b5e52]">@leacruz • Facebook</p>
-                </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            ))}
           </div>
+          <p className="mt-6 text-center text-sm text-[#6b5e52]">
+            Selected 5-star reviews from Google Maps.
+          </p>
         </div>
       </section>
 
