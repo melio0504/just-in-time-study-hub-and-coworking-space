@@ -5,7 +5,25 @@ Electron kiosk, all backed by one Supabase project.
 
 ## Preview
 
-![Just In Time Study Hub and Coworking Space website](docs/assets/screenshot.png)
+### Public website
+
+![Just In Time Study Hub landing page](docs/assets/frontend-landing-page.png)
+
+![Customer account and study history](docs/assets/frontend-account.png)
+
+![Interactive virtual tour](docs/assets/frontend-virtual-tour.png)
+
+### Admin dashboard
+
+![Admin seating overview](docs/assets/admin-dashboard.png)
+
+### Facility kiosk
+
+![Kiosk QR code scanner](docs/assets/kiosk-qr-code-scanner.png)
+
+![Kiosk successful check-in](docs/assets/kiosk-check-in-success.png)
+
+![Kiosk check-in error](docs/assets/kiosk-check-in-error.png)
 
 ```text
 studyhub/
