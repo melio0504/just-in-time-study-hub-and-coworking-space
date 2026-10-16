@@ -59,7 +59,7 @@ begin
       jsonb_build_object(
         'sub', v_admin_id::text,
         'email', v_admin_email,
-        'full_name', 'JIT Administrator',
+        'full_name', 'Admin',
         'email_verified', true,
         'phone_verified', false
       ),
@@ -87,7 +87,7 @@ begin
         raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object(
           'sub', v_admin_id::text,
           'email', v_admin_email,
-          'full_name', 'JIT Administrator',
+          'full_name', 'Admin',
           'email_verified', true,
           'phone_verified', false
         ),
@@ -109,7 +109,7 @@ begin
     jsonb_build_object(
       'sub', v_admin_id::text,
       'email', v_admin_email,
-      'full_name', 'JIT Administrator',
+      'full_name', 'Admin',
       'email_verified', true,
       'phone_verified', false
     ),
@@ -124,7 +124,7 @@ begin
       updated_at = now();
 
   update public.profiles
-  set full_name = 'JIT Administrator',
+  set full_name = 'Admin',
       email = v_admin_email,
       role = 'admin',
       is_active = true,
