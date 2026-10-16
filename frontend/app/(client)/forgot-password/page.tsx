@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage("");
 

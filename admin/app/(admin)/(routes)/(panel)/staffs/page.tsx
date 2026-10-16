@@ -136,7 +136,7 @@ export default function StaffAccountsPage() {
       : [...current, permission]);
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
     setMessage("");
@@ -212,7 +212,7 @@ export default function StaffAccountsPage() {
     );
   };
 
-  const resetStaffPassword = async (event: React.FormEvent, account: StaffAccount) => {
+  const resetStaffPassword = async (event: React.SubmitEvent<HTMLFormElement>, account: StaffAccount) => {
     event.preventDefault();
     setError("");
     if (resetPassword !== resetPasswordConfirmation) {

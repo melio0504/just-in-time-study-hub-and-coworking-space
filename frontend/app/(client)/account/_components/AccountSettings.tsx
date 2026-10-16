@@ -69,7 +69,7 @@ export function AccountSettings({ username, email, usernameChangedAt, currentTim
     timeZone: "Asia/Manila",
   });
 
-  const saveUsername = async (event: React.FormEvent) => {
+  const saveUsername = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaveError("");
     setSaveMessage("");

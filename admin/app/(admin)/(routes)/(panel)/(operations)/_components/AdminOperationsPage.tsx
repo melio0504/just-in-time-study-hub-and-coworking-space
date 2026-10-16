@@ -230,7 +230,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     setWalkInError('');
   };
 
-  const confirmWalkInChange = async (event: React.FormEvent) => {
+  const confirmWalkInChange = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!walkInTarget) return;
     const { seatCode, isOccupied } = walkInTarget;
@@ -270,7 +270,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     setCancelError('');
   };
 
-  const confirmCancellation = async (event: React.FormEvent) => {
+  const confirmCancellation = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!cancelTarget) return;
     const reason = cancelReason.trim();
@@ -290,7 +290,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   };
 
   const editAnnouncement = (announcement: Announcement) => setNoticeForm({ id: announcement.id, date: (announcement.starts_at || announcement.created_at).slice(0, 10), title: announcement.title, description: announcement.body, status: announcement.status });
-  const saveAnnouncement = async (event: React.FormEvent) => {
+  const saveAnnouncement = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault(); setSaving(true); setMessage('');
     const supabase = createClient();
     const { data: auth } = await supabase.auth.getUser();

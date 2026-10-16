@@ -142,7 +142,7 @@ export function BusinessSettingsManager() {
     if (!error) await load();
   };
 
-  const addClosure = async (event: React.FormEvent) => {
+  const addClosure = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving("closure"); setMessage("");
     const supabase = createClient();

@@ -134,7 +134,7 @@ export default function WalkInsPage() {
     }
   }, [checkoutTarget, openCheckout, searchParams, walkIns]);
 
-  const startWalkIn = async (event: React.FormEvent) => {
+  const startWalkIn = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true); setError(''); setMessage('');
     const { error: rpcError } = await createClient().rpc('start_walk_in', {
@@ -158,7 +158,7 @@ export default function WalkInsPage() {
   const checkoutAmountCents = Math.round((Number(checkoutForm.amount) || 0) * 100);
   const checkoutOverridden = Boolean(checkoutRate && checkoutAmountCents !== checkoutRate.price_cents);
 
-  const checkoutWalkIn = async (event: React.FormEvent) => {
+  const checkoutWalkIn = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!checkoutTarget) return;
     setSaving(true); setError(''); setMessage('');
@@ -192,7 +192,7 @@ export default function WalkInsPage() {
     setManualForm({ ...next, amount: next.amountDirty ? next.amount : rate ? String(rate.price_cents / 100) : '' });
   };
 
-  const createManualWalkIn = async (event: React.FormEvent) => {
+  const createManualWalkIn = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true); setError(''); setMessage('');
     const { error: rpcError } = await createClient().rpc('create_completed_walk_in', {

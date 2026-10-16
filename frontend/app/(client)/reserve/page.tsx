@@ -696,7 +696,7 @@ function ReserveContent() {
     return seats.find(s => s.id === seatId)?.status || 'available';
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBookingError('');
 
