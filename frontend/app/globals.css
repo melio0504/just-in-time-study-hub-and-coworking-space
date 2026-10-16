@@ -46,6 +46,6 @@ body {
 
 .site-header[data-scrolled="true"] {
   border-color: #f3ede4;
-  background-color: rgb(255 252 247 / 95%);
+  background-color: rgb(255 252 247 / 78%);
   box-shadow: 0 10px 15px -3px rgb(45 37 32 / 10%), 0 4px 6px -4px rgb(45 37 32 / 10%);
 }
