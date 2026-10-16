@@ -90,6 +90,11 @@
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
-    "supabase": "^2.117.0"
+    "@vitest/coverage-v8": "5.0.4",
+    "supabase": "^2.117.0",
+    "vitest": "5.0.4"
+  },
+  "overrides": {
+    "global-agent": "4.1.3"
   }
 }
