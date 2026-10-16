@@ -2,7 +2,7 @@
   "name": "jit-studyhub-kiosk-desktop",
   "productName": "Just In Time Kiosk",
   "desktopName": "com.jitstudyhub.kiosk.desktop",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "description": "Desktop runtime for the Just In Time Study Hub kiosk",
   "author": "Just In Time Study Hub Dev Team",
