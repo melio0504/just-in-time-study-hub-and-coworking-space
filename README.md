@@ -178,4 +178,6 @@ npm run start:kiosk
 
 `start:kiosk` opens an existing desktop build. Use `npm run desktop:kiosk` when
 the kiosk must be rebuilt first, or `npm run dist:kiosk:win` to create its
-Windows installer.
+Windows installer. To produce both the Linux AppImage and Windows 10/11
+installer in reproducible Linux-based build containers, use
+`npm run dist:kiosk:docker`; see the [kiosk packaging guide](kiosk/README.md#build-both-installers-with-docker).

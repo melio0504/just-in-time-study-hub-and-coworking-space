@@ -59,6 +59,44 @@ Desktop and Start Menu shortcuts and lets the installer choose the destination.
 Code-sign production installers before distributing them to avoid operating
 system trust warnings.
 
+### Build both installers with Docker
+
+Docker can produce the x64 Linux AppImage and the Windows NSIS installer from
+the same Linux-container toolchain. Docker Buildx is included with current
+Docker Desktop and is available as a plugin for Docker Engine. On Windows 11,
+leave Docker Desktop in its default Linux-container/WSL 2 mode for this build.
+
+Keep the required kiosk values in `kiosk/.env.local`, then run from the
+repository root:
+
+```bash
+# Build both installers
+npm run dist:kiosk:docker
+
+# Or build only one platform
+npm run dist:kiosk:docker:linux
+npm run dist:kiosk:docker:win
+```
+
+Docker writes the results to:
+
+- `kiosk/dist-electron/docker/linux/` — x64 AppImage for Linux
+- `kiosk/dist-electron/docker/windows/` — x64 NSIS `.exe` for Windows 10/11
+
+The environment file is supplied as a BuildKit secret rather than copied into
+the Docker build context. The device credential is still intentionally embedded
+inside each packaged Electron application, so treat the resulting installers as
+sensitive artifacts.
+
+There is deliberately no `windows:11` Docker base image. Windows 11 can host
+Docker Desktop, but Microsoft's container base images are Windows Server,
+Server Core, Nano Server, and Windows images tied to supported host/container
+versions. Electron is a desktop GUI application, so the Windows deliverable is
+a native `.exe` installer built in the supported Wine-based Electron Builder
+container and then installed directly on Windows 11; it is not run as a Windows
+container. Likewise, the AppImage should be run directly on the Linux kiosk so
+camera and display access remain under the desktop operating system.
+
 The packaging command embeds the three kiosk values from `.env.local` inside
 the application's `app.asar`. An installed kiosk therefore does not need an
 environment or configuration file. Changing or rotating the token requires a
