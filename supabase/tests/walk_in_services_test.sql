@@ -20,6 +20,13 @@ SELECT set_config(
   ((((now() AT TIME ZONE 'Asia/Manila') - interval '8 hours')::date)::text),
   true
 );
+-- Keep the 90-minute manual session in the past even when CI runs just after
+-- the 8 AM cutoff, and cover both its date and today's live sessions.
+SELECT set_config(
+  'test.report_start_date',
+  ((current_setting('test.business_date')::date - 1)::text),
+  true
+);
 SELECT set_config('test.admin_id', (SELECT id::text FROM public.profiles WHERE email = 'admin@jit-studyhub.com'), true);
 SELECT set_config('test.maria_id', (SELECT id::text FROM public.profiles WHERE email = 'maria.santos.jit@gmail.com'), true);
 SELECT set_config('test.ramon_id', (SELECT id::text FROM public.profiles WHERE email = 'ramon.deleon@jit-studyhub.com'), true);
@@ -45,9 +52,9 @@ SET LOCAL ROLE authenticated;
 SELECT set_config(
   'test.baseline_count',
   (
-    SELECT walk_in_count::text
+    SELECT coalesce(sum(walk_in_count), 0)::bigint::text
     FROM public.get_business_report(
-      current_setting('test.business_date')::date,
+      current_setting('test.report_start_date')::date,
       current_setting('test.business_date')::date
     )
   ),
@@ -56,9 +63,9 @@ SELECT set_config(
 SELECT set_config(
   'test.baseline_revenue',
   (
-    SELECT walk_in_revenue_cents::text
+    SELECT coalesce(sum(walk_in_revenue_cents), 0)::bigint::text
     FROM public.get_business_report(
-      current_setting('test.business_date')::date,
+      current_setting('test.report_start_date')::date,
       current_setting('test.business_date')::date
     )
   ),
@@ -200,8 +207,8 @@ SELECT set_config(
     SELECT public.create_completed_walk_in(
       'WI99',
       'Recovered walk-in',
-      now() - interval '100 minutes',
-      now() - interval '10 minutes',
+      (current_setting('test.report_start_date')::date + time '10:00') AT TIME ZONE 'Asia/Manila',
+      (current_setting('test.report_start_date')::date + time '11:30') AT TIME ZONE 'Asia/Manila',
       'qrph',
       'paid',
       11000,
@@ -251,9 +258,9 @@ SET LOCAL ROLE authenticated;
 
 SELECT is(
   (
-    SELECT walk_in_count
+    SELECT coalesce(sum(walk_in_count), 0)::bigint
     FROM public.get_business_report(
-      current_setting('test.business_date')::date,
+      current_setting('test.report_start_date')::date,
       current_setting('test.business_date')::date
     )
   ),
@@ -262,9 +269,9 @@ SELECT is(
 );
 SELECT is(
   (
-    SELECT walk_in_revenue_cents
+    SELECT coalesce(sum(walk_in_revenue_cents), 0)::bigint
     FROM public.get_business_report(
-      current_setting('test.business_date')::date,
+      current_setting('test.report_start_date')::date,
       current_setting('test.business_date')::date
     )
   ),
@@ -281,9 +288,9 @@ SELECT lives_ok(
 );
 SELECT is(
   (
-    SELECT walk_in_revenue_cents
+    SELECT coalesce(sum(walk_in_revenue_cents), 0)::bigint
     FROM public.get_business_report(
-      current_setting('test.business_date')::date,
+      current_setting('test.report_start_date')::date,
       current_setting('test.business_date')::date
     )
   ),
