@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Facebook, Instagram, Mail, Phone, MapPin, Clock } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -48,14 +48,40 @@ export function Footer() {
                   className="text-[#6b5e52] hover:text-[#e5a930] transition-colors"
                   aria-label="Facebook"
                 >
-                  <Facebook className="w-5 h-5" />
+                  <svg
+                    aria-hidden="true"
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+                  </svg>
                 </a>
                 <a
                   href="https://www.instagram.com/jitstudyhub/"
                   className="text-[#6b5e52] hover:text-[#e5a930] transition-colors"
                   aria-label="Instagram"
                 >
-                  <Instagram className="w-5 h-5" />
+                  <svg
+                    aria-hidden="true"
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                    <path d="M17.5 6.5h.01" />
+                  </svg>
                 </a>
                 <a
                   href="https://www.tiktok.com/@jitstudyhubandcoworking"
@@ -63,6 +89,7 @@ export function Footer() {
                   aria-label="TikTok"
                 >
                   <svg
+                    aria-hidden="true"
                     className="w-5 h-5"
                     fill="currentColor"
                     viewBox="0 0 24 24"
