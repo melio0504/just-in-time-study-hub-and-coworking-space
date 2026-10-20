@@ -18,13 +18,15 @@ import {
   Timer,
   UserCheck,
   Activity,
+  AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { CameraQrScanner } from "./CameraQrScanner";
 
 type KioskAction = "check-in" | "check-out";
-type ScanState = "idle" | "scanning" | "success" | "error";
+type ScanState = "idle" | "scanning" | "success" | "overtime" | "error";
 const ERROR_DISPLAY_SECONDS = 5;
+const OVERTIME_DISPLAY_SECONDS = 3;
 
 interface Booking {
   id: string;
@@ -52,6 +54,14 @@ interface ActivityEntry {
   guestName: string;
   seats: string[];
   timestamp: string;
+}
+
+interface OvertimeNotice {
+  guestName: string;
+  seats: string[];
+  overtimeMinutes: number;
+  billableHours: number;
+  chargeCents: number;
 }
 
 type ValidationError =
@@ -106,6 +116,13 @@ function formatClock(date: Date) {
   });
 }
 
+function formatPeso(cents: number) {
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+  }).format(cents / 100);
+}
+
 function getRemainingMinutes(endIso: string) {
   const end = new Date(endIso).getTime();
   const now = Date.now();
@@ -131,8 +148,10 @@ export function KioskScanner() {
   const [lastAction, setLastAction] = useState<KioskAction | null>(null);
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
+  const [overtimeNotice, setOvertimeNotice] = useState<OvertimeNotice | null>(null);
   const [serverError, setServerError] = useState('');
   const [errorSecondsRemaining, setErrorSecondsRemaining] = useState(ERROR_DISPLAY_SECONDS);
+  const [overtimeSecondsRemaining, setOvertimeSecondsRemaining] = useState(OVERTIME_DISPLAY_SECONDS);
   const successSoundRef = useRef<HTMLAudioElement>(null);
   const errorSoundRef = useRef<HTMLAudioElement>(null);
 
@@ -186,6 +205,7 @@ export function KioskScanner() {
     setScanState("idle");
     setSuccessBooking(null);
     setLastAction(null);
+    setOvertimeNotice(null);
   }, []);
 
   useEffect(() => {
@@ -203,9 +223,23 @@ export function KioskScanner() {
   }, [resetToIdle, scanState]);
 
   useEffect(() => {
+    if (scanState !== "overtime") return;
+
+    const countdown = window.setInterval(() => {
+      setOvertimeSecondsRemaining((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    const resumeScanner = window.setTimeout(resetToIdle, OVERTIME_DISPLAY_SECONDS * 1000);
+
+    return () => {
+      window.clearInterval(countdown);
+      window.clearTimeout(resumeScanner);
+    };
+  }, [resetToIdle, scanState]);
+
+  useEffect(() => {
     const sound = scanState === "success"
       ? successSoundRef.current
-      : scanState === "error"
+      : scanState === "error" || scanState === "overtime"
         ? errorSoundRef.current
         : null;
     if (!sound) return;
@@ -253,6 +287,9 @@ export function KioskScanner() {
         scheduled_start: string;
         scheduled_end: string;
         scanned_at: string;
+        overtime_minutes: number;
+        overtime_billable_hours: number;
+        overtime_charge_cents: number;
       };
       const booking: Booking = {
         id: result.reservation_code,
@@ -279,6 +316,18 @@ export function KioskScanner() {
       }
       addActivity({ type: result.action, guestName: booking.guestName, seats: booking.seats });
       setLastAction(result.action);
+      if (result.action === 'check-out' && result.overtime_charge_cents > 0) {
+        setOvertimeNotice({
+          guestName: booking.guestName,
+          seats: booking.seats,
+          overtimeMinutes: result.overtime_minutes,
+          billableHours: result.overtime_billable_hours,
+          chargeCents: result.overtime_charge_cents,
+        });
+        setOvertimeSecondsRemaining(OVERTIME_DISPLAY_SECONDS);
+        setScanState('overtime');
+        return;
+      }
       setSuccessBooking(booking);
       setScanState('success');
       window.setTimeout(resetToIdle, result.action === 'check-in' ? 8000 : 6000);
@@ -483,6 +532,46 @@ export function KioskScanner() {
                 )}
 
                 <p className="mt-3 shrink-0 text-base text-[#6b5e52] sm:text-lg">Returning to scanner…</p>
+              </motion.div>
+            )}
+
+            {scanState === "overtime" && overtimeNotice && (
+              <motion.div
+                key="overtime"
+                initial={{ opacity: 0, scale: 0.94 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col items-center justify-center px-4 text-center"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="overtime-alert-title"
+              >
+                <div className="mb-5 flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                  <AlertTriangle className="h-12 w-12 text-amber-700" />
+                </div>
+                <p className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-amber-700">
+                  Check-out recorded · {overtimeNotice.seats.join(", ")}
+                </p>
+                <h2 id="overtime-alert-title" className="mb-3 text-3xl font-semibold text-[#2d2520] sm:text-4xl">
+                  Additional payment required
+                </h2>
+                <p className="text-lg leading-relaxed text-[#6b5e52] sm:text-xl">
+                  {overtimeNotice.guestName}, your stay was {overtimeNotice.overtimeMinutes} minutes over time.
+                </p>
+                <div className="my-5 w-full rounded-2xl border-2 border-amber-300 bg-amber-50 p-5">
+                  <p className="text-sm font-semibold uppercase tracking-wider text-amber-800">
+                    Please pay at the front desk
+                  </p>
+                  <p className="mt-1 text-5xl font-bold text-amber-800">
+                    {formatPeso(overtimeNotice.chargeCents)}
+                  </p>
+                  <p className="mt-2 text-base text-amber-900">
+                    {overtimeNotice.billableHours} additional {overtimeNotice.billableHours === 1 ? "hour" : "hours"}, rounded up
+                  </p>
+                </div>
+                <p className="text-base font-medium text-[#2d2520]" aria-live="polite">
+                  Scanner resuming in {overtimeSecondsRemaining} {overtimeSecondsRemaining === 1 ? "second" : "seconds"}…
+                </p>
               </motion.div>
             )}
 

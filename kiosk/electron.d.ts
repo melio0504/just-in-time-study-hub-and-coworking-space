@@ -9,6 +9,10 @@ declare global {
     scheduled_start: string;
     scheduled_end: string;
     scanned_at: string;
+    overtime_minutes: number;
+    overtime_billable_hours: number;
+    hourly_rate_cents: number;
+    overtime_charge_cents: number;
   };
 
   type KioskScanResponse = { result: KioskScanResult };
