@@ -10,6 +10,7 @@ export type DashboardAuditLog = Tables<"audit_logs"> & {
 
 export type DashboardInitialData = {
   bookings: Tables<"bookings">[];
+  checkIns: Tables<"check_in_sessions">[];
   seats: Tables<"seats">[];
   walkIns: Tables<"walk_in_occupancies">[];
   announcements: Tables<"announcements">[];
