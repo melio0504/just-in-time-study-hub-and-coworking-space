@@ -149,7 +149,12 @@ function ReserveContent() {
       const now = new Date();
       setCurrentTime(now);
       setFormData((current) => {
-        if (!current.time || !isReservationTimePast(current.date, current.time, now)) {
+        if (!current.time || meetsMinimumNotice(
+          current.date,
+          current.time,
+          bookingSettings.minimum_notice_minutes,
+          now,
+        )) {
           return current;
         }
 
@@ -163,7 +168,7 @@ function ReserveContent() {
       window.clearInterval(refreshInterval);
       window.removeEventListener('focus', updateCurrentTime);
     };
-  }, []);
+  }, [bookingSettings.minimum_notice_minutes]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -792,7 +797,13 @@ function ReserveContent() {
     { length: Math.max(0, Math.min(bookingSettings.max_duration_hours, hoursUntilClosing) - bookingSettings.min_duration_hours + 1) },
     (_, index) => bookingSettings.min_duration_hours + index,
   ).map((hours) => [String(hours), `${hours} hour${hours === 1 ? '' : 's'}`] as const);
-  const availableTimeOptions = reservationTimeOptions(formData.date, businessHours);
+  const availableTimeOptions = reservationTimeOptions(formData.date, businessHours)
+    .filter(([time]) => meetsMinimumNotice(
+      formData.date,
+      time,
+      bookingSettings.minimum_notice_minutes,
+      currentTime,
+    ));
   const selectedClosure = closureForDate(formData.date, closures);
   const selectedDayHours = businessHours.find((hours) => hours.day_of_week === new Date(`${formData.date}T12:00:00`).getDay());
   const selectedDayClosed = isRegularlyClosedDate(formData.date, businessHours);
@@ -968,10 +979,9 @@ function ReserveContent() {
                 className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-[#2d2520] disabled:bg-[#eee9e2]"
               >
                 <option value="">Select time</option>
-                {availableTimeOptions.map(([value, label]) => {
-                  const tooSoon = !meetsMinimumNotice(formData.date, value, bookingSettings.minimum_notice_minutes, currentTime);
-                  return <option key={value} value={value} disabled={tooSoon}>{label}{tooSoon ? ' (Too soon)' : ''}</option>;
-                })}
+                {availableTimeOptions.map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
               </select>
               <p className="mt-2 text-xs text-[#8b7355]">
                 {selectedClosure
@@ -982,6 +992,16 @@ function ReserveContent() {
                       ? `${formatHoursRange(selectedDayHours)} · Past times are unavailable.`
                       : 'Loading current operating hours…'}
               </p>
+              {!configurationLoading
+                && !configurationError
+                && !selectedDateUnavailable
+                && availableTimeOptions.length === 0 && (
+                <p role="status" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  {formData.date === getManilaDateString(currentTime)
+                    ? 'No more booking times are available today. Please select another date.'
+                    : 'No booking times are available for this date. Please select another date.'}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
