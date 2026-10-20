@@ -199,14 +199,14 @@ isOneToOne: false
                   ]
                 },"check_in_sessions": {
                   Row: {
-                    "booking_id": string,"checked_in_at": string,"checked_out_at": string | null,"created_at": string,"id": string,"overtime_charge_cents": number,"overtime_minutes": number,"qr_access_pass_id": string,"scheduled_end_at": string,"status": Database["public"]['Enums']["check_in_status"],"updated_at": string,"verified_by": string | null
+                    "booking_id": string,"checked_in_at": string,"checked_out_at": string | null,"created_at": string,"end_reminder_claimed_at": string | null,"end_reminder_error": string | null,"end_reminder_sent_at": string | null,"id": string,"overtime_charge_cents": number,"overtime_minutes": number,"qr_access_pass_id": string,"scheduled_end_at": string,"status": Database["public"]['Enums']["check_in_status"],"updated_at": string,"verified_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "booking_id": string,"checked_in_at"?: string,"checked_out_at"?: string | null,"created_at"?: string,"id"?: string,"overtime_charge_cents"?: number,"overtime_minutes"?: number,"qr_access_pass_id": string,"scheduled_end_at": string,"status"?: Database["public"]['Enums']["check_in_status"],"updated_at"?: string,"verified_by"?: string | null
+                    "booking_id": string,"checked_in_at"?: string,"checked_out_at"?: string | null,"created_at"?: string,"end_reminder_claimed_at"?: string | null,"end_reminder_error"?: string | null,"end_reminder_sent_at"?: string | null,"id"?: string,"overtime_charge_cents"?: number,"overtime_minutes"?: number,"qr_access_pass_id": string,"scheduled_end_at": string,"status"?: Database["public"]['Enums']["check_in_status"],"updated_at"?: string,"verified_by"?: string | null
                   }
                   Update: {
-                    "booking_id"?: string,"checked_in_at"?: string,"checked_out_at"?: string | null,"created_at"?: string,"id"?: string,"overtime_charge_cents"?: number,"overtime_minutes"?: number,"qr_access_pass_id"?: string,"scheduled_end_at"?: string,"status"?: Database["public"]['Enums']["check_in_status"],"updated_at"?: string,"verified_by"?: string | null
+                    "booking_id"?: string,"checked_in_at"?: string,"checked_out_at"?: string | null,"created_at"?: string,"end_reminder_claimed_at"?: string | null,"end_reminder_error"?: string | null,"end_reminder_sent_at"?: string | null,"id"?: string,"overtime_charge_cents"?: number,"overtime_minutes"?: number,"qr_access_pass_id"?: string,"scheduled_end_at"?: string,"status"?: Database["public"]['Enums']["check_in_status"],"updated_at"?: string,"verified_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -570,6 +570,14 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"claim_end_time_reminders":
+{ Args: { "p_limit"?: number }; Returns: {
+              "booking_id": string,"guest_email": string,"guest_name": string,"hourly_rate_cents": number,"reservation_code": string,"scheduled_end_at": string,"seat_ids": (string)[],"session_id": string
+            }[]
+                           },
+"complete_end_time_reminder":
+{ Args: { "p_error"?: string,"p_session_id": string }; Returns: undefined
+                           },
 "confirm_booking_from_token":
 { Args: { "p_access_token_hash": string,"p_token_hash": string }; Returns: {
               "booking_id": string,"confirmation_email_sent_at": string,"ends_at": string,"guest_email": string,"guest_name": string,"newly_confirmed": boolean,"reservation_code": string,"seat_ids": (string)[],"starts_at": string,"subtotal_cents": number
@@ -732,7 +740,7 @@ isOneToOne: false
                            },
 "process_kiosk_scan":
 { Args: { "p_token_hash": string }; Returns: {
-              "action": string,"booking_id": string,"guest_name": string,"reservation_code": string,"scanned_at": string,"scheduled_end": string,"scheduled_start": string,"seat_ids": (string)[]
+              "action": string,"booking_id": string,"guest_name": string,"hourly_rate_cents": number,"overtime_billable_hours": number,"overtime_charge_cents": number,"overtime_minutes": number,"reservation_code": string,"scanned_at": string,"scheduled_end": string,"scheduled_start": string,"seat_ids": (string)[]
             }[]
                            },
 "process_paymongo_event":
