@@ -5,6 +5,8 @@ Electron kiosk, all backed by one Supabase project.
 
 ## Preview
 
+[Watch the project video on YouTube](https://www.youtube.com/watch?v=4nLBV7w_NfQ)
+
 ### Public website
 
 ![Just In Time Study Hub landing page](docs/assets/frontend-landing-page.png)
