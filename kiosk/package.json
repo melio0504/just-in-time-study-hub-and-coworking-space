@@ -5,7 +5,7 @@
   "description": "Desktop QR check-in kiosk for Just In Time Study Hub",
   "main": "electron/main.cjs",
   "engines": {
-    "node": ">=22.12.0"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "next dev -H 127.0.0.1 -p 3002",

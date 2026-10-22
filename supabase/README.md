@@ -5,7 +5,7 @@ production tables manually in the Dashboard after adopting this workflow.
 
 ## Local database and Auth
 
-Prerequisites: Node.js 22.12 or newer and Docker running locally. Docker is
+Prerequisites: Node.js 24.x and Docker running locally. Docker is
 required because the project's supported local database workflow runs Postgres
 and the other Supabase services in containers. If Docker is not installed, use
 the project's [Docker installation instructions](../docs/GETTING_STARTED.md#install-docker)

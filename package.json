@@ -42,7 +42,7 @@
   "bugs": {
     "url": "https://github.com/melio0504/just-in-time-study-hub-and-coworking-space/issues"
   },
-  "homepage": "https://jit-studyhub.com",
+  "homepage": "https://www.jit-studyhub.com",
   "license": "MIT",
   "workspaces": [
     "frontend",
@@ -50,7 +50,7 @@
     "kiosk"
   ],
   "engines": {
-    "node": ">=22.12.0"
+    "node": "24.x"
   },
   "scripts": {
     "dev:frontend": "npm run dev --workspace @jit-studyhub/frontend",

@@ -87,7 +87,7 @@ and installer commands.
 Complete setup, environment, architecture, and operational guidance is
 available in the [project documentation](docs/README.md).
 
-Requirements: Node.js 22.12 or newer, npm, and a running Docker installation for
+Requirements: Node.js 24.x, npm, and a running Docker installation for
 the local development database. See [Getting started](docs/GETTING_STARTED.md#install-docker)
 for Docker Desktop and Docker Engine installation instructions for macOS,
 Windows, and Linux.
