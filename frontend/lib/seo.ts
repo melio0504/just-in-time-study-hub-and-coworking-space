@@ -6,7 +6,7 @@ export const siteConfig = {
   defaultTitle: "Just In Time Study Hub and Coworking Space",
   description:
     "Study, work, and stay productive at Just In Time Study Hub and Coworking Space in Mendiola, Manila. Explore affordable rates, focused workspaces, and online seat reservations.",
-  url: "https://jit-studyhub.com",
+  url: "https://www.jit-studyhub.com",
   email: "jit.studyhub@gmail.com",
   telephone: "+639062885570",
   social: {
@@ -16,14 +16,23 @@ export const siteConfig = {
   },
 } as const;
 
-function getSiteUrl() {
-  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL;
-
+export function getSiteUrl(
+  configuredUrl = process.env.NEXT_PUBLIC_SITE_URL,
+) {
   try {
     const url = new URL(configuredUrl || siteConfig.url);
 
     // Local development URLs must never leak into canonical tags or sitemaps.
-    return url.protocol === "https:" ? url : new URL(siteConfig.url);
+    if (url.protocol !== "https:") return new URL(siteConfig.url);
+
+    // The apex domain redirects to www in production. Keep every SEO signal on
+    // the final hostname, including when an older Vercel environment value is
+    // still configured.
+    if (url.hostname === "jit-studyhub.com") {
+      url.hostname = "www.jit-studyhub.com";
+    }
+
+    return url;
   } catch {
     return new URL(siteConfig.url);
   }
