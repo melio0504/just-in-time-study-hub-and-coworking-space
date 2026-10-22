@@ -12,13 +12,8 @@ import {
   Check,
   Quote,
   Star,
-  Megaphone,
-  X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import type { Tables } from "@/lib/supabase/database.types";
+import { motion } from "motion/react";
 
 const googleReviews = [
   {
@@ -48,64 +43,8 @@ const googleReviews = [
 ] as const;
 
 export default function Home() {
-  const [announcement, setAnnouncement] = useState<Tables<"announcements"> | null>(null);
-  const [showAnnouncement, setShowAnnouncement] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-    const loadLatest = async () => {
-      const { data } = await supabase.from("announcements").select().eq("status", "published").order("starts_at", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false }).limit(1).maybeSingle();
-      setAnnouncement(data);
-      setShowAnnouncement(Boolean(data));
-    };
-    void loadLatest();
-    const channel = supabase.channel("public-announcements").on("postgres_changes", { event: "*", schema: "public", table: "announcements" }, () => void loadLatest()).subscribe();
-    return () => { void supabase.removeChannel(channel); };
-  }, []);
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] to-[#fff8ed]">
-      {/* Announcement Banner */}
-      <AnimatePresence>
-        {showAnnouncement && announcement && (
-          <motion.div
-          initial={false}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 400, opacity: 0 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-            className="fixed top-30 right-4 z-40 w-80"
-          >
-            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-4 border border-[#f3ede4]">
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-[#fef3dc] rounded-full flex items-center justify-center flex-shrink-0">
-                    <Megaphone className="w-4 h-4 text-[#e5a930]" />
-                  </div>
-                  <p className="text-[#2d2520] font-semibold text-sm">{announcement.title}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowAnnouncement(false)}
-                  aria-label="Dismiss announcement"
-                  className="w-6 h-6 hover:bg-[#f3ede4] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  <X className="w-3 h-3 text-[#6b5e52]" />
-                </button>
-              </div>
-              <p className="text-xs text-[#6b5e52] mb-2">{new Date(announcement.starts_at || announcement.created_at).toLocaleDateString("en-PH", { dateStyle: "long", timeZone: "Asia/Manila" })}</p>
-              <p className="text-[#2d2520] text-sm leading-relaxed">{announcement.body}</p>
-              <Link
-                href="/announcements"
-                className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#b47b0d] transition-colors hover:text-[#8d5f08]"
-              >
-                View all announcements
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <section className="relative overflow-hidden px-4 pb-20 sm:px-6 sm:pb-32">
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-20 right-20 w-96 h-96 bg-[#fef3dc] rounded-full blur-3xl"></div>
