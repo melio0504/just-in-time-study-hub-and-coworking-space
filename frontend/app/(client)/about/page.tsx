@@ -34,7 +34,7 @@ export default function About() {
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
-          initial={false}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
@@ -57,7 +57,7 @@ export default function About() {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
@@ -83,7 +83,7 @@ export default function About() {
             </motion.div>
 
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
@@ -97,6 +97,7 @@ export default function About() {
                   height={1600}
                   sizes="(min-width: 768px) 50vw, 100vw"
                   className="w-full h-full object-cover"
+                  draggable="false"
                 />
               </div>
             </motion.div>
@@ -109,7 +110,7 @@ export default function About() {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8">
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
@@ -127,7 +128,7 @@ export default function About() {
             </motion.div>
 
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -161,7 +162,7 @@ export default function About() {
             {values.map((value, index) => (
               <motion.div
                 key={index}
-          initial={false}
+                initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -189,7 +190,7 @@ export default function About() {
 
           <div className="grid md:grid-cols-3 gap-8">
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
@@ -203,7 +204,7 @@ export default function About() {
             </motion.div>
 
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
@@ -215,7 +216,7 @@ export default function About() {
             </motion.div>
 
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -243,7 +244,7 @@ export default function About() {
 
           <div className="grid md:grid-cols-2 gap-8">
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
@@ -266,7 +267,7 @@ export default function About() {
             </motion.div>
 
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
@@ -289,7 +290,7 @@ export default function About() {
             </motion.div>
 
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -312,7 +313,7 @@ export default function About() {
             </motion.div>
 
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.3 }}
@@ -333,7 +334,7 @@ export default function About() {
       <section className="py-20 px-6 bg-gradient-to-r from-[#fef3dc] to-[#fff8ed]">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
-          initial={false}
+            initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
