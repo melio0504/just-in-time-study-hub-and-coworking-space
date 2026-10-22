@@ -25,6 +25,11 @@ type NoticeForm = { id?: string; date: string; title: string; description: strin
 type AnnouncementFilter = 'all' | 'published' | 'draft' | 'archived';
 type WalkInTarget = { seatCode: string; isOccupied: boolean };
 type OvertimeResolution = 'paid_manually' | 'waived';
+type OvertimeResolutionTarget = {
+  booking: Booking;
+  overtime: CheckIn;
+  resolution: OvertimeResolution;
+};
 
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 const cleanForm: NoticeForm = { date: today(), title: '', description: '', status: 'published' };
@@ -95,6 +100,8 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const [cancelReason, setCancelReason] = useState('Cancelled by staff');
   const [cancelError, setCancelError] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [overtimeResolutionTarget, setOvertimeResolutionTarget] = useState<OvertimeResolutionTarget | null>(null);
+  const [overtimeResolutionError, setOvertimeResolutionError] = useState('');
   const [resolvingOvertimeId, setResolvingOvertimeId] = useState<string | null>(null);
   const [walkInTarget, setWalkInTarget] = useState<WalkInTarget | null>(null);
   const [walkInGuestName, setWalkInGuestName] = useState('');
@@ -303,31 +310,41 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     await loadData();
   };
 
-  const resolveOvertime = async (
+  const requestOvertimeResolution = (
     booking: Booking,
     overtime: CheckIn,
     resolution: OvertimeResolution,
   ) => {
-    const amount = `₱${(overtime.overtime_charge_cents / 100).toLocaleString('en-PH')}`;
-    const confirmation = resolution === 'paid_manually'
-      ? `Confirm that ${amount} was collected manually for ${booking.reservation_code}? This will check the guest out.`
-      : `Remove ${booking.reservation_code} from the overdue list without payment? This will waive ${amount}, check the guest out, and keep the reservation history.`;
+    setOvertimeResolutionTarget({ booking, overtime, resolution });
+    setOvertimeResolutionError('');
+  };
 
-    if (!window.confirm(confirmation)) return;
+  const closeOvertimeResolution = () => {
+    if (resolvingOvertimeId) return;
+    setOvertimeResolutionTarget(null);
+    setOvertimeResolutionError('');
+  };
+
+  const resolveOvertime = async (event: React.SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!overtimeResolutionTarget) return;
+
+    const { booking, resolution } = overtimeResolutionTarget;
 
     setResolvingOvertimeId(booking.id);
-    setMessage('');
+    setOvertimeResolutionError('');
     const { error } = await createClient().rpc('resolve_overtime_session', {
       p_booking_id: booking.id,
       p_resolution: resolution,
     });
 
     if (error) {
-      setMessage(error.message);
+      setOvertimeResolutionError(error.message);
       setResolvingOvertimeId(null);
       return;
     }
 
+    setOvertimeResolutionTarget(null);
     setSelectedBooking(null);
     setMessage(
       resolution === 'paid_manually'
@@ -399,7 +416,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
                         <div className="grid grid-cols-2 border-t border-red-100">
                           <button
                             type="button"
-                            onClick={() => void resolveOvertime(booking, overtime, 'paid_manually')}
+                            onClick={() => requestOvertimeResolution(booking, overtime, 'paid_manually')}
                             disabled={Boolean(resolvingOvertimeId)}
                             className="inline-flex items-center justify-center gap-1.5 border-r border-red-100 px-3 py-2.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
                           >
@@ -408,7 +425,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
                           </button>
                           <button
                             type="button"
-                            onClick={() => void resolveOvertime(booking, overtime, 'waived')}
+                            onClick={() => requestOvertimeResolution(booking, overtime, 'waived')}
                             disabled={Boolean(resolvingOvertimeId)}
                             className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                           >
@@ -485,7 +502,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
-                onClick={() => void resolveOvertime(selectedBooking, overtimeByBooking.get(selectedBooking.id)!, 'paid_manually')}
+                onClick={() => requestOvertimeResolution(selectedBooking, overtimeByBooking.get(selectedBooking.id)!, 'paid_manually')}
                 disabled={Boolean(resolvingOvertimeId)}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -494,7 +511,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
               </button>
               <button
                 type="button"
-                onClick={() => void resolveOvertime(selectedBooking, overtimeByBooking.get(selectedBooking.id)!, 'waived')}
+                onClick={() => requestOvertimeResolution(selectedBooking, overtimeByBooking.get(selectedBooking.id)!, 'waived')}
                 disabled={Boolean(resolvingOvertimeId)}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -510,6 +527,102 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
         </div>
       </div>
     )}
+
+    {overtimeResolutionTarget && (() => {
+      const { booking, overtime, resolution } = overtimeResolutionTarget;
+      const isManualPayment = resolution === 'paid_manually';
+      const amount = `₱${(overtime.overtime_charge_cents / 100).toLocaleString('en-PH')}`;
+      return (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm"
+          onMouseDown={closeOvertimeResolution}
+        >
+          <form
+            onSubmit={resolveOvertime}
+            className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7"
+            onMouseDown={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="resolve-overtime-title"
+            aria-describedby="resolve-overtime-description"
+          >
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${isManualPayment ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+                  {isManualPayment ? <BadgeCheck className="h-5 w-5" /> : <CircleOff className="h-5 w-5" />}
+                </span>
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-wider ${isManualPayment ? 'text-emerald-700' : 'text-slate-600'}`}>
+                    {isManualPayment ? 'Overtime payment' : 'Waive overtime fee'}
+                  </p>
+                  <h2 id="resolve-overtime-title" className="mt-1 text-2xl font-semibold">
+                    {isManualPayment ? 'Confirm manual payment?' : 'Remove without payment?'}
+                  </h2>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeOvertimeResolution}
+                disabled={Boolean(resolvingOvertimeId)}
+                className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:opacity-50"
+                aria-label="Close overtime resolution dialog"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p id="resolve-overtime-description" className="text-sm leading-6 text-[#574b42]">
+              {isManualPayment
+                ? `Confirm that ${amount} was collected manually for ${booking.reservation_code}.`
+                : `Remove ${booking.reservation_code} from the overdue list and waive the ${amount} overtime fee.`}
+            </p>
+
+            <div className="mt-5 rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-semibold">{booking.guest_name}</p>
+                  <p className="mt-1 text-sm text-[#574b42]">{booking.reservation_code} · Seats {booking.seat_ids.join(', ')}</p>
+                </div>
+                <p className="shrink-0 font-semibold text-red-700">{amount}</p>
+              </div>
+              <p className="mt-3 border-t border-[#e8dfd4] pt-3 text-sm text-[#574b42]">
+                This will check the guest out, release the seats, and keep the reservation in the activity history.
+              </p>
+            </div>
+
+            {overtimeResolutionError && (
+              <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+                {overtimeResolutionError}
+              </p>
+            )}
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                autoFocus
+                onClick={closeOvertimeResolution}
+                disabled={Boolean(resolvingOvertimeId)}
+                className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={Boolean(resolvingOvertimeId)}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${isManualPayment ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-slate-700 hover:bg-slate-800'}`}
+              >
+                {resolvingOvertimeId && <Loader2 className="h-4 w-4 animate-spin" />}
+                {resolvingOvertimeId
+                  ? 'Updating…'
+                  : isManualPayment
+                    ? 'Confirm payment'
+                    : 'Remove without payment'}
+              </button>
+            </div>
+          </form>
+        </div>
+      );
+    })()}
 
     {cancelTarget && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm" onMouseDown={closeCancellation}><form onSubmit={confirmCancellation} className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="cancel-reservation-title"><div className="mb-5 flex items-start justify-between gap-4"><div className="flex items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700"><AlertTriangle className="h-5 w-5" /></span><div><p className="text-xs font-semibold uppercase tracking-wider text-red-700">Permanent status change</p><h2 id="cancel-reservation-title" className="mt-1 text-2xl font-semibold">Cancel reservation?</h2></div></div><button type="button" onClick={closeCancellation} disabled={cancelling} className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:opacity-50" aria-label="Close cancellation dialog"><X className="h-5 w-5" /></button></div><div className="mb-5 rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-4"><p className="font-semibold">{cancelTarget.guest_name}</p><p className="mt-1 text-sm text-[#574b42]">{cancelTarget.reservation_code} · {formatDateTime(cancelTarget.starts_at)}</p><p className="mt-1 text-sm text-[#574b42]">Seats: {cancelTarget.seat_ids.join(', ')}</p></div><label className="block"><span className="mb-2 block text-sm font-semibold text-[#3f3630]">Cancellation reason</span><textarea autoFocus required maxLength={500} rows={4} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} className="w-full resize-y rounded-xl border border-[#b9aa9b] bg-white px-4 py-3 text-[#2d2520] outline-none placeholder:text-[#6b5e52] focus:border-red-600 focus:ring-2 focus:ring-red-100" placeholder="Explain why this reservation is being cancelled" /></label><p className="mt-2 text-sm text-[#574b42]">The seat will become available immediately and the action will be recorded in access logs.</p>{cancelError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{cancelError}</p>}<div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={closeCancellation} disabled={cancelling} className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50">Keep reservation</button><button type="submit" disabled={cancelling || !cancelReason.trim()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50">{cancelling && <Loader2 className="h-4 w-4 animate-spin" />}{cancelling ? 'Cancelling…' : 'Confirm cancellation'}</button></div></form></div>}
   </div>;
