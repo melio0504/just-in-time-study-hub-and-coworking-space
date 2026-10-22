@@ -569,7 +569,10 @@ set qr_access_pass_id = excluded.qr_access_pass_id,
     checked_out_at = excluded.checked_out_at,
     scheduled_end_at = excluded.scheduled_end_at,
     overtime_minutes = 0,
-    overtime_charge_cents = 0;
+    overtime_charge_cents = 0,
+    overtime_resolution = null,
+    overtime_resolved_at = null,
+    overtime_resolved_by = null;
 
 -- Current walk-ins make the admin live floor plan less uniform. They use seats
 -- that are not occupied by the live checked-in reservations above.

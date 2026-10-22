@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, Armchair, CalendarDays, Eye, Loader2, Pencil, Plus, Radio, Search, ShieldCheck, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Armchair, BadgeCheck, CalendarDays, CircleOff, Eye, Loader2, Pencil, Plus, Radio, Search, ShieldCheck, Trash2, X } from 'lucide-react';
 import { SeatingPlanMini } from '../../../_components/SeatingPlanMini';
 import { useAdminAccess } from '../../../_components/AdminShell';
 import { useDashboardInitialData, type DashboardAuditLog } from './DashboardDataProvider';
@@ -24,6 +24,7 @@ export type OperationsSection = 'dashboard' | 'reservations' | 'announcements' |
 type NoticeForm = { id?: string; date: string; title: string; description: string; status: 'draft' | 'published' | 'archived' };
 type AnnouncementFilter = 'all' | 'published' | 'draft' | 'archived';
 type WalkInTarget = { seatCode: string; isOccupied: boolean };
+type OvertimeResolution = 'paid_manually' | 'waived';
 
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 const cleanForm: NoticeForm = { date: today(), title: '', description: '', status: 'published' };
@@ -66,6 +67,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const initialData = useDashboardInitialData();
   const router = useRouter();
   const canManageReservations = hasAdminAccess(access, 'reservations');
+  const canResolveOvertime = hasAdminAccess(access, 'seating') || canManageReservations;
   const canViewSection = access.role === 'admin'
     || (section === 'dashboard' && hasAdminAccess(access, 'seating'))
     || (section === 'reservations' && canManageReservations)
@@ -93,6 +95,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const [cancelReason, setCancelReason] = useState('Cancelled by staff');
   const [cancelError, setCancelError] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [resolvingOvertimeId, setResolvingOvertimeId] = useState<string | null>(null);
   const [walkInTarget, setWalkInTarget] = useState<WalkInTarget | null>(null);
   const [walkInGuestName, setWalkInGuestName] = useState('');
   const [walkInError, setWalkInError] = useState('');
@@ -300,6 +303,41 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     await loadData();
   };
 
+  const resolveOvertime = async (
+    booking: Booking,
+    overtime: CheckIn,
+    resolution: OvertimeResolution,
+  ) => {
+    const amount = `₱${(overtime.overtime_charge_cents / 100).toLocaleString('en-PH')}`;
+    const confirmation = resolution === 'paid_manually'
+      ? `Confirm that ${amount} was collected manually for ${booking.reservation_code}? This will check the guest out.`
+      : `Remove ${booking.reservation_code} from the overdue list without payment? This will waive ${amount}, check the guest out, and keep the reservation history.`;
+
+    if (!window.confirm(confirmation)) return;
+
+    setResolvingOvertimeId(booking.id);
+    setMessage('');
+    const { error } = await createClient().rpc('resolve_overtime_session', {
+      p_booking_id: booking.id,
+      p_resolution: resolution,
+    });
+
+    if (error) {
+      setMessage(error.message);
+      setResolvingOvertimeId(null);
+      return;
+    }
+
+    setSelectedBooking(null);
+    setMessage(
+      resolution === 'paid_manually'
+        ? `Manual overtime payment recorded for ${booking.reservation_code}.`
+        : `${booking.reservation_code} was removed from the overdue list without payment.`,
+    );
+    await loadData();
+    setResolvingOvertimeId(null);
+  };
+
   const editAnnouncement = (announcement: Announcement) => setNoticeForm({ id: announcement.id, date: (announcement.starts_at || announcement.created_at).slice(0, 10), title: announcement.title, description: announcement.body, status: announcement.status });
   const saveAnnouncement = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault(); setSaving(true); setMessage('');
@@ -326,7 +364,67 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
 
     {section === 'dashboard' && <>
       <div className="mb-7 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between"><div><p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-emerald-700"><Radio className="h-3.5 w-3.5" />Live operations</p><h1 className="text-3xl font-semibold tracking-tight text-[#2d2520] sm:text-4xl">Seating overview</h1><p className="mt-2 text-[#5f5248]">Reservations and walk-ins update automatically from the shared database.</p></div><div className="grid gap-3 sm:grid-cols-3"><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]"><span className="mb-1 block text-xs font-semibold uppercase tracking-wider">Viewing date</span><input type="date" min={today()} value={selectedDate} onChange={(event) => { beginAvailabilityWindowChange(); setSelectedDate(event.target.value < today() ? today() : event.target.value); }} className="w-full bg-transparent font-semibold text-[#2d2520] outline-none" /></label><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]"><span className="mb-1 block text-xs font-semibold uppercase tracking-wider">Start time</span><select value={selectedTime} onChange={(event) => { beginAvailabilityWindowChange(); const value = event.target.value; setSelectedTime(value); setSelectedDuration(value ? '1' : ''); }} className="w-full bg-transparent font-semibold text-[#2d2520] outline-none"><option value="">All operating day</option>{availabilityTimes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]"><span className="mb-1 block text-xs font-semibold uppercase tracking-wider">Duration</span><select value={selectedDuration} disabled={!selectedTime} onChange={(event) => { beginAvailabilityWindowChange(); setSelectedDuration(event.target.value); }} className="w-full bg-transparent font-semibold text-[#2d2520] outline-none disabled:text-[#9b9188]"><option value="">{selectedTime ? 'Select duration' : 'All day'}</option>{availableDurationOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div></div>
-      {overtimeBookings.length > 0 && <div className="mb-6 rounded-3xl border-2 border-red-300 bg-red-50 p-5 shadow-sm" role="alert"><div className="flex items-start gap-3"><span className="rounded-2xl bg-red-100 p-3 text-red-700"><AlertTriangle className="h-6 w-6" /></span><div className="min-w-0 flex-1"><h2 className="text-xl font-semibold text-red-900">{overtimeBookings.length} {overtimeBookings.length === 1 ? 'reservation is' : 'reservations are'} overstaying</h2><p className="mt-1 text-sm text-red-800">These guests passed the 20-minute grace period. Collect the shown overtime fee at the front desk.</p><div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{overtimeBookings.map((booking) => { const overtime = overtimeByBooking.get(booking.id)!; return <button key={booking.id} onClick={() => setSelectedBooking(booking)} className="rounded-2xl border border-red-200 bg-white px-4 py-3 text-left hover:bg-red-50"><span className="block font-semibold text-red-900">{booking.seat_ids.join(', ')} · {booking.guest_name}</span><span className="mt-1 block text-sm text-red-700">{overtime.overtime_minutes} min over · ₱{(overtime.overtime_charge_cents / 100).toLocaleString('en-PH')} due</span></button>; })}</div></div></div></div>}
+      {overtimeBookings.length > 0 && (
+        <div className="mb-6 rounded-3xl border-2 border-red-300 bg-red-50 p-5 shadow-sm" role="alert">
+          <div className="flex items-start gap-3">
+            <span className="rounded-2xl bg-red-100 p-3 text-red-700">
+              <AlertTriangle className="h-6 w-6" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-xl font-semibold text-red-900">
+                {overtimeBookings.length} {overtimeBookings.length === 1 ? 'reservation is' : 'reservations are'} overstaying
+              </h2>
+              <p className="mt-1 text-sm text-red-800">
+                These guests passed the 20-minute grace period. Collect the shown overtime fee at the front desk.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {overtimeBookings.map((booking) => {
+                  const overtime = overtimeByBooking.get(booking.id)!;
+                  const isResolving = resolvingOvertimeId === booking.id;
+                  return (
+                    <div key={booking.id} className="overflow-hidden rounded-2xl border border-red-200 bg-white">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBooking(booking)}
+                        className="w-full px-4 py-3 text-left hover:bg-red-50"
+                      >
+                        <span className="block font-semibold text-red-900">
+                          {booking.seat_ids.join(', ')} · {booking.guest_name}
+                        </span>
+                        <span className="mt-1 block text-sm text-red-700">
+                          {overtime.overtime_minutes} min over · ₱{(overtime.overtime_charge_cents / 100).toLocaleString('en-PH')} due
+                        </span>
+                      </button>
+                      {canResolveOvertime && (
+                        <div className="grid grid-cols-2 border-t border-red-100">
+                          <button
+                            type="button"
+                            onClick={() => void resolveOvertime(booking, overtime, 'paid_manually')}
+                            disabled={Boolean(resolvingOvertimeId)}
+                            className="inline-flex items-center justify-center gap-1.5 border-r border-red-100 px-3 py-2.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {isResolving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BadgeCheck className="h-3.5 w-3.5" />}
+                            Paid manually
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void resolveOvertime(booking, overtime, 'waived')}
+                            disabled={Boolean(resolvingOvertimeId)}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <CircleOff className="h-3.5 w-3.5" />
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{[
         ['Available', seatSummary.available || 0, 'bg-emerald-50 text-emerald-700'], ['Reserved', seatSummary.reserved || 0, 'bg-slate-100 text-slate-700'], ['Occupied now', seatSummary.occupied || 0, 'bg-amber-50 text-amber-700'], ['Total active seats', seats.filter((seat) => seat.is_active).length, 'bg-white text-[#2d2520]'],
         ['Overstaying', overtimeBookings.length, overtimeBookings.length ? 'bg-red-50 text-red-700 border-red-200' : 'bg-white text-[#2d2520]'],
@@ -343,7 +441,75 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
 
     {walkInTarget && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm" onMouseDown={closeWalkInModal}><form onSubmit={confirmWalkInChange} className="w-full max-w-md rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="walk-in-title" aria-describedby="walk-in-description"><div className="mb-5 flex items-start justify-between gap-4"><div className="flex items-start gap-3"><span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${walkInTarget.isOccupied ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}><Armchair className="h-5 w-5" /></span><div><p className="text-xs font-semibold uppercase tracking-wider text-[#8a671a]">Seat {walkInTarget.seatCode}</p><h2 id="walk-in-title" className="mt-1 text-2xl font-semibold">{walkInTarget.isOccupied ? 'Checkout this walk-in?' : 'Is someone using this seat?'}</h2></div></div><button type="button" onClick={closeWalkInModal} disabled={Boolean(busySeat)} className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:opacity-50" aria-label="Close occupancy dialog"><X className="h-5 w-5" /></button></div><p id="walk-in-description" className="text-sm leading-6 text-[#574b42]">{walkInTarget.isOccupied ? `Continue to Walk-in Services to review the stay, calculated price, and payment for seat ${walkInTarget.seatCode}.` : `Confirm that someone is currently using seat ${walkInTarget.seatCode}. It will be shown as occupied on the live floor plan.`}</p>{!walkInTarget.isOccupied && <label className="mt-5 block"><span className="mb-2 block text-sm font-semibold text-[#3f3630]">Guest name <span className="font-normal text-[#6b5e52]">(optional)</span></span><input autoFocus maxLength={160} value={walkInGuestName} onChange={(event) => setWalkInGuestName(event.target.value)} className="w-full rounded-xl border border-[#b9aa9b] bg-white px-4 py-3 text-[#2d2520] outline-none placeholder:text-[#6b5e52] focus:border-[#c4841a] focus:ring-2 focus:ring-amber-100" placeholder="Enter the walk-in guest's name" /></label>}{walkInError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{walkInError}</p>}<div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={closeWalkInModal} disabled={Boolean(busySeat)} className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50">Cancel</button><button type="submit" autoFocus={walkInTarget.isOccupied} disabled={Boolean(busySeat)} className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${walkInTarget.isOccupied ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-[#c4841a] hover:bg-[#a86f12]'}`}>{busySeat && <Loader2 className="h-4 w-4 animate-spin" />}{busySeat ? 'Updating…' : walkInTarget.isOccupied ? 'Review checkout' : 'Mark as occupied'}</button></div></form></div>}
 
-    {selectedBooking && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#2d2520]/45 p-4 backdrop-blur-sm" onMouseDown={() => setSelectedBooking(null)}><div className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl" onMouseDown={(e) => e.stopPropagation()}><div className="mb-5 flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-wider text-[#9b6810]">{selectedBooking.reservation_code}</p><h2 className="mt-1 text-2xl font-semibold">Reservation details</h2></div><button onClick={() => setSelectedBooking(null)} className="rounded-xl p-2 hover:bg-[#f7f1e8]" aria-label="Close reservation details"><X className="h-5 w-5" /></button></div>{overtimeByBooking.has(selectedBooking.id) && <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-900"><p className="font-semibold">Overtime payment due at front desk</p><p className="mt-1 text-sm">{overtimeByBooking.get(selectedBooking.id)!.overtime_minutes} minutes over · <strong>₱{(overtimeByBooking.get(selectedBooking.id)!.overtime_charge_cents / 100).toLocaleString('en-PH')}</strong></p></div>}<dl className="grid grid-cols-2 gap-4 rounded-2xl bg-[#faf7f2] p-4 text-sm"><Detail label="Guest" value={selectedBooking.guest_name} /><Detail label="Email" value={selectedBooking.guest_email} /><Detail label="Schedule" value={formatDateTime(selectedBooking.starts_at)} /><Detail label="Duration" value={`${selectedBooking.duration_hours} hour(s)`} /><Detail label="Seats" value={selectedBooking.seat_ids.join(', ')} /><Detail label="Status" value={overtimeByBooking.has(selectedBooking.id) ? 'Overstaying' : titleCase(selectedBooking.status)} /><Detail label="Payment" value={titleCase(selectedBooking.payment_status)} /><Detail label="Amount" value={`₱${(selectedBooking.subtotal_cents / 100).toLocaleString('en-PH')}`} /></dl>{canManageReservations && !terminalStatuses.has(selectedBooking.status) && <button onClick={() => requestCancellation(selectedBooking)} className="mt-5 w-full rounded-xl bg-red-700 px-4 py-3 font-semibold text-white hover:bg-red-800">Cancel reservation</button>}</div></div>}
+    {selectedBooking && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-[#2d2520]/45 p-4 backdrop-blur-sm"
+        onMouseDown={() => !resolvingOvertimeId && setSelectedBooking(null)}
+      >
+        <div className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="mb-5 flex items-start justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#9b6810]">{selectedBooking.reservation_code}</p>
+              <h2 className="mt-1 text-2xl font-semibold">Reservation details</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedBooking(null)}
+              disabled={Boolean(resolvingOvertimeId)}
+              className="rounded-xl p-2 hover:bg-[#f7f1e8] disabled:opacity-50"
+              aria-label="Close reservation details"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          {overtimeByBooking.has(selectedBooking.id) && (
+            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-900">
+              <p className="font-semibold">Overtime payment due at front desk</p>
+              <p className="mt-1 text-sm">
+                {overtimeByBooking.get(selectedBooking.id)!.overtime_minutes} minutes over ·{' '}
+                <strong>₱{(overtimeByBooking.get(selectedBooking.id)!.overtime_charge_cents / 100).toLocaleString('en-PH')}</strong>
+              </p>
+            </div>
+          )}
+          <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-[#faf7f2] p-4 text-sm">
+            <Detail label="Guest" value={selectedBooking.guest_name} />
+            <Detail label="Email" value={selectedBooking.guest_email} />
+            <Detail label="Schedule" value={formatDateTime(selectedBooking.starts_at)} />
+            <Detail label="Duration" value={`${selectedBooking.duration_hours} hour(s)`} />
+            <Detail label="Seats" value={selectedBooking.seat_ids.join(', ')} />
+            <Detail label="Status" value={overtimeByBooking.has(selectedBooking.id) ? 'Overstaying' : titleCase(selectedBooking.status)} />
+            <Detail label="Payment" value={titleCase(selectedBooking.payment_status)} />
+            <Detail label="Amount" value={`₱${(selectedBooking.subtotal_cents / 100).toLocaleString('en-PH')}`} />
+          </dl>
+          {canResolveOvertime && overtimeByBooking.has(selectedBooking.id) ? (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => void resolveOvertime(selectedBooking, overtimeByBooking.get(selectedBooking.id)!, 'paid_manually')}
+                disabled={Boolean(resolvingOvertimeId)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {resolvingOvertimeId ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgeCheck className="h-4 w-4" />}
+                Paid manually
+              </button>
+              <button
+                type="button"
+                onClick={() => void resolveOvertime(selectedBooking, overtimeByBooking.get(selectedBooking.id)!, 'waived')}
+                disabled={Boolean(resolvingOvertimeId)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <CircleOff className="h-4 w-4" />
+                Remove without payment
+              </button>
+            </div>
+          ) : canManageReservations && !terminalStatuses.has(selectedBooking.status) ? (
+            <button onClick={() => requestCancellation(selectedBooking)} className="mt-5 w-full rounded-xl bg-red-700 px-4 py-3 font-semibold text-white hover:bg-red-800">
+              Cancel reservation
+            </button>
+          ) : null}
+        </div>
+      </div>
+    )}
 
     {cancelTarget && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm" onMouseDown={closeCancellation}><form onSubmit={confirmCancellation} className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="cancel-reservation-title"><div className="mb-5 flex items-start justify-between gap-4"><div className="flex items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700"><AlertTriangle className="h-5 w-5" /></span><div><p className="text-xs font-semibold uppercase tracking-wider text-red-700">Permanent status change</p><h2 id="cancel-reservation-title" className="mt-1 text-2xl font-semibold">Cancel reservation?</h2></div></div><button type="button" onClick={closeCancellation} disabled={cancelling} className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:opacity-50" aria-label="Close cancellation dialog"><X className="h-5 w-5" /></button></div><div className="mb-5 rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-4"><p className="font-semibold">{cancelTarget.guest_name}</p><p className="mt-1 text-sm text-[#574b42]">{cancelTarget.reservation_code} · {formatDateTime(cancelTarget.starts_at)}</p><p className="mt-1 text-sm text-[#574b42]">Seats: {cancelTarget.seat_ids.join(', ')}</p></div><label className="block"><span className="mb-2 block text-sm font-semibold text-[#3f3630]">Cancellation reason</span><textarea autoFocus required maxLength={500} rows={4} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} className="w-full resize-y rounded-xl border border-[#b9aa9b] bg-white px-4 py-3 text-[#2d2520] outline-none placeholder:text-[#6b5e52] focus:border-red-600 focus:ring-2 focus:ring-red-100" placeholder="Explain why this reservation is being cancelled" /></label><p className="mt-2 text-sm text-[#574b42]">The seat will become available immediately and the action will be recorded in access logs.</p>{cancelError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{cancelError}</p>}<div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={closeCancellation} disabled={cancelling} className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50">Keep reservation</button><button type="submit" disabled={cancelling || !cancelReason.trim()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50">{cancelling && <Loader2 className="h-4 w-4 animate-spin" />}{cancelling ? 'Cancelling…' : 'Confirm cancellation'}</button></div></form></div>}
   </div>;
@@ -472,5 +638,5 @@ function PageHeading({ eyebrow, title, detail }: { eyebrow: string; title: strin
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#5f5248]">{label}</span>{children}</label>; }
 function Detail({ label, value }: { label: string; value: string }) { return <div><dt className="text-xs uppercase tracking-wider text-[#5f5248]">{label}</dt><dd className="mt-1 break-words font-medium text-[#2d2520]">{value}</dd></div>; }
 function EmptyState({ icon: Icon, text }: { icon: React.ComponentType<{ className?: string }>; text: string }) { return <div className="flex flex-col items-center px-5 py-14 text-center text-[#5f5248]"><Icon className="mb-3 h-8 w-8" /><p>{text}</p></div>; }
-function BookingTable({ bookings, overtimeByBooking, onView, onCancel }: { bookings: Booking[]; overtimeByBooking: Map<string, CheckIn>; onView: (booking: Booking) => void; onCancel?: (booking: Booking) => void }) { return <div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left"><thead className="text-xs uppercase tracking-wider text-[#5f5248]"><tr><th className="px-3 py-3">Reservation</th><th className="px-3 py-3">Customer</th><th className="px-3 py-3">Schedule</th><th className="px-3 py-3">Seats</th><th className="px-3 py-3">Status</th><th className="px-3 py-3 text-right">Actions</th></tr></thead><tbody>{bookings.map((booking) => { const overtime = overtimeByBooking.get(booking.id); return <tr key={booking.id} className={`border-t border-[#eee6dc] hover:bg-[#fffcf8] ${overtime ? 'bg-red-50/60' : ''}`}><td className="px-3 py-4 font-mono text-sm text-[#8a671a]">{booking.reservation_code}</td><td className="px-3 py-4"><p className="font-medium text-[#2d2520]">{booking.guest_name}</p><p className="text-xs text-[#5f5248]">{booking.guest_email}</p></td><td className="px-3 py-4 text-sm text-[#6b5e52]">{formatDateTime(booking.starts_at)}</td><td className="px-3 py-4 text-sm text-[#2d2520]">{booking.seat_ids.join(', ')}</td><td className="px-3 py-4">{overtime ? <span className="inline-flex flex-col rounded-xl bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-800"><span>Overstaying · {overtime.overtime_minutes} min</span><span>₱{(overtime.overtime_charge_cents / 100).toLocaleString('en-PH')} due</span></span> : <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle(booking.status)}`}>{titleCase(booking.status)}</span>}</td><td className="px-3 py-4"><div className="flex justify-end gap-2"><button onClick={() => onView(booking)} className="rounded-lg border border-[#e8dfd4] p-2 text-[#6b5e52] hover:bg-[#f7f1e8]" title="View"><Eye className="h-4 w-4" /></button>{onCancel && !terminalStatuses.has(booking.status) && <button onClick={() => onCancel(booking)} className="rounded-lg border border-red-100 p-2 text-red-600 hover:bg-red-50" title="Cancel"><Trash2 className="h-4 w-4" /></button>}</div></td></tr>; })}</tbody></table>{bookings.length === 0 && <EmptyState icon={CalendarDays} text="No reservations match the current filters." />}</div>; }
+function BookingTable({ bookings, overtimeByBooking, onView, onCancel }: { bookings: Booking[]; overtimeByBooking: Map<string, CheckIn>; onView: (booking: Booking) => void; onCancel?: (booking: Booking) => void }) { return <div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left"><thead className="text-xs uppercase tracking-wider text-[#5f5248]"><tr><th className="px-3 py-3">Reservation</th><th className="px-3 py-3">Customer</th><th className="px-3 py-3">Schedule</th><th className="px-3 py-3">Seats</th><th className="px-3 py-3">Status</th><th className="px-3 py-3 text-right">Actions</th></tr></thead><tbody>{bookings.map((booking) => { const overtime = overtimeByBooking.get(booking.id); return <tr key={booking.id} className={`border-t border-[#eee6dc] hover:bg-[#fffcf8] ${overtime ? 'bg-red-50/60' : ''}`}><td className="px-3 py-4 font-mono text-sm text-[#8a671a]">{booking.reservation_code}</td><td className="px-3 py-4"><p className="font-medium text-[#2d2520]">{booking.guest_name}</p><p className="text-xs text-[#5f5248]">{booking.guest_email}</p></td><td className="px-3 py-4 text-sm text-[#6b5e52]">{formatDateTime(booking.starts_at)}</td><td className="px-3 py-4 text-sm text-[#2d2520]">{booking.seat_ids.join(', ')}</td><td className="px-3 py-4">{overtime ? <span className="inline-flex flex-col rounded-xl bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-800"><span>Overstaying · {overtime.overtime_minutes} min</span><span>₱{(overtime.overtime_charge_cents / 100).toLocaleString('en-PH')} due</span></span> : <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle(booking.status)}`}>{titleCase(booking.status)}</span>}</td><td className="px-3 py-4"><div className="flex justify-end gap-2"><button onClick={() => onView(booking)} className="rounded-lg border border-[#e8dfd4] p-2 text-[#6b5e52] hover:bg-[#f7f1e8]" title="View"><Eye className="h-4 w-4" /></button>{onCancel && !overtime && !terminalStatuses.has(booking.status) && <button onClick={() => onCancel(booking)} className="rounded-lg border border-red-100 p-2 text-red-600 hover:bg-red-50" title="Cancel"><Trash2 className="h-4 w-4" /></button>}</div></td></tr>; })}</tbody></table>{bookings.length === 0 && <EmptyState icon={CalendarDays} text="No reservations match the current filters." />}</div>; }
 

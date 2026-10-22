@@ -199,14 +199,14 @@ isOneToOne: false
                   ]
                 },"check_in_sessions": {
                   Row: {
-                    "booking_id": string,"checked_in_at": string,"checked_out_at": string | null,"created_at": string,"end_reminder_claimed_at": string | null,"end_reminder_error": string | null,"end_reminder_sent_at": string | null,"id": string,"overtime_charge_cents": number,"overtime_minutes": number,"qr_access_pass_id": string,"scheduled_end_at": string,"status": Database["public"]['Enums']["check_in_status"],"updated_at": string,"verified_by": string | null
+                    "booking_id": string,"checked_in_at": string,"checked_out_at": string | null,"created_at": string,"end_reminder_claimed_at": string | null,"end_reminder_error": string | null,"end_reminder_sent_at": string | null,"id": string,"overtime_charge_cents": number,"overtime_minutes": number,"overtime_resolution": Database["public"]['Enums']["overtime_resolution"] | null,"overtime_resolved_at": string | null,"overtime_resolved_by": string | null,"qr_access_pass_id": string,"scheduled_end_at": string,"status": Database["public"]['Enums']["check_in_status"],"updated_at": string,"verified_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "booking_id": string,"checked_in_at"?: string,"checked_out_at"?: string | null,"created_at"?: string,"end_reminder_claimed_at"?: string | null,"end_reminder_error"?: string | null,"end_reminder_sent_at"?: string | null,"id"?: string,"overtime_charge_cents"?: number,"overtime_minutes"?: number,"qr_access_pass_id": string,"scheduled_end_at": string,"status"?: Database["public"]['Enums']["check_in_status"],"updated_at"?: string,"verified_by"?: string | null
+                    "booking_id": string,"checked_in_at"?: string,"checked_out_at"?: string | null,"created_at"?: string,"end_reminder_claimed_at"?: string | null,"end_reminder_error"?: string | null,"end_reminder_sent_at"?: string | null,"id"?: string,"overtime_charge_cents"?: number,"overtime_minutes"?: number,"overtime_resolution"?: Database["public"]['Enums']["overtime_resolution"] | null,"overtime_resolved_at"?: string | null,"overtime_resolved_by"?: string | null,"qr_access_pass_id": string,"scheduled_end_at": string,"status"?: Database["public"]['Enums']["check_in_status"],"updated_at"?: string,"verified_by"?: string | null
                   }
                   Update: {
-                    "booking_id"?: string,"checked_in_at"?: string,"checked_out_at"?: string | null,"created_at"?: string,"end_reminder_claimed_at"?: string | null,"end_reminder_error"?: string | null,"end_reminder_sent_at"?: string | null,"id"?: string,"overtime_charge_cents"?: number,"overtime_minutes"?: number,"qr_access_pass_id"?: string,"scheduled_end_at"?: string,"status"?: Database["public"]['Enums']["check_in_status"],"updated_at"?: string,"verified_by"?: string | null
+                    "booking_id"?: string,"checked_in_at"?: string,"checked_out_at"?: string | null,"created_at"?: string,"end_reminder_claimed_at"?: string | null,"end_reminder_error"?: string | null,"end_reminder_sent_at"?: string | null,"id"?: string,"overtime_charge_cents"?: number,"overtime_minutes"?: number,"overtime_resolution"?: Database["public"]['Enums']["overtime_resolution"] | null,"overtime_resolved_at"?: string | null,"overtime_resolved_by"?: string | null,"qr_access_pass_id"?: string,"scheduled_end_at"?: string,"status"?: Database["public"]['Enums']["check_in_status"],"updated_at"?: string,"verified_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -214,6 +214,12 @@ isOneToOne: false
       columns: ["booking_id"]
 isOneToOne: true
       referencedRelation: "bookings"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "check_in_sessions_overtime_resolved_by_fkey"
+      columns: ["overtime_resolved_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "check_in_sessions_qr_access_pass_id_fkey"
@@ -751,6 +757,9 @@ isOneToOne: false
 "process_paymongo_refund_event":
 { Args: { "p_event_id": string,"p_event_type": string,"p_internal_refund_id"?: string,"p_livemode": boolean,"p_payload": Json,"p_refund_id": string,"p_status": string }; Returns: undefined
                            },
+"resolve_overtime_session":
+{ Args: { "p_booking_id": string,"p_resolution": Database["public"]['Enums']["overtime_resolution"] }; Returns: undefined
+                           },
 "revoke_staff_sessions":
 { Args: { "p_staff_id": string }; Returns: number
                            },
@@ -774,7 +783,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "booking_status": "pending"|"confirmed"|"checked_in"|"completed"|"cancelled"|"declined"|"no_show","check_in_status": "checked_in"|"checked_out"|"overtime"|"no_show","content_status": "draft"|"published"|"archived","flashcard_rating": "learned"|"needs_review","payment_method": "gcash"|"qrph","payment_status": "pending"|"processing"|"paid"|"failed"|"refunded"|"not_required","profile_role": "customer"|"staff"|"admin","seat_status": "available"|"reserved"|"occupied"|"maintenance","staff_permission": "seating"|"reservations"|"announcements"
+            "booking_status": "pending"|"confirmed"|"checked_in"|"completed"|"cancelled"|"declined"|"no_show","check_in_status": "checked_in"|"checked_out"|"overtime"|"no_show","content_status": "draft"|"published"|"archived","flashcard_rating": "learned"|"needs_review","overtime_resolution": "paid_manually"|"waived","payment_method": "gcash"|"qrph","payment_status": "pending"|"processing"|"paid"|"failed"|"refunded"|"not_required","profile_role": "customer"|"staff"|"admin","seat_status": "available"|"reserved"|"occupied"|"maintenance","staff_permission": "seating"|"reservations"|"announcements"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -894,7 +903,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "booking_status": ["pending", "confirmed", "checked_in", "completed", "cancelled", "declined", "no_show"],"check_in_status": ["checked_in", "checked_out", "overtime", "no_show"],"content_status": ["draft", "published", "archived"],"flashcard_rating": ["learned", "needs_review"],"payment_method": ["gcash", "qrph"],"payment_status": ["pending", "processing", "paid", "failed", "refunded", "not_required"],"profile_role": ["customer", "staff", "admin"],"seat_status": ["available", "reserved", "occupied", "maintenance"],"staff_permission": ["seating", "reservations", "announcements"]
+            "booking_status": ["pending", "confirmed", "checked_in", "completed", "cancelled", "declined", "no_show"],"check_in_status": ["checked_in", "checked_out", "overtime", "no_show"],"content_status": ["draft", "published", "archived"],"flashcard_rating": ["learned", "needs_review"],"overtime_resolution": ["paid_manually", "waived"],"payment_method": ["gcash", "qrph"],"payment_status": ["pending", "processing", "paid", "failed", "refunded", "not_required"],"profile_role": ["customer", "staff", "admin"],"seat_status": ["available", "reserved", "occupied", "maintenance"],"staff_permission": ["seating", "reservations", "announcements"]
           }
         }
 } as const
