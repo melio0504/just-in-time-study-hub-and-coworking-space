@@ -29,6 +29,16 @@ async function mockPublicSupabaseContext(page: Page) {
 }
 
 test("the landing page presents the primary booking journey", async ({ page }) => {
+  await page.route("**/rest/v1/announcements*", (route) =>
+    fulfillSupabaseJson(route, {
+      id: 1,
+      status: "published",
+      title: "Test announcement",
+      body: "The study hub is open today.",
+      starts_at: "2026-10-26T00:00:00+08:00",
+      created_at: "2026-10-26T00:00:00+08:00",
+    }),
+  );
   const response = await page.goto("/");
 
   expect(response).not.toBeNull();
@@ -43,8 +53,21 @@ test("the landing page presents the primary booking journey", async ({ page }) =
   await expect(page).toHaveTitle(/Just In Time Study Hub/);
   const capstoneNotice = page.getByLabel("Capstone project disclaimer");
   await expect(capstoneNotice).toBeVisible();
-  await expect(capstoneNotice).toContainText("not the official Just In Time Study Hub website");
-  await expect(capstoneNotice).toContainText("payments made here are not official");
+  await expect(capstoneNotice).toContainText(
+    /not the official Just In Time Study Hub.*website/,
+  );
+  await expect(capstoneNotice).toContainText(
+    /payments made here are (?:still )?not official/,
+  );
+  const announcement = page.getByLabel("Latest announcement");
+  await expect(announcement).toBeVisible();
+  const headerBox = await page.locator("header.site-header").boundingBox();
+  const announcementBox = await announcement.boundingBox();
+  expect(headerBox).not.toBeNull();
+  expect(announcementBox).not.toBeNull();
+  expect(announcementBox!.y).toBeGreaterThanOrEqual(
+    headerBox!.y + headerBox!.height + 15,
+  );
   await expect(
     page.getByRole("heading", { level: 1, name: /just in time.*focused success/i }),
   ).toBeVisible();
@@ -59,6 +82,18 @@ test("the landing page presents the primary booking journey", async ({ page }) =
 
   await page.evaluate(() => window.scrollTo(0, 300));
   await expect(capstoneNotice).not.toBeInViewport();
+  await expect
+    .poll(async () => {
+      const scrolledHeaderBox = await page.locator("header.site-header").boundingBox();
+      const scrolledAnnouncementBox = await announcement.boundingBox();
+      if (!scrolledHeaderBox || !scrolledAnnouncementBox) return -1;
+
+      return (
+        scrolledAnnouncementBox.y -
+        (scrolledHeaderBox.y + scrolledHeaderBox.height)
+      );
+    })
+    .toBeGreaterThanOrEqual(15);
 });
 
 test("pricing exposes hourly and package options", async ({ page }) => {
