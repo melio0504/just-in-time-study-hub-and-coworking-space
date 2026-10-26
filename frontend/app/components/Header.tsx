@@ -66,9 +66,14 @@ export function Header() {
       );
 
       header.style.width = `${viewportWidth + (finalWidth - viewportWidth) * progress}px`;
-      header.style.top = `${Math.max(noticeBottom, 6 * progress)}px`;
+      const headerTop = Math.max(noticeBottom, 6 * progress);
+      header.style.top = `${headerTop}px`;
       header.style.borderRadius = `${finalRadius * progress}px`;
       header.dataset.scrolled = progress > 0.01 ? 'true' : 'false';
+      document.documentElement.style.setProperty(
+        '--site-header-bottom',
+        `${headerTop + header.offsetHeight}px`,
+      );
     };
 
     const animate = (time: number) => {
@@ -111,6 +116,7 @@ export function Header() {
       window.removeEventListener('scroll', updateTarget);
       window.removeEventListener('resize', updateTarget);
       if (animationFrame) cancelAnimationFrame(animationFrame);
+      document.documentElement.style.removeProperty('--site-header-bottom');
     };
   }, []);
 

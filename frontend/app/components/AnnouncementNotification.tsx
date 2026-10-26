@@ -57,7 +57,8 @@ export function AnnouncementNotification() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           aria-label="Latest announcement"
           aria-live="polite"
-          className="fixed right-4 top-24 z-40 w-[calc(100%-2rem)] max-w-80 sm:top-30"
+          style={{ top: "calc(var(--site-header-bottom, 6rem) + 1rem)" }}
+          className="fixed right-4 z-40 w-[calc(100%-2rem)] max-w-80"
         >
           <div className="rounded-xl border border-[#f3ede4] bg-white/90 p-4 shadow-lg backdrop-blur-sm">
             <div className="mb-3 flex items-start justify-between gap-3">

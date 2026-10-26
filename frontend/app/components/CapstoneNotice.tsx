@@ -10,7 +10,7 @@ export function CapstoneNotice() {
           <strong className="font-semibold">Made by students for Capstone Project:</strong>{" "}
           This is not the official Just In Time Study Hub and Coworking Space website. Applications,
           reservations, and payments made here are still not official. For real bookings,
-          please contact the study hub's Facebook page directly.
+          please contact the study hub&apos;s Facebook page directly.
         </p>
       </div>
     </aside>
