@@ -1,7 +1,8 @@
 # Just In Time Study Hub and Coworking Space
 
-This repository is an npm workspace containing two web applications and one
-Electron kiosk, all backed by one Supabase project.
+> [!NOTE]
+> This repository is an npm workspace containing two web applications and one
+> Electron kiosk, all backed by one Supabase project.
 
 ## Preview
 
@@ -155,4 +156,4 @@ This capstone project was developed by students from the National Teachers Colle
 - Rivera, Edmon Daniel C.
 - Ronquillo, Vincent Raiven
 
-A.Y. 2026 - 2027
+_A.Y. 2026-2027_
