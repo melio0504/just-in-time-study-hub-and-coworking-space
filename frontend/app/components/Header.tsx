@@ -60,9 +60,13 @@ export function Header() {
       const sideGap = viewportWidth >= 640 ? 48 : 24;
       const finalWidth = Math.min(viewportWidth - sideGap, 1280);
       const finalRadius = viewportWidth >= 640 ? 24 : 16;
+      const noticeBottom = Math.max(
+        document.getElementById('capstone-notice')?.getBoundingClientRect().bottom ?? 0,
+        0,
+      );
 
       header.style.width = `${viewportWidth + (finalWidth - viewportWidth) * progress}px`;
-      header.style.top = `${6 * progress}px`;
+      header.style.top = `${Math.max(noticeBottom, 6 * progress)}px`;
       header.style.borderRadius = `${finalRadius * progress}px`;
       header.dataset.scrolled = progress > 0.01 ? 'true' : 'false';
     };

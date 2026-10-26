@@ -41,6 +41,10 @@ test("the landing page presents the primary booking journey", async ({ page }) =
   expect(headers["permissions-policy"]).toContain("camera=()");
   expect(headers["x-powered-by"]).toBeUndefined();
   await expect(page).toHaveTitle(/Just In Time Study Hub/);
+  const capstoneNotice = page.getByLabel("Capstone project disclaimer");
+  await expect(capstoneNotice).toBeVisible();
+  await expect(capstoneNotice).toContainText("not the official Just In Time Study Hub website");
+  await expect(capstoneNotice).toContainText("payments made here are not official");
   await expect(
     page.getByRole("heading", { level: 1, name: /just in time.*focused success/i }),
   ).toBeVisible();
@@ -52,6 +56,9 @@ test("the landing page presents the primary booking journey", async ({ page }) =
     "href",
     "/virtual-tour",
   );
+
+  await page.evaluate(() => window.scrollTo(0, 300));
+  await expect(capstoneNotice).not.toBeInViewport();
 });
 
 test("pricing exposes hourly and package options", async ({ page }) => {
