@@ -1,5 +1,3 @@
-import { Info } from "lucide-react";
-
 export function CapstoneNotice() {
   return (
     <aside
