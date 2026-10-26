@@ -43,45 +43,6 @@ Admin Next.js (Vercel) ───┼── Supabase Auth, Data API, Postgres, Sto
 Electron kiosk (local) ───┘
 ```
 
-## Applications
-
-### Public frontend
-
-`frontend/` contains the customer-facing pages, including reservations, authentication, accounts, pricing, the gallery, and the virtual tour. It does not contain `/admin` or `/kiosk`, so those routes are absent from its production build.
-
-For Vercel, import this repository and set **Root Directory** to `frontend`. Configure these variables in the Vercel project:
-
-```text
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-NEXT_PUBLIC_SITE_URL
-```
-
-Only use a Supabase publishable key in `NEXT_PUBLIC_` variables. Never place a secret or service-role key in either browser application.
-
-### Remote admin dashboard
-
-`admin/` contains the authenticated staff dashboard. Deploy it as a separate
-Vercel project with **Root Directory** set to `admin`, then attach
-`admin.jit-studyhub.com` as its custom domain. It uses the same three public
-environment variables as the frontend, with:
-
-```text
-NEXT_PUBLIC_SITE_URL=https://admin.jit-studyhub.com
-```
-
-Authentication, staff permissions, and Supabase RLS protect this application.
-The subdomain is a deployment boundary, not a security boundary by itself.
-
-### Facility kiosk
-
-`kiosk/` packages the front-desk QR scanner as an Electron desktop application.
-It opens directly to the scanner without a staff login. Install it only on the
-facility computer; do not create a Vercel project or public DNS record for it.
-Scan requests use a kiosk-scoped device credential stored outside the renderer.
-See `kiosk/README.md` for configuration, window behavior, camera permissions,
-and installer commands.
-
 ## Setup
 
 Complete setup, environment, architecture, and operational guidance is
@@ -183,3 +144,15 @@ the kiosk must be rebuilt first, or `npm run dist:kiosk:win` to create its
 Windows installer. To produce both the Linux AppImage and Windows 10/11
 installer in reproducible Linux-based build containers, use
 `npm run dist:kiosk:docker`; see the [kiosk packaging guide](kiosk/README.md#build-both-installers-with-docker).
+
+## Capstone Group
+
+This capstone project was developed by students from the National Teachers College:
+
+- Barquez, Rafael C.
+- De Vera, Jhan Nichol G.
+- Teodoro, Romelio C.
+- Rivera, Edmon Daniel C.
+- Ronquillo, Vincent Raiven
+
+A.Y. 2026 - 2027
