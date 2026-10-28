@@ -1,5 +1,5 @@
 begin;
-select plan(25);
+select plan(33);
 
 select has_table('public', 'business_hours', 'weekly business hours table exists');
 select has_table('public', 'business_closures', 'business closures table exists');
@@ -13,6 +13,40 @@ select is(
   'reservations can use the full operating-day window'
 );
 select is((select count(*) from public.package_rate_plans), 4::bigint, 'the existing package prices are migrated into configurable rows');
+select has_function(
+  'private',
+  'update_seat_type_rate',
+  array['text', 'bigint'],
+  'the privileged seat-rate implementation is private'
+);
+select ok(
+  not (select prosecdef from pg_proc where oid = 'public.update_seat_type_rate(text,bigint)'::regprocedure),
+  'the exposed seat-rate RPC uses invoker privileges'
+);
+select ok(
+  (select prosecdef from pg_proc where oid = 'private.update_seat_type_rate(text,bigint)'::regprocedure),
+  'the private implementation owns the privileged operation'
+);
+select ok(
+  not has_function_privilege('anon', 'public.update_seat_type_rate(text,bigint)', 'execute'),
+  'anonymous users cannot execute the seat-rate RPC'
+);
+select ok(
+  has_function_privilege('authenticated', 'public.update_seat_type_rate(text,bigint)', 'execute'),
+  'signed-in users can reach the staff-authorized RPC wrapper'
+);
+select ok(
+  not has_function_privilege('service_role', 'public.update_seat_type_rate(text,bigint)', 'execute'),
+  'the service role has no direct access to the exposed seat-rate RPC'
+);
+select ok(
+  has_function_privilege('authenticated', 'private.update_seat_type_rate(text,bigint)', 'execute'),
+  'the invoker wrapper can execute the private implementation'
+);
+select ok(
+  not has_function_privilege('anon', 'private.update_seat_type_rate(text,bigint)', 'execute'),
+  'anonymous users cannot execute the private implementation'
+);
 
 select set_config('test.customer_id', (
   select id::text from public.profiles where email = 'maria.santos.jit@gmail.com'
