@@ -1,12 +1,12 @@
 # Just In Time Study Hub and Coworking Space
 
+[![YouTube](https://shields.io)](https://www.youtube.com/watch?v=4nLBV7w_NfQ)
+
 > [!NOTE]
 > This repository is an npm workspace containing two web applications and one
 > Electron kiosk, all backed by one Supabase project.
 
-## Preview
-
-[Watch the project video on YouTube](https://www.youtube.com/watch?v=4nLBV7w_NfQ)
+## Screenshots
 
 ### Public website
 
