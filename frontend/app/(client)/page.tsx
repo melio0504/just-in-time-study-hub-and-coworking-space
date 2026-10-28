@@ -108,11 +108,12 @@ export default function Home() {
                   <span className="relative z-10 text-[#e5a930]">
                     just in time
                   </span>
-                  <motion.div
-                    className="absolute -bottom-2 left-0 right-0 h-3 bg-[#e5a930] opacity-20 rounded-full"
-                    initial={false}
+                  <motion.span
+                    aria-hidden="true"
+                    className="absolute -bottom-2 left-0 h-2 w-full origin-left rounded-full bg-[#e5a930]/35"
+                    initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
-                    transition={{ duration: 0.8, delay: 1.2 }}
+                    transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
                   />
                 </motion.span>
                 <br />
@@ -163,7 +164,7 @@ export default function Home() {
 
           <motion.div
             className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto"
-          initial={false}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 2 }}
           >
@@ -423,7 +424,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 gap-8 mb-16">
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
@@ -448,7 +449,7 @@ export default function Home() {
             </motion.div>
 
             <motion.div
-          initial={false}
+              initial={false}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
