@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, Clock, LogOut, TrendingUp, BookOpen, Play, Pause, RotateCcw, Plus, X, Settings, Trash2 } from 'lucide-react';
+import { Calendar, Clock, LogOut, TrendingUp, BookOpen, Play, Pause, RotateCcw, Plus, X, Settings, Trash2, VolumeX } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import {
@@ -16,8 +16,17 @@ import { AccountSettings } from './_components/AccountSettings';
 
 const STUDY_HISTORY_WEEKS = STUDY_HISTORY_DAYS / 7;
 
+function playSound(audio: HTMLAudioElement | null) {
+  if (!audio) return;
+
+  audio.currentTime = 0;
+  void audio.play().catch(() => undefined);
+}
+
 export default function Account() {
   const router = useRouter();
+  const pomodoroAudioRef = useRef<HTMLAudioElement>(null);
+  const flashcardAudioRef = useRef<HTMLAudioElement>(null);
   const [userName, setUserName] = useState('User');
   const [userEmail, setUserEmail] = useState('');
   const [usernameChangedAt, setUsernameChangedAt] = useState<string | null>(null);
@@ -32,6 +41,7 @@ export default function Account() {
   const [timerMinutes, setTimerMinutes] = useState(25);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [isPomodoroSoundPlaying, setIsPomodoroSoundPlaying] = useState(false);
   const [showTimerSettings, setShowTimerSettings] = useState(false);
   const [timerUnit, setTimerUnit] = useState<'minutes' | 'seconds'>('minutes');
   const [customTimerValue, setCustomTimerValue] = useState(25);
@@ -111,6 +121,7 @@ export default function Account() {
         if (timerSeconds === 0) {
           if (timerMinutes === 0) {
             setIsTimerRunning(false);
+            playSound(pomodoroAudioRef.current);
           } else {
             setTimerMinutes(timerMinutes - 1);
             setTimerSeconds(59);
@@ -196,12 +207,22 @@ export default function Account() {
     setIsTimerRunning(!isTimerRunning);
   };
 
+  const stopPomodoroSound = () => {
+    const audio = pomodoroAudioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    setIsPomodoroSoundPlaying(false);
+  };
+
   const timerPresets = timerUnit === 'seconds' ? [5, 10, 15, 30] : [5, 15, 25, 45];
   const timerUnitLabel = timerUnit === 'seconds' ? 'seconds' : 'minutes';
   const timerUnitShortLabel = timerUnit === 'seconds' ? 'sec' : 'min';
 
   const flipCard = () => {
     if (flashcards.length === 0) return;
+    playSound(flashcardAudioRef.current);
     setIsCardFlipped(!isCardFlipped);
   };
 
@@ -259,6 +280,17 @@ export default function Account() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] to-[#fff8ed] pt-24">
+      <audio
+        ref={pomodoroAudioRef}
+        src="/audio/pomodoro.mp3"
+        preload="auto"
+        aria-hidden="true"
+        onPlay={() => setIsPomodoroSoundPlaying(true)}
+        onPause={() => setIsPomodoroSoundPlaying(false)}
+        onEnded={() => setIsPomodoroSoundPlaying(false)}
+        onError={() => setIsPomodoroSoundPlaying(false)}
+      />
+      <audio ref={flashcardAudioRef} src="/audio/flashcard.mp3" preload="auto" aria-hidden="true" />
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Header */}
         <div className="flex items-center justify-between mb-12">
@@ -455,19 +487,31 @@ export default function Account() {
 
               <div className="rounded-2xl border border-white/80 bg-white/75 px-5 py-8 text-center shadow-inner">
                 <span className="inline-flex rounded-full bg-[#fef3dc] px-3 py-1 text-xs font-medium uppercase tracking-wider text-[#8b6518]">
-                  {isTimerRunning ? 'Focus in progress' : 'Ready to focus'}
+                  {isPomodoroSoundPlaying ? 'Time is up' : isTimerRunning ? 'Focus in progress' : 'Ready to focus'}
                 </span>
                 <div className="my-5 text-6xl font-mono tabular-nums text-[#2d2520] sm:text-7xl">
                   {String(timerMinutes).padStart(2, '0')}:{String(timerSeconds).padStart(2, '0')}
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    onClick={toggleTimer}
-                    className="inline-flex min-w-32 items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white shadow-sm transition-all hover:bg-[#d69520] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d69520] focus-visible:ring-offset-2 cursor-pointer"
-                  >
-                    {isTimerRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                    {isTimerRunning ? 'Pause' : 'Start focus'}
-                  </button>
+                  {isPomodoroSoundPlaying ? (
+                    <button
+                      type="button"
+                      onClick={stopPomodoroSound}
+                      className="inline-flex min-w-32 items-center justify-center gap-2 rounded-full bg-[#2d2520] px-6 py-3 text-white shadow-sm transition-all hover:bg-[#44382f] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2d2520] focus-visible:ring-offset-2 cursor-pointer"
+                    >
+                      <VolumeX className="h-5 w-5" />
+                      Stop the sound
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={toggleTimer}
+                      className="inline-flex min-w-32 items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white shadow-sm transition-all hover:bg-[#d69520] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d69520] focus-visible:ring-offset-2 cursor-pointer"
+                    >
+                      {isTimerRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                      {isTimerRunning ? 'Pause' : 'Start focus'}
+                    </button>
+                  )}
                   <button
                     onClick={resetTimer}
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-[#e5a930] bg-white px-5 py-3 text-[#2d2520] transition-colors hover:bg-[#f3ede4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] cursor-pointer"
