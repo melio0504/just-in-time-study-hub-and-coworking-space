@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(25);
 
 select has_table('public', 'business_hours', 'weekly business hours table exists');
 select has_table('public', 'business_closures', 'business closures table exists');
@@ -7,6 +7,11 @@ select has_table('public', 'booking_settings', 'booking settings table exists');
 select has_table('public', 'package_rate_plans', 'package rate plans table exists');
 select is((select count(*) from public.business_hours), 7::bigint, 'all seven weekdays are configured');
 select is((select count(*) from public.booking_settings), 1::bigint, 'booking settings has one singleton row');
+select is(
+  (select max_duration_hours from public.booking_settings where singleton),
+  24::smallint,
+  'reservations can use the full operating-day window'
+);
 select is((select count(*) from public.package_rate_plans), 4::bigint, 'the existing package prices are migrated into configurable rows');
 
 select set_config('test.customer_id', (

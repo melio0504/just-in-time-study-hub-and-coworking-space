@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   getReservationDropdownLayout,
-  hasReservationTimeGap,
+  startsNextReservationDay,
 } from "./reservation-dropdown";
 
-describe("hasReservationTimeGap", () => {
-  it("separates the overnight closing time from the morning opening time", () => {
-    expect(hasReservationTimeGap("04:00", "08:00")).toBe(true);
+describe("startsNextReservationDay", () => {
+  it("separates the next day when the clock wraps after midnight", () => {
+    expect(startsNextReservationDay("23:00", "00:00")).toBe(true);
   });
 
-  it("keeps consecutive hours in the same visual group", () => {
-    expect(hasReservationTimeGap("03:00", "04:00")).toBe(false);
+  it("keeps consecutive same-day hours in the same visual group", () => {
+    expect(startsNextReservationDay("08:00", "09:00")).toBe(false);
   });
 });
 

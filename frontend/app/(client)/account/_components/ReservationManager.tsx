@@ -24,6 +24,8 @@ import {
   hoursAvailableFrom,
   maximumBookingDate,
   meetsMinimumNotice,
+  operatingDateForBooking,
+  reservationDateForTime,
   reservationTimeOptions,
   type BookingSettings,
   type BusinessClosure,
@@ -308,7 +310,11 @@ export function ReservationManager() {
     ? reservationTimeOptions(draft.date, businessHours)
       .filter(([time]) => (
         selected.duration_hours <= hoursAvailableFrom(draft.date, time, businessHours)
-        && meetsMinimumNotice(draft.date, time, bookingSettings.minimum_notice_minutes)
+        && meetsMinimumNotice(
+          reservationDateForTime(draft.date, time, businessHours),
+          time,
+          bookingSettings.minimum_notice_minutes,
+        )
       ))
     : [];
   const selectedClosure = draft ? closureForDate(draft.date, closures) : undefined;
@@ -331,7 +337,8 @@ export function ReservationManager() {
     if (!editing || !selected || !draft?.date || !draft.time) return;
     const timer = window.setTimeout(async () => {
       setAvailabilityLoading(true);
-      const windowRange = manilaWindow(draft.date, draft.time, selected.duration_hours);
+      const bookingDate = reservationDateForTime(draft.date, draft.time, businessHours);
+      const windowRange = manilaWindow(bookingDate, draft.time, selected.duration_hours);
       const client = createClient();
       const [catalogResult, availabilityResult] = await Promise.all([
         client.from('seats').select('*').eq('is_active', true).order('code'),
@@ -356,7 +363,7 @@ export function ReservationManager() {
       setAvailabilityLoading(false);
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [draft?.date, draft?.time, editing, selected]);
+  }, [businessHours, draft?.date, draft?.time, editing, selected]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -399,13 +406,22 @@ export function ReservationManager() {
   const beginEdit = () => {
     if (!selected) return;
     const currentTime = selected.start_time.slice(0, 5);
-    const validTimes = reservationTimeOptions(selected.booking_date, businessHours)
+    const operatingDate = operatingDateForBooking(
+      selected.booking_date,
+      currentTime,
+      businessHours,
+    );
+    const validTimes = reservationTimeOptions(operatingDate, businessHours)
       .filter(([time]) => (
-        selected.duration_hours <= hoursAvailableFrom(selected.booking_date, time, businessHours)
-        && meetsMinimumNotice(selected.booking_date, time, bookingSettings.minimum_notice_minutes)
+        selected.duration_hours <= hoursAvailableFrom(operatingDate, time, businessHours)
+        && meetsMinimumNotice(
+          reservationDateForTime(operatingDate, time, businessHours),
+          time,
+          bookingSettings.minimum_notice_minutes,
+        )
       ));
     setDraft({
-      date: selected.booking_date,
+      date: operatingDate,
       time: validTimes.some(([time]) => time === currentTime) ? currentTime : validTimes[0]?.[0] ?? '',
       seats: [...selected.seat_ids].sort(),
     });
@@ -432,9 +448,10 @@ export function ReservationManager() {
     }
     setAction('save');
     setError('');
+    const bookingDate = reservationDateForTime(draft.date, draft.time, businessHours);
     const { error: updateError } = await createClient().rpc('customer_update_booking', {
       p_booking_id: selected.id,
-      p_booking_date: draft.date,
+      p_booking_date: bookingDate,
       p_start_time: draft.time,
       p_seat_codes: draft.seats,
     });
@@ -517,7 +534,7 @@ export function ReservationManager() {
       .reduce((total, seat) => total + seat.hourly_rate_cents * (selected?.duration_hours ?? 0), 0)
     : 0;
   const editHasChanges = Boolean(selected && draft && (
-    draft.date !== selected.booking_date
+    reservationDateForTime(draft.date, draft.time, businessHours) !== selected.booking_date
     || draft.time !== selected.start_time.slice(0, 5)
     || draft.seats.join(',') !== [...selected.seat_ids].sort().join(',')
   ));
@@ -670,7 +687,7 @@ export function ReservationManager() {
               <h3 className="text-xl font-semibold text-[#2d2520]">Change schedule or seats</h3>
               <p className="mt-2 text-sm leading-6 text-[#6b5e52]">The duration and paid total stay unchanged. You may select up to {selected.seat_ids.length} seat{selected.seat_ids.length === 1 ? '' : 's'}, matching the number originally paid for.</p>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <label className="text-sm font-semibold text-[#4f443c]">Date<input type="date" min={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })} max={maximumBookingDate(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }), bookingSettings.maximum_advance_days)} value={draft.date} onChange={(event) => { const date = event.target.value; const validTimes = reservationTimeOptions(date, businessHours).filter(([time]) => selected.duration_hours <= hoursAvailableFrom(date, time, businessHours) && meetsMinimumNotice(date, time, bookingSettings.minimum_notice_minutes)); setDraft({ ...draft, date, time: validTimes.some(([time]) => time === draft.time) ? draft.time : validTimes[0]?.[0] ?? '' }); }} disabled={configurationLoading} className="mt-2 w-full rounded-xl border border-[#d8c9b9] bg-white px-4 py-3 font-normal text-[#2d2520] outline-none focus:border-[#e5a930] disabled:opacity-60" /></label>
+                <label className="text-sm font-semibold text-[#4f443c]">Date<input type="date" min={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })} max={maximumBookingDate(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }), bookingSettings.maximum_advance_days)} value={draft.date} onChange={(event) => { const date = event.target.value; const validTimes = reservationTimeOptions(date, businessHours).filter(([time]) => selected.duration_hours <= hoursAvailableFrom(date, time, businessHours) && meetsMinimumNotice(reservationDateForTime(date, time, businessHours), time, bookingSettings.minimum_notice_minutes)); setDraft({ ...draft, date, time: validTimes.some(([time]) => time === draft.time) ? draft.time : validTimes[0]?.[0] ?? '' }); }} disabled={configurationLoading} className="mt-2 w-full rounded-xl border border-[#d8c9b9] bg-white px-4 py-3 font-normal text-[#2d2520] outline-none focus:border-[#e5a930] disabled:opacity-60" /></label>
                 <label className="text-sm font-semibold text-[#4f443c]">Start time<select value={draft.time} onChange={(event) => setDraft({ ...draft, time: event.target.value })} disabled={configurationLoading || Boolean(selectedClosure) || rescheduleTimes.length === 0} className="mt-2 w-full rounded-xl border border-[#d8c9b9] bg-white px-4 py-3 font-normal text-[#2d2520] outline-none focus:border-[#e5a930] disabled:opacity-60"><option value="">Choose a time</option>{rescheduleTimes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
               </div>
               {selectedClosure && <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><strong>{selectedClosure.name}:</strong> This date is closed. Please choose another date.</p>}

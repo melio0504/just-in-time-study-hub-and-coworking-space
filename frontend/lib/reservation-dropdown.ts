@@ -17,13 +17,13 @@ const timeValueInMinutes = (value: string) => {
   return Number(match[1]) * 60 + Number(match[2]);
 };
 
-export function hasReservationTimeGap(previousValue: string, currentValue: string) {
+export function startsNextReservationDay(previousValue: string, currentValue: string) {
   const previousMinutes = timeValueInMinutes(previousValue);
   const currentMinutes = timeValueInMinutes(currentValue);
 
   return previousMinutes !== null
     && currentMinutes !== null
-    && currentMinutes - previousMinutes > 60;
+    && currentMinutes < previousMinutes;
 }
 
 export function getReservationDropdownLayout({

@@ -17,6 +17,7 @@ import {
   isRegularlyClosedDate,
   maximumBookingDate,
   meetsMinimumNotice,
+  reservationDateForTime,
   reservationTimeOptions,
   type BookingSettings,
   type BusinessClosure,
@@ -152,8 +153,9 @@ function ReserveContent() {
       const now = new Date();
       setCurrentTime(now);
       setFormData((current) => {
+        const bookingDate = reservationDateForTime(current.date, current.time, businessHours);
         if (!current.time || meetsMinimumNotice(
-          current.date,
+          bookingDate,
           current.time,
           bookingSettings.minimum_notice_minutes,
           now,
@@ -171,7 +173,7 @@ function ReserveContent() {
       window.clearInterval(refreshInterval);
       window.removeEventListener('focus', updateCurrentTime);
     };
-  }, [bookingSettings.minimum_notice_minutes]);
+  }, [bookingSettings.minimum_notice_minutes, businessHours]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -411,8 +413,11 @@ function ReserveContent() {
     const loadAvailability = async () => {
       setIsAvailabilityLoading(true);
       setAvailabilityError('');
+      const bookingDate = formData.time && formData.duration
+        ? reservationDateForTime(formData.date, formData.time, businessHours)
+        : formData.date;
       const { startsAt, endsAt } = getReservationAvailabilityWindow(
-        formData.date,
+        bookingDate,
         formData.time,
         formData.duration,
       );
@@ -456,7 +461,7 @@ function ReserveContent() {
       window.clearInterval(refreshInterval);
       window.removeEventListener('focus', refreshAvailability);
     };
-  }, [formData.date, formData.duration, formData.time, hasRestoredDraft]);
+  }, [businessHours, formData.date, formData.duration, formData.time, hasRestoredDraft]);
 
   useEffect(() => {
     if (configurationLoading || isIdentityLoading) return;
@@ -495,7 +500,8 @@ function ReserveContent() {
               .slice(0, bookingSettings.max_seats_per_booking)
             : [];
 
-          if (time && isReservationTimePast(date, time)) {
+          const bookingDate = reservationDateForTime(date, time, businessHours);
+          if (time && isReservationTimePast(bookingDate, time)) {
             time = '';
             duration = '';
           }
@@ -531,7 +537,11 @@ function ReserveContent() {
       const durationHours = Number(duration);
       if (isClosureDate(date, closures)
         || isRegularlyClosedDate(date, businessHours)
-        || (time && !meetsMinimumNotice(date, time, bookingSettings.minimum_notice_minutes))
+        || (time && !meetsMinimumNotice(
+          reservationDateForTime(date, time, businessHours),
+          time,
+          bookingSettings.minimum_notice_minutes,
+        ))
         || availableHours === 0
         || durationHours < bookingSettings.min_duration_hours
         || durationHours > bookingSettings.max_duration_hours
@@ -595,7 +605,8 @@ function ReserveContent() {
     setIsAvailabilityLoading(true);
     setAvailabilityError('');
     setFormData((current) => {
-      if (value && !meetsMinimumNotice(current.date, value, bookingSettings.minimum_notice_minutes)) {
+      const bookingDate = reservationDateForTime(current.date, value, businessHours);
+      if (value && !meetsMinimumNotice(bookingDate, value, bookingSettings.minimum_notice_minutes)) {
         return { ...current, time: '', duration: '' };
       }
       const hoursUntilClosing = hoursAvailableFrom(current.date, value, businessHours);
@@ -628,7 +639,11 @@ function ReserveContent() {
     setFormData((current) => {
       const keepTime = Boolean(
         current.time
-        && meetsMinimumNotice(dateString, current.time, bookingSettings.minimum_notice_minutes)
+        && meetsMinimumNotice(
+          reservationDateForTime(dateString, current.time, businessHours),
+          current.time,
+          bookingSettings.minimum_notice_minutes,
+        )
         && hoursAvailableFrom(dateString, current.time, businessHours) >= Number(current.duration || 1),
       );
       return {
@@ -732,14 +747,16 @@ function ReserveContent() {
       return;
     }
 
-    if (isReservationTimePast(formData.date, formData.time)) {
+    const bookingDate = reservationDateForTime(formData.date, formData.time, businessHours);
+
+    if (isReservationTimePast(bookingDate, formData.time)) {
       setBookingError('Please select a future reservation time.');
       setFormData((current) => ({ ...current, time: '', duration: '' }));
       timeSelectRef.current?.focus();
       return;
     }
 
-    if (!meetsMinimumNotice(formData.date, formData.time, bookingSettings.minimum_notice_minutes)) {
+    if (!meetsMinimumNotice(bookingDate, formData.time, bookingSettings.minimum_notice_minutes)) {
       setBookingError(`Reservations require at least ${bookingSettings.minimum_notice_minutes} minutes notice.`);
       setFormData((current) => ({ ...current, time: '', duration: '' }));
       timeSelectRef.current?.focus();
@@ -769,7 +786,7 @@ function ReserveContent() {
       const booking = await createBooking({
         guestName: formData.name,
         guestEmail: formData.email,
-        bookingDate: formData.date,
+        bookingDate,
         startTime: formData.time,
         durationHours: Number(formData.duration),
         space: formData.space || 'study-seat',
@@ -829,7 +846,7 @@ function ReserveContent() {
   ).map((hours) => [String(hours), `${hours} hour${hours === 1 ? '' : 's'}`] as const);
   const availableTimeOptions = reservationTimeOptions(formData.date, businessHours)
     .filter(([time]) => meetsMinimumNotice(
-      formData.date,
+      reservationDateForTime(formData.date, time, businessHours),
       time,
       bookingSettings.minimum_notice_minutes,
       currentTime,
@@ -1043,7 +1060,7 @@ function ReserveContent() {
                 placeholder="Select time"
                 listboxLabel="Available reservation times"
                 emptyMessage="No times are available for this date."
-                separateTimeGaps
+                separateNextDay
               />
               <p className="mt-2 text-xs text-[#8b7355]">
                 {selectedClosure

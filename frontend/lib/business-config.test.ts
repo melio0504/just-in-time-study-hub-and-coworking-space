@@ -6,6 +6,8 @@ import {
   isRegularlyClosedDate,
   maximumBookingDate,
   meetsMinimumNotice,
+  operatingDateForBooking,
+  reservationDateForTime,
   reservationTimeOptions,
   type BusinessHours,
 } from './business-config';
@@ -19,6 +21,7 @@ const dailyHours: BusinessHours[] = Array.from({ length: 7 }, (_, day) => ({
 
 describe('business configuration helpers', () => {
   it('supports operating windows that continue after midnight', () => {
+    expect(hoursAvailableFrom('2026-10-16', '08:00', dailyHours)).toBe(21);
     expect(hoursAvailableFrom('2026-10-16', '23:00', dailyHours)).toBe(6);
     expect(hoursAvailableFrom('2026-10-16', '02:00', dailyHours)).toBe(3);
     expect(hoursAvailableFrom('2026-10-16', '06:00', dailyHours)).toBe(0);
@@ -26,9 +29,16 @@ describe('business configuration helpers', () => {
 
   it('generates only hourly times when the hub is open', () => {
     const times = reservationTimeOptions('2026-10-16', dailyHours).map(([value]) => value);
-    expect(times).toContain('00:00');
-    expect(times).toContain('08:00');
+    expect(times[0]).toBe('08:00');
+    expect(times.at(-1)).toBe('04:00');
+    expect(times.indexOf('23:00')).toBeLessThan(times.indexOf('00:00'));
     expect(times).not.toContain('06:00');
+  });
+
+  it('maps after-midnight choices to the next calendar date', () => {
+    expect(reservationDateForTime('2026-10-16', '01:00', dailyHours)).toBe('2026-10-17');
+    expect(reservationDateForTime('2026-10-16', '23:00', dailyHours)).toBe('2026-10-16');
+    expect(operatingDateForBooking('2026-10-17', '01:00', dailyHours)).toBe('2026-10-16');
   });
 
   it('identifies dates whose weekday is closed in the regular schedule', () => {

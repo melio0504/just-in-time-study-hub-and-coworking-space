@@ -5,7 +5,7 @@ import { Fragment, type RefObject, useEffect, useRef, useState } from "react";
 
 import {
   getReservationDropdownLayout,
-  hasReservationTimeGap,
+  startsNextReservationDay,
 } from "@/lib/reservation-dropdown";
 
 type ReservationOption = readonly [value: string, label: string];
@@ -21,7 +21,7 @@ type ReservationSelectProps = {
   onChange: (value: string) => void;
   options: ReservationOption[];
   placeholder: string;
-  separateTimeGaps?: boolean;
+  separateNextDay?: boolean;
   value: string;
 };
 
@@ -36,7 +36,7 @@ export function ReservationSelect({
   onChange,
   options,
   placeholder,
-  separateTimeGaps = false,
+  separateNextDay = false,
   value,
 }: ReservationSelectProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -152,17 +152,17 @@ export function ReservationSelect({
         >
           {options.length > 0 ? options.map(([optionValue, label], index) => {
             const previousValue = options[index - 1]?.[0];
-            const showTimeGap = Boolean(separateTimeGaps
+            const showNextDay = Boolean(separateNextDay
               && previousValue
-              && hasReservationTimeGap(previousValue, optionValue));
+              && startsNextReservationDay(previousValue, optionValue));
 
             return (
               <Fragment key={optionValue}>
-                {showTimeGap && (
+                {showNextDay && (
                   <div aria-hidden="true" className="flex items-center gap-2 px-3 py-2">
                     <span className="h-px flex-1 bg-[#d8cfc2]" />
                     <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#8b7355]">
-                      Closed period
+                      Next Day
                     </span>
                     <span className="h-px flex-1 bg-[#d8cfc2]" />
                   </div>
