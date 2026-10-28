@@ -150,7 +150,7 @@ export function Header() {
                 <X className="hidden h-6 w-6 group-open:block" />
               </summary>
 
-              <nav id="mobile-navigation" aria-label="Mobile navigation" className="mobile-navigation-menu absolute left-1/2 top-[calc(100%+0.5rem)] z-[70] max-h-[calc(100dvh-6rem)] w-[min(28rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] -translate-x-1/2 overscroll-contain overflow-y-auto rounded-3xl border border-[#f3ede4] p-5 shadow-2xl sm:p-6">
+              <nav id="mobile-navigation" aria-label="Mobile navigation" className="mobile-navigation-menu absolute left-1/2 top-[calc(100%+0.5rem)] z-[70] max-h-[calc(100dvh-6rem)] w-[80vw] max-w-[calc(100vw-1.5rem)] -translate-x-1/2 overscroll-contain overflow-y-auto rounded-3xl border border-[#f3ede4] p-5 shadow-2xl sm:p-6">
                 <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#6b5e52]">Menu</p>
                 <ul className="space-y-1">
                   {MOBILE_NAV_LINKS.map((item) => (
