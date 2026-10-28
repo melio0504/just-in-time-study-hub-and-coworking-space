@@ -4,7 +4,7 @@ const supabaseCorsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "apikey, authorization, content-type, x-client-info, x-supabase-api-version",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Expose-Headers": "Content-Range",
 };
 
@@ -153,6 +153,49 @@ test("pricing explains when current rates are unavailable", async ({ page }) => 
   ).toBeVisible();
   await expect(page.getByText(/No hourly rates are currently available/i)).toBeVisible();
   await expect(page.getByText(/No package deals are currently available/i)).toBeVisible();
+});
+
+test("reserve requires an account before schedule and seat selection", async ({ page }) => {
+  await page.route("**/auth/v1/user*", (route) =>
+    fulfillSupabaseJson(route, {
+      code: "session_not_found",
+      message: "Auth session missing",
+    }, 401),
+  );
+  await page.route("**/rest/v1/business_hours*", (route) =>
+    fulfillSupabaseJson(route, []),
+  );
+  await page.route("**/rest/v1/business_closures*", (route) =>
+    fulfillSupabaseJson(route, []),
+  );
+  await page.route("**/rest/v1/booking_settings*", (route) =>
+    fulfillSupabaseJson(route, {
+      max_seats_per_booking: 5,
+      min_duration_hours: 1,
+      max_duration_hours: 8,
+      minimum_notice_minutes: 60,
+      maximum_advance_days: 90,
+    }),
+  );
+  await page.route("**/rest/v1/rpc/get_available_seats*", (route) =>
+    fulfillSupabaseJson(route, []),
+  );
+
+  await page.goto("/reserve");
+
+  const notice = page.getByRole("status").filter({
+    hasText: "Sign in to reserve a seat",
+  });
+  await expect(notice).toBeVisible();
+  await expect(notice.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+    "href",
+    "/register",
+  );
+  await expect(page.getByRole("button", { name: "Select Date" })).toBeDisabled();
+  await expect(page.getByRole("combobox", { name: "Time" })).toBeDisabled();
+  await expect(page.getByRole("combobox", { name: "Duration" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "SO01" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Confirm Reservation" })).toBeDisabled();
 });
 
 test("an unknown public route uses the branded not-found page", async ({ page }) => {

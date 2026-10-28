@@ -4,6 +4,7 @@ import { Suspense, useCallback, useState, useRef, useEffect } from 'react';
 import { Calendar, Clock, ChevronLeft, ChevronRight, X, QrCode, AlertCircle, CheckCircle2, Mail } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { SeatingPlan } from '@/app/components/SeatingPlan';
 import {
@@ -110,6 +111,7 @@ function ReserveContent() {
   const qrRequestVersionRef = useRef(0);
   const paymentSuccessSoundRef = useRef<HTMLAudioElement>(null);
   const soundedBookingIdRef = useRef('');
+  const reservationControlsDisabled = isIdentityLoading || !memberIdentity;
 
   const initializeSeats = useCallback((_date: string, selectedSeats: string[] = []): Seat[] => {
     return allSeatIds.map(id => ({
@@ -456,7 +458,7 @@ function ReserveContent() {
   }, [formData.date, formData.duration, formData.time, hasRestoredDraft]);
 
   useEffect(() => {
-    if (configurationLoading) return;
+    if (configurationLoading || isIdentityLoading) return;
     const restoreDraft = window.setTimeout(() => {
       let date = getManilaDateString();
       let time = '';
@@ -537,12 +539,19 @@ function ReserveContent() {
         duration = '';
       }
 
+      if (!memberIdentity) {
+        date = getManilaDateString();
+        time = '';
+        duration = '';
+        seatIds = [];
+      }
+
       setFormData((current) => ({ ...current, date, time, duration }));
       setCurrentMonth(new Date(`${date}T00:00:00`));
       setSeats(initializeSeats(date, seatIds));
       setHasRestoredDraft(true);
 
-      if (requestedSeats.length > 0 && shouldFocusSchedule) {
+      if (memberIdentity && requestedSeats.length > 0 && shouldFocusSchedule) {
         window.setTimeout(() => {
           scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           timeSelectRef.current?.focus({ preventScroll: true });
@@ -551,10 +560,10 @@ function ReserveContent() {
     }, 0);
 
     return () => window.clearTimeout(restoreDraft);
-  }, [bookingSettings, businessHours, closures, configurationLoading, initializeSeats, requestedDateParam, requestedSeatParam, shouldFocusSchedule]);
+  }, [bookingSettings, businessHours, closures, configurationLoading, initializeSeats, isIdentityLoading, memberIdentity, requestedDateParam, requestedSeatParam, shouldFocusSchedule]);
 
   useEffect(() => {
-    if (!hasRestoredDraft) return;
+    if (!hasRestoredDraft || !memberIdentity) return;
 
     const draft: ReservationDraft = {
       date: formData.date,
@@ -566,7 +575,7 @@ function ReserveContent() {
     };
 
     window.localStorage.setItem(RESERVATION_DRAFT_KEY, JSON.stringify(draft));
-  }, [formData.date, formData.duration, formData.time, hasRestoredDraft, seats]);
+  }, [formData.date, formData.duration, formData.time, hasRestoredDraft, memberIdentity, seats]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -580,6 +589,8 @@ function ReserveContent() {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (reservationControlsDisabled) return;
+
     const { name, value } = e.target;
     if (name === 'date' || name === 'time' || name === 'duration') {
       setIsAvailabilityLoading(true);
@@ -604,6 +615,8 @@ function ReserveContent() {
   };
 
   const handleDateSelect = (date: Date) => {
+    if (reservationControlsDisabled) return;
+
     const candidate = getDateString(date);
     if (isPastDate(date)
       || candidate > maximumBookingDate(getManilaDateString(), bookingSettings.maximum_advance_days)
@@ -673,7 +686,7 @@ function ReserveContent() {
   };
 
   const handleSeatClick = (seatId: string) => {
-    if (isAvailabilityLoading || availabilityError || configurationLoading || configurationError || selectedDateUnavailable) return;
+    if (reservationControlsDisabled || isAvailabilityLoading || availabilityError || configurationLoading || configurationError || selectedDateUnavailable) return;
     const seat = seats.find(s => s.id === seatId);
     if (!seat || seat.status === 'reserved') return;
 
@@ -707,6 +720,11 @@ function ReserveContent() {
 
     if (!isSupabaseConfigured) {
       setBookingError('Supabase is not configured. Add your project values to .env.');
+      return;
+    }
+
+    if (!memberIdentity) {
+      setBookingError('Please sign in before choosing a schedule and reserving seats.');
       return;
     }
 
@@ -772,10 +790,17 @@ function ReserveContent() {
 
   const renderSeatButton = (id: string) => {
     const status = getSeatStatus(id);
+    const isSeatDisabled = reservationControlsDisabled
+      || status === 'reserved'
+      || isAvailabilityLoading
+      || configurationLoading
+      || Boolean(availabilityError)
+      || Boolean(configurationError)
+      || selectedDateUnavailable;
     const colors = {
-      available: 'bg-[#e8e8e8] hover:bg-[#d0d0d0] cursor-pointer text-[#2d2520]',
-      reserved: 'bg-[#9ca3af] cursor-not-allowed text-white',
-      selected: 'bg-[#3b82f6] cursor-pointer text-white'
+      available: 'bg-[#e8e8e8] enabled:hover:bg-[#d0d0d0] text-[#2d2520]',
+      reserved: 'bg-[#9ca3af] text-white',
+      selected: 'bg-[#3b82f6] text-white'
     };
 
     return (
@@ -783,8 +808,9 @@ function ReserveContent() {
         key={id}
         type="button"
         onClick={() => handleSeatClick(id)}
-        className={`w-14 h-14 shrink-0 rounded-xl ${isAvailabilityLoading ? 'bg-[#d1d5db] cursor-wait text-white animate-pulse' : colors[status]} transition-all text-xs font-medium flex items-center justify-center`}
-        disabled={status === 'reserved' || isAvailabilityLoading || configurationLoading || Boolean(availabilityError) || Boolean(configurationError) || selectedDateUnavailable}
+        aria-describedby={!isIdentityLoading && !memberIdentity ? 'reservation-sign-in-notice' : undefined}
+        className={`w-14 h-14 shrink-0 rounded-xl ${isAvailabilityLoading ? 'bg-[#d1d5db] cursor-wait text-white animate-pulse' : colors[status]} ${isSeatDisabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} transition-all text-xs font-medium flex items-center justify-center`}
+        disabled={isSeatDisabled}
       >
         {id}
       </button>
@@ -824,6 +850,32 @@ function ReserveContent() {
           </p>
         </div>
 
+        {!isIdentityLoading && !memberIdentity && (
+          <div
+            id="reservation-sign-in-notice"
+            role="status"
+            className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#e5a930]/50 bg-[#fef3dc] p-5 shadow-sm sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+          >
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#b47b0d]">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-medium text-[#2d2520]">Sign in to reserve a seat</h2>
+                <p className="mt-1 text-sm leading-6 text-[#6b5e52]">
+                  Please sign in or create an account before choosing a date, time, and seats.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/register"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-[#e5a930] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#d69520] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d69520] focus-visible:ring-offset-2"
+            >
+              Sign in
+            </Link>
+          </div>
+        )}
+
         {/* Seat Plan */}
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-lg mb-6 sm:mb-8">
           <div className="mb-5 sm:mb-6 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -845,14 +897,17 @@ function ReserveContent() {
               </div>
             </div>
             <div className="w-full sm:w-72 lg:w-64 relative" ref={calendarRef}>
-              <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
+              <label htmlFor="reservation-date" className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
                 <Calendar className="inline w-4 h-4 mr-1" />
                 Select Date
               </label>
               <button
+                id="reservation-date"
                 type="button"
                 onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-left flex items-center justify-between"
+                disabled={reservationControlsDisabled}
+                aria-describedby={!isIdentityLoading && !memberIdentity ? 'reservation-sign-in-notice' : undefined}
+                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-left flex items-center justify-between disabled:cursor-not-allowed disabled:bg-[#eee9e2] disabled:opacity-70"
               >
                 <span className="text-[#2d2520]">{formatDate(formData.date)}</span>
                 <Calendar className="w-4 h-4 text-[#6b5e52]" />
@@ -864,7 +919,7 @@ function ReserveContent() {
                     <button
                       type="button"
                       onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-                      disabled={!canGoToPreviousMonth()}
+                      disabled={reservationControlsDisabled || !canGoToPreviousMonth()}
                       className="p-2 hover:bg-[#f3ede4] rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                     >
                       <ChevronLeft className="w-5 h-5 text-[#6b5e52]" />
@@ -875,7 +930,8 @@ function ReserveContent() {
                     <button
                       type="button"
                       onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-                      className="p-2 hover:bg-[#f3ede4] rounded-lg transition-colors"
+                      disabled={reservationControlsDisabled}
+                      className="p-2 hover:bg-[#f3ede4] rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
                     >
                       <ChevronRight className="w-5 h-5 text-[#6b5e52]" />
                     </button>
@@ -906,7 +962,7 @@ function ReserveContent() {
                             <button
                               type="button"
                               onClick={() => handleDateSelect(day)}
-                              disabled={unavailable}
+                              disabled={reservationControlsDisabled || unavailable}
                               title={unavailableReason}
                               aria-label={unavailableReason ? `${formatDate(dateString)} — ${unavailableReason}` : formatDate(dateString)}
                               className={`w-full aspect-square rounded-lg text-sm transition-all ${unavailable
@@ -938,7 +994,9 @@ function ReserveContent() {
 
           <div className="rounded-xl sm:rounded-2xl border border-[#e8e0d4] bg-[#f3f0eb] p-2 sm:p-6">
             <p className="text-sm text-[#6b5e52] mb-1 sm:mb-4 px-1 sm:px-0">
-              {isAvailabilityLoading
+              {reservationControlsDisabled
+                ? 'Sign in to select seats from the floor plan.'
+                : isAvailabilityLoading
                 ? 'Checking live seat availability…'
                 : `Layout follows the in-store floor plan — tap a seat to select (up to ${bookingSettings.max_seats_per_booking}).`}
             </p>
@@ -965,18 +1023,20 @@ function ReserveContent() {
 
           <div ref={scheduleRef} className="grid scroll-mt-28 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
             <div>
-              <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
+              <label htmlFor="reservation-time" className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
                 <Clock className="inline w-4 h-4 mr-1" />
                 Time
               </label>
               <select
+                id="reservation-time"
                 ref={timeSelectRef}
                 name="time"
                 value={formData.time}
                 onChange={handleChange}
                 required
-                disabled={configurationLoading || Boolean(configurationError) || selectedDateUnavailable}
-                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-[#2d2520] disabled:bg-[#eee9e2]"
+                disabled={reservationControlsDisabled || configurationLoading || Boolean(configurationError) || selectedDateUnavailable}
+                aria-describedby={!isIdentityLoading && !memberIdentity ? 'reservation-sign-in-notice' : undefined}
+                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-[#2d2520] disabled:cursor-not-allowed disabled:bg-[#eee9e2] disabled:opacity-70"
               >
                 <option value="">Select time</option>
                 {availableTimeOptions.map(([value, label]) => (
@@ -1004,16 +1064,18 @@ function ReserveContent() {
               )}
             </div>
             <div>
-              <label className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
+              <label htmlFor="reservation-duration" className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
                 Duration
               </label>
               <select
+                id="reservation-duration"
                 name="duration"
                 value={formData.duration}
                 onChange={handleChange}
                 required
-                disabled={!formData.time}
-                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-[#2d2520]"
+                disabled={reservationControlsDisabled || !formData.time}
+                aria-describedby={!isIdentityLoading && !memberIdentity ? 'reservation-sign-in-notice' : undefined}
+                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-[#2d2520] disabled:cursor-not-allowed disabled:bg-[#eee9e2] disabled:opacity-70"
               >
                 <option value="">{formData.time ? 'Select duration' : 'Select a time first'}</option>
                 {availableDurationOptions.map(([value, label]) => (
@@ -1056,8 +1118,8 @@ function ReserveContent() {
 
           <button
             type="submit"
-            disabled={selectedCount === 0 || isSubmitting || isAvailabilityLoading || configurationLoading || Boolean(availabilityError) || Boolean(configurationError) || selectedDateUnavailable}
-            className={`w-full min-h-12 cursor-pointer bg-[#e5a930] text-white px-5 sm:px-8 py-3 sm:py-4 rounded-full transition-[background-color,box-shadow] duration-200 enabled:hover:bg-[#d69520] enabled:hover:shadow-lg ${selectedCount === 0 || isSubmitting || isAvailabilityLoading || configurationLoading || availabilityError || configurationError || selectedDateUnavailable ? 'opacity-50 cursor-not-allowed' : ''
+            disabled={reservationControlsDisabled || selectedCount === 0 || isSubmitting || isAvailabilityLoading || configurationLoading || Boolean(availabilityError) || Boolean(configurationError) || selectedDateUnavailable}
+            className={`w-full min-h-12 cursor-pointer bg-[#e5a930] text-white px-5 sm:px-8 py-3 sm:py-4 rounded-full transition-[background-color,box-shadow] duration-200 enabled:hover:bg-[#d69520] enabled:hover:shadow-lg ${reservationControlsDisabled || selectedCount === 0 || isSubmitting || isAvailabilityLoading || configurationLoading || availabilityError || configurationError || selectedDateUnavailable ? 'opacity-50 cursor-not-allowed' : ''
               }`}
           >
             {isSubmitting
