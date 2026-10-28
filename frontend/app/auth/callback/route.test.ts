@@ -51,6 +51,22 @@ describe("GET /auth/callback", () => {
     expect(response.headers.get("location")).toBe("http://localhost:3000/account");
   });
 
+  it("defaults a successful OAuth sign-in to the account page", async () => {
+    const exchangeCodeForSession = vi.fn().mockResolvedValue({ error: null });
+    createClientMock.mockResolvedValue({
+      auth: { exchangeCodeForSession },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/auth/callback?code=google-code",
+    );
+
+    const response = await GET(request);
+
+    expect(exchangeCodeForSession).toHaveBeenCalledWith("google-code");
+    expect(response.headers.get("location")).toBe("http://localhost:3000/account");
+  });
+
   it("verifies an email signup and opens the account page", async () => {
     const verifyOtp = vi.fn().mockResolvedValue({ error: null });
     createClientMock.mockResolvedValue({
