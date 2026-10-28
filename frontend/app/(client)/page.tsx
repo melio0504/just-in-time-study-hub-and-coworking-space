@@ -42,25 +42,36 @@ export default function Home() {
         </motion.div>
 
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="relative isolate -mx-4 mb-16 grid min-h-dvh items-center overflow-hidden px-4 py-24 sm:-mx-6 sm:px-6 md:mx-0 md:grid-cols-2 md:gap-12 md:overflow-visible md:p-0">
-            <Image
-              src="/images/solo-learner.jpg"
-              alt=""
-              fill
-              priority
-              sizes="(max-width: 767px) 100vw, 1px"
-              className="-z-20 object-cover object-center md:hidden"
-            />
-            <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#fffcf7]/90 via-[#fffcf7]/80 to-[#fff8ed]/95 md:hidden" />
+          <div className="relative isolate -mx-4 mb-16 overflow-hidden pb-12 pt-20 sm:-mx-6 sm:px-6 sm:pb-16 sm:pt-24 md:mx-0 md:grid md:min-h-dvh md:grid-cols-2 md:items-center md:gap-12 md:overflow-visible md:p-0">
+            <motion.div
+              className="relative h-[46svh] min-h-72 max-h-[30rem] overflow-hidden sm:rounded-3xl md:hidden"
+              initial={false}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
+              <Image
+                src="/images/solo-learner.jpg"
+                alt="Quiet individual study desks inside Just In Time Study Hub"
+                fill
+                priority
+                sizes="(max-width: 767px) 100vw, 1px"
+                className="object-cover object-center"
+              />
+              <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#fffcf7] via-[#fffcf7]/20 to-transparent" />
+              <div className="absolute bottom-14 left-4 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/85 px-3.5 py-2 text-sm font-medium text-[#2d2520] shadow-lg backdrop-blur-md sm:left-6">
+                <MapPin className="h-4 w-4 text-[#e5a930]" />
+                Mendiola, Manila
+              </div>
+            </motion.div>
 
             <motion.div
-              className="md:pr-8"
+              className="relative z-10 mx-4 -mt-10 rounded-[2rem] border border-[#f3ede4] bg-[#fffcf7]/95 p-6 shadow-[0_24px_60px_rgba(45,37,32,0.14)] backdrop-blur-md sm:mx-0 sm:-mt-12 sm:p-8 md:m-0 md:rounded-none md:border-0 md:bg-transparent md:p-0 md:pr-8 md:shadow-none md:backdrop-blur-none"
               initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               <motion.h1
-                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6 text-[#2d2520] leading-[1.1]"
+                className="mb-5 text-4xl leading-[1.08] tracking-tight text-[#2d2520] sm:text-5xl md:mb-6 md:text-6xl md:leading-[1.1] md:tracking-normal lg:text-7xl"
                 initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
@@ -101,7 +112,7 @@ export default function Home() {
               </motion.h1>
 
               <motion.p
-                className="text-lg sm:text-xl text-[#6b5e52] mb-8 leading-relaxed"
+                className="mb-7 text-base leading-relaxed text-[#6b5e52] sm:text-lg md:mb-8 md:text-xl"
                 initial={false}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, delay: 1.4 }}
@@ -112,21 +123,21 @@ export default function Home() {
               </motion.p>
 
               <motion.div
-                className="flex flex-col sm:flex-row items-start gap-4"
+                className="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:gap-4"
                 initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 1.6 }}
               >
                 <Link
                   href="/reserve"
-                  className="inline-flex items-center gap-2 bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl transition-all duration-300 hover:scale-105 group"
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#e5a930] px-5 py-4 text-center text-white transition-all duration-300 hover:shadow-xl sm:w-auto sm:px-8 sm:hover:scale-105"
                 >
                   Reserve Your Seat Now
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <Link
                   href="/virtual-tour"
-                  className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm text-[#2d2520] px-8 py-4 rounded-full border border-[#f3ede4] hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#f3ede4] bg-white/80 px-5 py-4 text-center text-[#2d2520] backdrop-blur-sm transition-all duration-300 hover:shadow-lg sm:w-auto sm:px-8 sm:hover:scale-105"
                 >
                   Take a Virtual Tour
                 </Link>
