@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { SeatingPlan } from '@/app/components/SeatingPlan';
+import { ReservationSelect } from './_components/ReservationSelect';
 import {
   closureForDate,
   DEFAULT_BOOKING_SETTINGS,
@@ -79,7 +80,7 @@ function ReserveContent() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const calendarRef = useRef<HTMLDivElement>(null);
   const scheduleRef = useRef<HTMLDivElement>(null);
-  const timeSelectRef = useRef<HTMLSelectElement>(null);
+  const timeSelectRef = useRef<HTMLButtonElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [confirmationStep, setConfirmationStep] = useState<'pending' | 'success'>('pending');
   const [reservationId, setReservationId] = useState('');
@@ -588,30 +589,27 @@ function ReserveContent() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleTimeSelect = (value: string) => {
     if (reservationControlsDisabled) return;
 
-    const { name, value } = e.target;
-    if (name === 'date' || name === 'time' || name === 'duration') {
-      setIsAvailabilityLoading(true);
-      setAvailabilityError('');
-    }
+    setIsAvailabilityLoading(true);
+    setAvailabilityError('');
     setFormData((current) => {
-      if (name === 'time') {
-        if (value && !meetsMinimumNotice(current.date, value, bookingSettings.minimum_notice_minutes)) {
-          return { ...current, time: '', duration: '' };
-        }
-        const hoursUntilClosing = hoursAvailableFrom(current.date, value, businessHours);
-        const duration = Number(current.duration) <= hoursUntilClosing ? current.duration : '';
-        return { ...current, time: value, duration };
+      if (value && !meetsMinimumNotice(current.date, value, bookingSettings.minimum_notice_minutes)) {
+        return { ...current, time: '', duration: '' };
       }
-      return { ...current, [name]: value };
+      const hoursUntilClosing = hoursAvailableFrom(current.date, value, businessHours);
+      const duration = Number(current.duration) <= hoursUntilClosing ? current.duration : '';
+      return { ...current, time: value, duration };
     });
+  };
 
-    if (name === 'date') {
-      const currentSelected = seats.filter(s => s.status === 'selected').map(s => s.id);
-      setSeats(initializeSeats(value, currentSelected));
-    }
+  const handleDurationSelect = (value: string) => {
+    if (reservationControlsDisabled) return;
+
+    setIsAvailabilityLoading(true);
+    setAvailabilityError('');
+    setFormData((current) => ({ ...current, duration: value }));
   };
 
   const handleDateSelect = (date: Date) => {
@@ -725,6 +723,12 @@ function ReserveContent() {
 
     if (!memberIdentity) {
       setBookingError('Please sign in before choosing a schedule and reserving seats.');
+      return;
+    }
+
+    if (!formData.time || !formData.duration) {
+      setBookingError('Please select a reservation time and duration.');
+      timeSelectRef.current?.focus();
       return;
     }
 
@@ -1027,22 +1031,20 @@ function ReserveContent() {
                 <Clock className="inline w-4 h-4 mr-1" />
                 Time
               </label>
-              <select
+              <ReservationSelect
                 id="reservation-time"
-                ref={timeSelectRef}
                 name="time"
+                buttonRef={timeSelectRef}
                 value={formData.time}
-                onChange={handleChange}
-                required
+                options={availableTimeOptions}
+                onChange={handleTimeSelect}
                 disabled={reservationControlsDisabled || configurationLoading || Boolean(configurationError) || selectedDateUnavailable}
-                aria-describedby={!isIdentityLoading && !memberIdentity ? 'reservation-sign-in-notice' : undefined}
-                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-[#2d2520] disabled:cursor-not-allowed disabled:bg-[#eee9e2] disabled:opacity-70"
-              >
-                <option value="">Select time</option>
-                {availableTimeOptions.map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
+                describedBy={!isIdentityLoading && !memberIdentity ? 'reservation-sign-in-notice' : undefined}
+                placeholder="Select time"
+                listboxLabel="Available reservation times"
+                emptyMessage="No times are available for this date."
+                separateTimeGaps
+              />
               <p className="mt-2 text-xs text-[#8b7355]">
                 {selectedClosure
                   ? `Closed: ${selectedClosure.name}`
@@ -1067,21 +1069,18 @@ function ReserveContent() {
               <label htmlFor="reservation-duration" className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
                 Duration
               </label>
-              <select
+              <ReservationSelect
                 id="reservation-duration"
                 name="duration"
                 value={formData.duration}
-                onChange={handleChange}
-                required
+                options={availableDurationOptions}
+                onChange={handleDurationSelect}
                 disabled={reservationControlsDisabled || !formData.time}
-                aria-describedby={!isIdentityLoading && !memberIdentity ? 'reservation-sign-in-notice' : undefined}
-                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-[#2d2520] disabled:cursor-not-allowed disabled:bg-[#eee9e2] disabled:opacity-70"
-              >
-                <option value="">{formData.time ? 'Select duration' : 'Select a time first'}</option>
-                {availableDurationOptions.map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
+                describedBy={!isIdentityLoading && !memberIdentity ? 'reservation-sign-in-notice' : undefined}
+                placeholder={formData.time ? 'Select duration' : 'Select a time first'}
+                listboxLabel="Available reservation durations"
+                emptyMessage="No durations are available for this time."
+              />
               {formData.time && (
                 <p className="mt-2 text-xs text-[#8b7355]">
                   {hoursUntilClosing} hour{hoursUntilClosing === 1 ? '' : 's'} available before closing.
@@ -1118,8 +1117,8 @@ function ReserveContent() {
 
           <button
             type="submit"
-            disabled={reservationControlsDisabled || selectedCount === 0 || isSubmitting || isAvailabilityLoading || configurationLoading || Boolean(availabilityError) || Boolean(configurationError) || selectedDateUnavailable}
-            className={`w-full min-h-12 cursor-pointer bg-[#e5a930] text-white px-5 sm:px-8 py-3 sm:py-4 rounded-full transition-[background-color,box-shadow] duration-200 enabled:hover:bg-[#d69520] enabled:hover:shadow-lg ${reservationControlsDisabled || selectedCount === 0 || isSubmitting || isAvailabilityLoading || configurationLoading || availabilityError || configurationError || selectedDateUnavailable ? 'opacity-50 cursor-not-allowed' : ''
+            disabled={reservationControlsDisabled || !formData.time || !formData.duration || selectedCount === 0 || isSubmitting || isAvailabilityLoading || configurationLoading || Boolean(availabilityError) || Boolean(configurationError) || selectedDateUnavailable}
+            className={`w-full min-h-12 cursor-pointer bg-[#e5a930] text-white px-5 sm:px-8 py-3 sm:py-4 rounded-full transition-[background-color,box-shadow] duration-200 enabled:hover:bg-[#d69520] enabled:hover:shadow-lg ${reservationControlsDisabled || !formData.time || !formData.duration || selectedCount === 0 || isSubmitting || isAvailabilityLoading || configurationLoading || availabilityError || configurationError || selectedDateUnavailable ? 'opacity-50 cursor-not-allowed' : ''
               }`}
           >
             {isSubmitting
