@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { ArrowUp } from 'lucide-react';
 
@@ -10,9 +10,14 @@ import { cn } from './utils';
 export function ScrollToTop() {
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
+  const scrollAnimationRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      if (scrollAnimationRef.current !== null) {
+        window.cancelAnimationFrame(scrollAnimationRef.current);
+        scrollAnimationRef.current = null;
+      }
       window.scrollTo(0, 0);
     }
   }, [pathname]);
@@ -30,8 +35,50 @@ export function ScrollToTop() {
     };
   }, []);
 
+  useEffect(() => {
+    const cancelScrollAnimation = () => {
+      if (scrollAnimationRef.current === null) return;
+      window.cancelAnimationFrame(scrollAnimationRef.current);
+      scrollAnimationRef.current = null;
+    };
+
+    window.addEventListener('wheel', cancelScrollAnimation, { passive: true });
+    window.addEventListener('touchstart', cancelScrollAnimation, { passive: true });
+
+    return () => {
+      cancelScrollAnimation();
+      window.removeEventListener('wheel', cancelScrollAnimation);
+      window.removeEventListener('touchstart', cancelScrollAnimation);
+    };
+  }, []);
+
   const handleClick = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const scrollRoot = document.scrollingElement ?? document.documentElement;
+    const startY = scrollRoot.scrollTop;
+    if (startY <= 0) return;
+
+    if (scrollAnimationRef.current !== null) {
+      window.cancelAnimationFrame(scrollAnimationRef.current);
+    }
+
+    const startedAt = performance.now();
+    const duration = Math.min(1400, Math.max(1000, startY * 0.4));
+    const animateScroll = (now: number) => {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      const easedProgress = progress < 0.5
+        ? 4 * progress ** 3
+        : 1 - (-2 * progress + 2) ** 3 / 2;
+
+      scrollRoot.scrollTop = Math.round(startY * (1 - easedProgress));
+      if (progress < 1) {
+        scrollAnimationRef.current = window.requestAnimationFrame(animateScroll);
+      } else {
+        scrollRoot.scrollTop = 0;
+        scrollAnimationRef.current = null;
+      }
+    };
+
+    scrollAnimationRef.current = window.requestAnimationFrame(animateScroll);
   };
 
   return (
