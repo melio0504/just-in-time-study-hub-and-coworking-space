@@ -1141,7 +1141,7 @@ function ReserveContent() {
                       type="button"
                       onClick={() => void closePaymentModal()}
                       disabled={isCancellingReservation}
-                      aria-label="Cancel reservation"
+                      aria-label="Close payment"
                       className="p-2 hover:bg-[#f3ede4] rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <X className="w-6 h-6 text-[#6b5e52]" />
@@ -1233,14 +1233,6 @@ function ReserveContent() {
                   </div>
 
                   <p className="text-center text-sm text-[#6b5e52]">Waiting for PayMongo to confirm your payment…</p>
-                  <button
-                    type="button"
-                    onClick={() => void closePaymentModal()}
-                    disabled={isCancellingReservation}
-                    className="mt-4 w-full rounded-full border border-red-200 px-6 py-3 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {isCancellingReservation ? 'Cancelling reservation…' : 'Cancel reservation'}
-                  </button>
                 </>
               ) : (
                 <>
