@@ -636,7 +636,7 @@ export function VirtualStreetView() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,240,212,0.3),transparent_45%),linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.35)_100%)]" />
 
       <div className="absolute left-4 right-4 top-4 z-20 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div className="max-w-sm rounded-2xl bg-black/35 px-4 py-3 backdrop-blur-md">
+        <div className="w-fit max-w-full self-start rounded-2xl bg-black/35 px-4 py-3 backdrop-blur-md sm:max-w-sm">
           <p className="text-xs uppercase tracking-[0.3em] text-[#f5cf82]">360° Virtual Tour</p>
           <h3 className="mt-1 text-xl font-medium text-white md:text-2xl">{activeScene.title}</h3>
           <p className="mt-1 text-sm text-white/75">{activeScene.subtitle}</p>
