@@ -24,6 +24,9 @@ export default function Account() {
   const [accountClock, setAccountClock] = useState(() => Date.now());
   const [bookingCount, setBookingCount] = useState(0);
   const [studyData, setStudyData] = useState<StudyDay[]>([]);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
 
   // Timer states
   const [timerMinutes, setTimerMinutes] = useState(25);
@@ -137,12 +140,39 @@ export default function Account() {
     };
   }, [showDeleteCardModal]);
 
+  useEffect(() => {
+    if (!showLogoutModal) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isLoggingOut) setShowLogoutModal(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isLoggingOut, showLogoutModal]);
+
   const handleLogout = async () => {
+    setIsLoggingOut(true);
+    setLogoutError('');
+
     if (isSupabaseConfigured) {
       const supabase = createClient();
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        setLogoutError('We could not log you out. Please try again.');
+        setIsLoggingOut(false);
+        return;
+      }
     }
-    router.push('/');
+
+    router.replace('/register');
     router.refresh();
   };
 
@@ -237,7 +267,11 @@ export default function Account() {
             <p className="text-lg text-[#6b5e52]">Welcome back, {userName}!</p>
           </div>
           <button
-            onClick={handleLogout}
+            type="button"
+            onClick={() => {
+              setLogoutError('');
+              setShowLogoutModal(true);
+            }}
             className="flex items-center gap-2 bg-white text-[#2d2520] px-6 py-3 rounded-full border border-[#f3ede4] hover:shadow-lg cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
@@ -619,6 +653,62 @@ export default function Account() {
             </div>
           </div>
         </div>
+
+        {showLogoutModal && (
+          <div
+            className="fixed inset-0 z-60 flex items-center justify-center bg-[#2d2520]/60 p-4 backdrop-blur-sm"
+            onClick={(event) => {
+              if (event.target === event.currentTarget && !isLoggingOut) {
+                setShowLogoutModal(false);
+              }
+            }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="logout-title"
+              aria-describedby="logout-description"
+              className="w-full max-w-md rounded-3xl border border-[#f3ede4] bg-white p-6 shadow-2xl sm:p-8"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#fef3dc] text-[#b47b0d]">
+                <LogOut className="h-5 w-5" />
+              </div>
+              <h2 id="logout-title" className="mt-5 text-2xl text-[#2d2520]">
+                Log out of your account?
+              </h2>
+              <p id="logout-description" className="mt-2 text-sm leading-6 text-[#6b5e52]">
+                You will be returned to the registration page and will need to sign in again to access your account.
+              </p>
+
+              {logoutError && (
+                <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {logoutError}
+                </p>
+              )}
+
+              <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutModal(false)}
+                  disabled={isLoggingOut}
+                  autoFocus
+                  className="cursor-pointer rounded-full border border-[#f3ede4] bg-white px-5 py-2.5 text-sm text-[#2d2520] transition-colors hover:border-[#e5a930] hover:bg-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Stay signed in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  disabled={isLoggingOut}
+                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#2d2520] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#44382f] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {isLoggingOut ? 'Logging out…' : 'Log out'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showDeleteCardModal && currentFlashcard && (
           <div
