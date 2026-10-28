@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Administration | Just In Time Study Hub",
-  description: "Authenticated staff administration for Just In Time Study Hub.",
+  title: "Admin | Just In Time Study Hub and Coworking Space",
+  description: "Authenticated staff administration for Just In Time Study Hub and Coworking Space.",
   robots: { index: false, follow: false },
 };
 

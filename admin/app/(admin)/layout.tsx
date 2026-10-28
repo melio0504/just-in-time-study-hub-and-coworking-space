@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    default: "Admin | Just In Time Study Hub",
-    template: "%s | Just In Time Admin",
+    default: "Admin | Just In Time Study Hub and Coworking Space",
+    template: "%s | Just In Time Study Hub and Coworking Space",
   },
 };
 
