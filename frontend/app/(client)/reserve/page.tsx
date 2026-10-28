@@ -12,6 +12,7 @@ import {
   closureForDate,
   DEFAULT_BOOKING_SETTINGS,
   formatHoursRange,
+  formatTime,
   hoursAvailableFrom,
   isClosureDate,
   isRegularlyClosedDate,
@@ -393,13 +394,17 @@ function ReserveContent() {
   };
 
   const formatTimeLabel = (time: string) => {
-    if (!time) return '';
-    const [hourStr] = time.split(':');
-    const hour = parseInt(hourStr, 10);
-    if (hour === 0) return '12:00 AM';
-    if (hour < 12) return `${hour}:00 AM`;
-    if (hour === 12) return '12:00 PM';
-    return `${hour - 12}:00 PM`;
+    return time ? formatTime(time) : '';
+  };
+
+  const formatReservationTimeRange = (startTime: string, durationHours: string) => {
+    if (!startTime || !durationHours) return '';
+    const [startHour, startMinute] = startTime.slice(0, 5).split(':').map(Number);
+    const absoluteEndMinutes = startHour * 60 + startMinute + Number(durationHours) * 60;
+    const endMinutes = absoluteEndMinutes % 1440;
+    const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
+    const nextDayLabel = absoluteEndMinutes >= 1440 ? ' (Next Day)' : '';
+    return `${formatTimeLabel(startTime)} - ${formatTimeLabel(endTime)}${nextDayLabel}`;
   };
 
   const formatPrice = (cents: number) => new Intl.NumberFormat('en-PH', {
@@ -1176,9 +1181,26 @@ function ReserveContent() {
                         <p className="text-2xl font-semibold text-[#9b6810]">{formatPrice(subtotalCents)}</p>
                       </div>
                     </div>
-                    {lastSelectedSeats.length > 0 && (
-                      <p className="mt-2 text-sm text-[#6b5e52]">Seats: {lastSelectedSeats.join(', ')}</p>
-                    )}
+                    <dl className="mt-3 space-y-2 text-left text-sm text-[#6b5e52]">
+                      {lastSelectedSeats.length > 0 && (
+                        <div>
+                          <dt className="inline font-medium text-[#2d2520]">Seats: </dt>
+                          <dd className="inline">{lastSelectedSeats.join(', ')}</dd>
+                        </div>
+                      )}
+                      <div>
+                        <dt className="inline font-medium text-[#2d2520]">Date: </dt>
+                        <dd className="inline">
+                          {formatDate(reservationDateForTime(formData.date, formData.time, businessHours))}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="inline font-medium text-[#2d2520]">Time: </dt>
+                        <dd className="inline">
+                          {formatReservationTimeRange(formData.time, formData.duration)}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
 
                   <div className="mb-6">
