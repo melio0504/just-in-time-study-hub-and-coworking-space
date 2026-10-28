@@ -96,6 +96,28 @@ test("the landing page presents the primary booking journey", async ({ page }) =
     .toBeGreaterThanOrEqual(15);
 });
 
+test("the back-to-top button scrolls gradually", async ({ page }) => {
+  await page.route("**/rest/v1/announcements*", (route) =>
+    fulfillSupabaseJson(route, []),
+  );
+  await page.goto("/about");
+  await page.waitForTimeout(250);
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+
+  const button = page.getByRole("button", { name: "Scroll to top" });
+  await expect(button).toHaveClass(/pointer-events-auto/);
+  const start = await page.evaluate(() => window.scrollY);
+  expect(start).toBeGreaterThan(320);
+
+  await button.evaluate((element) => element.click());
+  await page.waitForTimeout(150);
+  const duringAnimation = await page.evaluate(() => window.scrollY);
+  expect(duringAnimation).toBeGreaterThan(0);
+  expect(duringAnimation).toBeLessThan(start);
+
+  await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 2_500 }).toBe(0);
+});
+
 test("pricing exposes hourly and package options", async ({ page }) => {
   await mockPublicSupabaseContext(page);
   await page.route("**/rest/v1/service_rate_plans*", (route) => fulfillSupabaseJson(route, [
