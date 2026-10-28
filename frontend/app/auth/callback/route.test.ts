@@ -51,6 +51,25 @@ describe("GET /auth/callback", () => {
     expect(response.headers.get("location")).toBe("http://localhost:3000/account");
   });
 
+  it("verifies an email signup and opens the account page", async () => {
+    const verifyOtp = vi.fn().mockResolvedValue({ error: null });
+    createClientMock.mockResolvedValue({
+      auth: { verifyOtp },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/auth/callback?token_hash=signup-token&type=email",
+    );
+
+    const response = await GET(request);
+
+    expect(verifyOtp).toHaveBeenCalledWith({
+      token_hash: "signup-token",
+      type: "email",
+    });
+    expect(response.headers.get("location")).toBe("http://localhost:3000/account");
+  });
+
   it("exchanges a password recovery code and opens the reset form", async () => {
     const exchangeCodeForSession = vi.fn().mockResolvedValue({ error: null });
     createClientMock.mockResolvedValue({

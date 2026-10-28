@@ -1,3 +1,4 @@
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -18,15 +19,19 @@ function redirectOrigin(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const origin = redirectOrigin(request);
   const code = request.nextUrl.searchParams.get("code");
+  const tokenHash = request.nextUrl.searchParams.get("token_hash");
+  const type = request.nextUrl.searchParams.get("type") as EmailOtpType | null;
   const requestedNext = safeNextPath(request.nextUrl.searchParams.get("next"));
   const isPasswordRecovery =
     request.nextUrl.searchParams.get("flow") === "recovery" ||
     requestedNext === "/reset-password";
   const next = isPasswordRecovery ? "/reset-password" : requestedNext;
 
-  if (isSupabaseConfigured && code) {
+  if (isSupabaseConfigured && (code || (tokenHash && type))) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = code
+      ? await supabase.auth.exchangeCodeForSession(code)
+      : await supabase.auth.verifyOtp({ token_hash: tokenHash!, type: type! });
 
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);

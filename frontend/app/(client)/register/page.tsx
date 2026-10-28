@@ -69,7 +69,7 @@ export default function Register() {
         data: {
           full_name: formData.username,
         },
-        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     setIsSubmitting(false);
@@ -85,7 +85,7 @@ export default function Register() {
       return;
     }
 
-    router.push('/account');
+    router.replace('/account');
     router.refresh();
   };
 
