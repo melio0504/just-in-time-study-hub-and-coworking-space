@@ -1,6 +1,6 @@
 # Just In Time Study Hub and Coworking Space
 
-[![YouTube](https://shields.io)](https://www.youtube.com/watch?v=4nLBV7w_NfQ)
+[![YouTube](https://img.shields.io/badge/YouTube-Watch%20Video-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=4nLBV7w_NfQ)
 
 > [!NOTE]
 > This repository is an npm workspace containing two web applications and one
