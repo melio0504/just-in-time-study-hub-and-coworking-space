@@ -1047,8 +1047,8 @@ function ReserveContent() {
               {reservationControlsDisabled
                 ? 'Sign in to select seats from the floor plan.'
                 : isAvailabilityLoading
-                ? 'Checking live seat availability…'
-                : `Layout follows the in-store floor plan — tap a seat to select (up to ${bookingSettings.max_seats_per_booking}).`}
+                  ? 'Checking live seat availability…'
+                  : `Layout follows the in-store floor plan — tap a seat to select (up to ${bookingSettings.max_seats_per_booking}).`}
             </p>
             {availabilityError && <p className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-800" role="alert">{availabilityError} Seat selection is disabled until it reconnects.</p>}
             <p className="text-xs text-[#8b7355] mb-3 px-1 sm:hidden">
@@ -1104,12 +1104,12 @@ function ReserveContent() {
                 && !configurationError
                 && !selectedDateUnavailable
                 && availableTimeOptions.length === 0 && (
-                <p role="status" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  {formData.date === getManilaDateString(currentTime)
-                    ? 'No more booking times are available today. Please select another date.'
-                    : 'No booking times are available for this date. Please select another date.'}
-                </p>
-              )}
+                  <p role="status" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    {formData.date === getManilaDateString(currentTime)
+                      ? 'No more booking times are available today. Please select another date.'
+                      : 'No booking times are available for this date. Please select another date.'}
+                  </p>
+                )}
             </div>
             <div>
               <label htmlFor="reservation-duration" className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
@@ -1306,7 +1306,7 @@ function ReserveContent() {
                     </ul>
                   </div>
 
-                  <p className="text-center text-sm text-[#6b5e52]">Waiting for PayMongo to confirm your payment…</p>
+                  <p className="text-center text-sm text-[#6b5e52]">Waiting to confirm your payment…</p>
                 </>
               ) : (
                 <>
