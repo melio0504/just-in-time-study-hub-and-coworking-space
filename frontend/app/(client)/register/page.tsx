@@ -116,9 +116,9 @@ export default function Register() {
   const benefits = [
     'View all your past bookings in one place',
     'Track your study hours with visual dashboard',
-    'Earn loyalty points with every visit',
-    'Get exclusive member-only promotions',
-    'Priority booking for your favorite seats',
+    'Manage your upcoming reservations with ease',
+    'Stay focused with the built-in study timer',
+    'Create flashcards for quick review sessions',
     'Personalized study insights and analytics',
   ];
 
