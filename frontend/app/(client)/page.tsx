@@ -14,33 +14,7 @@ import {
   Star,
 } from "lucide-react";
 import { motion } from "motion/react";
-
-const googleReviews = [
-  {
-    name: "Freceia H.I. Gases",
-    profilePicture:
-      "https://lh3.googleusercontent.com/a-/ALV-UjV6FevloXio983dQ5e0f3pQ8MDrOjpB3owlHh4Dn3b22ucmcNfz=w90-h90-p-rp-mo-ba12-br100",
-    review:
-      "First time to try studying with such ambiance and love it! Ate was very accommodating and explained things to me. The WiFi is good for me and the room is well air-conditioned. Spacious for one desk and I can borrow stuff. Love the laptop stand! I will definitely go again.",
-    reviewUrl: "https://maps.app.goo.gl/6foJXJF9fZV211K99",
-  },
-  {
-    name: "Grace Anne Lui",
-    profilePicture:
-      "https://lh3.googleusercontent.com/a-/ALV-UjXSGMB7k2AGNfTX3NdTayNjdrpoH0QTteW54KY6_BY3TTvq9wVy=w45-h45-p-rp-mo-br100",
-    review:
-      "Worth the money! Clean and large-enough space. Very organized check-in and check-out process and the hub’s complete with free coffee, pantry, and other amenities.",
-    reviewUrl: "https://maps.app.goo.gl/nfmAF87eozv67rcY6",
-  },
-  {
-    name: "Phil",
-    profilePicture:
-      "https://lh3.googleusercontent.com/a-/ALV-UjX0-VphhWAbN_jLs4moIDRPoCWkm7mBxHgcQ1N9i4YMk75RgW2U7Q=w45-h45-p-rp-mo-ba12-br100",
-    review:
-      "Quiet and free drinks!!! You can also bring your own food. I got really productive from working here. Also, rates are very affordable",
-    reviewUrl: "https://maps.app.goo.gl/dis6fUnS3gDDYgMV6",
-  },
-] as const;
+import googleReviews from "@/data/google-reviews.json";
 
 export default function Home() {
   return (
