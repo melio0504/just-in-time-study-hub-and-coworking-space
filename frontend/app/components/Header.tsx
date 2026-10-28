@@ -57,7 +57,7 @@ export function Header() {
     let isScrollingUp = false;
 
     const draw = (progress: number) => {
-      const viewportWidth = window.innerWidth;
+      const viewportWidth = document.documentElement.clientWidth;
       const sideGap = viewportWidth >= 640 ? 48 : 24;
       const finalWidth = Math.min(viewportWidth - sideGap, 1280);
       const finalRadius = viewportWidth >= 640 ? 24 : 16;

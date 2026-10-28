@@ -30,7 +30,7 @@ body {
   top: 0;
   left: 50%;
   width: 100%;
-  max-width: none;
+  max-width: 100%;
   transform: translateX(-50%);
   border: 1px solid transparent;
   border-bottom-color: rgb(243 237 228 / 60%);
