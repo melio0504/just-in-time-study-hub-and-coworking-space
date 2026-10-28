@@ -6,6 +6,10 @@ import { useRouter } from 'next/navigation';
 import { User, Mail, Lock, Check, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
+import {
+  EXISTING_ACCOUNT_MESSAGE,
+  isExistingAccountSignUp,
+} from '@/lib/supabase/sign-up';
 
 export default function Register() {
   const router = useRouter();
@@ -61,9 +65,10 @@ export default function Register() {
     }
 
     setIsSubmitting(true);
+    const normalizedEmail = formData.email.trim().toLowerCase();
     const supabase = createClient();
     const { data, error } = await supabase.auth.signUp({
-      email: formData.email,
+      email: normalizedEmail,
       password: formData.password,
       options: {
         data: {
@@ -74,13 +79,18 @@ export default function Register() {
     });
     setIsSubmitting(false);
 
+    if (isExistingAccountSignUp(data, error)) {
+      setErrorMessage(EXISTING_ACCOUNT_MESSAGE);
+      return;
+    }
+
     if (error) {
       setErrorMessage(error.message);
       return;
     }
 
     if (!data.session) {
-      setSuccessMessage(`Your account was created. We sent a welcome email to ${formData.email}. Open it to confirm your address and activate your account.`);
+      setSuccessMessage(`Your account was created. We sent a welcome email to ${normalizedEmail}. Open it to confirm your address and activate your account.`);
       setFormData({ username: '', email: '', password: '', confirmPassword: '' });
       return;
     }
