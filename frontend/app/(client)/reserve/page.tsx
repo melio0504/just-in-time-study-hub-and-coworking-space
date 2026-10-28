@@ -83,6 +83,7 @@ function ReserveContent() {
   const calendarRef = useRef<HTMLDivElement>(null);
   const scheduleRef = useRef<HTMLDivElement>(null);
   const timeSelectRef = useRef<HTMLButtonElement>(null);
+  const paymentModalCloseRef = useRef<HTMLButtonElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [confirmationStep, setConfirmationStep] = useState<'pending' | 'success'>('pending');
   const [reservationId, setReservationId] = useState('');
@@ -284,6 +285,29 @@ function ReserveContent() {
       setIsCancellingReservation(false);
     }
   };
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      paymentModalCloseRef.current?.click();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
+    };
+  }, [isModalOpen]);
 
   useEffect(() => {
     if (!bookingId || !isModalOpen) return;
@@ -1152,14 +1176,25 @@ function ReserveContent() {
 
       {/* Local QR confirmation modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-t-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#f3ede4] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:my-4 [&::-webkit-scrollbar-thumb]:bg-[#e5a930] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-[#d69520]">
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-2 sm:p-4"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) paymentModalCloseRef.current?.click();
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="payment-modal-title"
+            className="bg-white rounded-t-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#f3ede4] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:my-4 [&::-webkit-scrollbar-thumb]:bg-[#e5a930] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-[#d69520]"
+          >
             <div className="p-5 sm:p-8">
               {confirmationStep === 'pending' ? (
                 <>
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl sm:text-3xl text-[#2d2520]">Scan to Pay</h2>
+                    <h2 id="payment-modal-title" className="text-2xl sm:text-3xl text-[#2d2520]">Scan to Pay</h2>
                     <button
+                      ref={paymentModalCloseRef}
                       type="button"
                       onClick={() => void closePaymentModal()}
                       disabled={isCancellingReservation}
@@ -1276,8 +1311,9 @@ function ReserveContent() {
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl sm:text-3xl text-[#2d2520]">Reservation Confirmed</h2>
+                    <h2 id="payment-modal-title" className="text-2xl sm:text-3xl text-[#2d2520]">Reservation Confirmed</h2>
                     <button
+                      ref={paymentModalCloseRef}
                       type="button"
                       onClick={() => void closePaymentModal()}
                       aria-label="Close confirmation"
