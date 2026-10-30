@@ -51,7 +51,8 @@ export default function Gallery() {
           {galleryImages.map((image, index) => (
             <div
               key={index}
-              className="group relative aspect-[4/3] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              className="group relative aspect-[4/3] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            >
               <Image
                 src={image.src}
                 alt={image.title}

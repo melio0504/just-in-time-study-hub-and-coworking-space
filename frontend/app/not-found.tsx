@@ -31,13 +31,15 @@ export default function NotFound() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              >
                 <Home className="h-4 w-4" />
                 Back to home
               </Link>
               <Link
                 href="/reserve"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#f3ede4] bg-white/80 px-6 py-3 text-[#2d2520] transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm">
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#f3ede4] bg-white/80 px-6 py-3 text-[#2d2520] transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
+              >
                 <ArrowLeft className="h-4 w-4" />
                 Reserve now
               </Link>
@@ -48,7 +50,8 @@ export default function NotFound() {
                 <Link
                   key={href}
                   href={href}
-                  className="group flex items-center gap-3 rounded-2xl border border-[#f3ede4] bg-white/75 p-4 text-[#2d2520] shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#e5a930] hover:shadow-xl">
+                  className="group flex items-center gap-3 rounded-2xl border border-[#f3ede4] bg-white/75 p-4 text-[#2d2520] shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#e5a930] hover:shadow-xl"
+                >
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fef3dc] text-[#e5a930] transition-colors group-hover:bg-[#e5a930] group-hover:text-white">
                     <Icon className="h-5 w-5" />
                   </span>

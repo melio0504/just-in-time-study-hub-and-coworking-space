@@ -940,7 +940,8 @@ function ReserveContent() {
           !isIdentityLoading && !memberIdentity ? "reservation-sign-in-notice" : undefined
         }
         className={`w-14 h-14 shrink-0 rounded-xl ${isAvailabilityLoading ? "bg-[#d1d5db] cursor-wait text-white animate-pulse" : colors[status]} ${isSeatDisabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"} transition-all text-xs font-medium flex items-center justify-center`}
-        disabled={isSeatDisabled}>
+        disabled={isSeatDisabled}
+      >
         {id}
       </button>
     );
@@ -998,7 +999,8 @@ function ReserveContent() {
           <div
             id="reservation-sign-in-notice"
             role="status"
-            className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#e5a930]/50 bg-[#fef3dc] p-5 shadow-sm sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#e5a930]/50 bg-[#fef3dc] p-5 shadow-sm sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+          >
             <div className="flex items-start gap-3">
               <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#b47b0d]">
                 <AlertCircle className="h-5 w-5" />
@@ -1012,7 +1014,8 @@ function ReserveContent() {
             </div>
             <Link
               href="/register"
-              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-[#e5a930] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#d69520] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d69520] focus-visible:ring-offset-2">
+              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-[#e5a930] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#d69520] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d69520] focus-visible:ring-offset-2"
+            >
               Sign in
             </Link>
           </div>
@@ -1043,7 +1046,8 @@ function ReserveContent() {
             <div className="w-full sm:w-72 lg:w-64 relative" ref={calendarRef}>
               <label
                 htmlFor="reservation-date"
-                className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
+                className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2"
+              >
                 <Calendar className="inline w-4 h-4 mr-1" />
                 Select Date
               </label>
@@ -1055,7 +1059,8 @@ function ReserveContent() {
                 aria-describedby={
                   !isIdentityLoading && !memberIdentity ? "reservation-sign-in-notice" : undefined
                 }
-                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-left flex items-center justify-between disabled:cursor-not-allowed disabled:bg-[#eee9e2] disabled:opacity-70">
+                className="w-full px-4 py-3 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all text-left flex items-center justify-between disabled:cursor-not-allowed disabled:bg-[#eee9e2] disabled:opacity-70"
+              >
                 <span className="text-[#2d2520]">{formatDate(formData.date)}</span>
                 <Calendar className="w-4 h-4 text-[#6b5e52]" />
               </button>
@@ -1071,7 +1076,8 @@ function ReserveContent() {
                         )
                       }
                       disabled={reservationControlsDisabled || !canGoToPreviousMonth()}
-                      className="p-2 hover:bg-[#f3ede4] rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+                      className="p-2 hover:bg-[#f3ede4] rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    >
                       <ChevronLeft className="w-5 h-5 text-[#6b5e52]" />
                     </button>
                     <span className="text-lg text-[#2d2520]">
@@ -1085,7 +1091,8 @@ function ReserveContent() {
                         )
                       }
                       disabled={reservationControlsDisabled}
-                      className="p-2 hover:bg-[#f3ede4] rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent">
+                      className="p-2 hover:bg-[#f3ede4] rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+                    >
                       <ChevronRight className="w-5 h-5 text-[#6b5e52]" />
                     </button>
                   </div>
@@ -1138,7 +1145,8 @@ function ReserveContent() {
                                   : isSameDay(day, formData.date)
                                     ? "bg-[#e5a930] text-white"
                                     : "hover:bg-[#f3ede4] text-[#2d2520]"
-                              }`}>
+                              }`}
+                            >
                               {day.getDate()}
                             </button>
                           ) : (
@@ -1168,7 +1176,8 @@ function ReserveContent() {
             {availabilityError && (
               <p
                 className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-800"
-                role="alert">
+                role="alert"
+              >
                 {availabilityError} Seat selection is disabled until it reconnects.
               </p>
             )}
@@ -1181,7 +1190,8 @@ function ReserveContent() {
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white/70 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-lg">
+          className="bg-white/70 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-lg"
+        >
           {isIdentityLoading ? (
             <div className="mb-4 h-[74px] animate-pulse rounded-xl bg-[#f3ede4]/70 sm:mb-6">
               <span className="sr-only">Loading account profile</span>
@@ -1196,11 +1206,13 @@ function ReserveContent() {
 
           <div
             ref={scheduleRef}
-            className="grid scroll-mt-28 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+            className="grid scroll-mt-28 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6"
+          >
             <div>
               <label
                 htmlFor="reservation-time"
-                className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
+                className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2"
+              >
                 <Clock className="inline w-4 h-4 mr-1" />
                 Time
               </label>
@@ -1240,7 +1252,8 @@ function ReserveContent() {
                 availableTimeOptions.length === 0 && (
                   <p
                     role="status"
-                    className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                  >
                     {formData.date === getManilaDateString(currentTime)
                       ? "No more booking times are available today. Please select another date."
                       : "No booking times are available for this date. Please select another date."}
@@ -1250,7 +1263,8 @@ function ReserveContent() {
             <div>
               <label
                 htmlFor="reservation-duration"
-                className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
+                className="block text-sm text-[#6b5e52] uppercase tracking-wider mb-2"
+              >
                 Duration
               </label>
               <ReservationSelect
@@ -1283,7 +1297,8 @@ function ReserveContent() {
                 <button
                   type="button"
                   onClick={handleClearSelectedSeats}
-                  className="rounded-full border border-[#e5a930]/50 bg-white px-3 py-1.5 text-xs font-medium text-[#8b651b] transition-colors hover:border-[#e5a930] hover:bg-[#fff8ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] cursor-pointer">
+                  className="rounded-full border border-[#e5a930]/50 bg-white px-3 py-1.5 text-xs font-medium text-[#8b651b] transition-colors hover:border-[#e5a930] hover:bg-[#fff8ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] cursor-pointer"
+                >
                   Clear
                 </button>
               </div>
@@ -1299,7 +1314,8 @@ function ReserveContent() {
           {bookingError && (
             <p
               role="alert"
-              className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+            >
               {bookingError}
             </p>
           )}
@@ -1307,7 +1323,8 @@ function ReserveContent() {
           {configurationError && (
             <p
               role="alert"
-              className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+            >
               {configurationError}
             </p>
           )}
@@ -1339,7 +1356,8 @@ function ReserveContent() {
               selectedDateUnavailable
                 ? "opacity-50 cursor-not-allowed"
                 : ""
-            }`}>
+            }`}
+          >
             {isSubmitting
               ? "Saving Reservation…"
               : `Confirm Reservation${selectedCount > 0 ? ` (${selectedCount} seat${selectedCount > 1 ? "s" : ""})` : ""}`}
@@ -1353,12 +1371,14 @@ function ReserveContent() {
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-2 sm:p-4"
           onClick={(event) => {
             if (event.target === event.currentTarget) paymentModalCloseRef.current?.click();
-          }}>
+          }}
+        >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="payment-modal-title"
-            className="bg-white rounded-t-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#f3ede4] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:my-4 [&::-webkit-scrollbar-thumb]:bg-[#e5a930] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-[#d69520]">
+            className="bg-white rounded-t-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#f3ede4] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:my-4 [&::-webkit-scrollbar-thumb]:bg-[#e5a930] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-[#d69520]"
+          >
             <div className="p-5 sm:p-8">
               {confirmationStep === "pending" ? (
                 <>
@@ -1372,7 +1392,8 @@ function ReserveContent() {
                       onClick={() => void closePaymentModal()}
                       disabled={isCancellingReservation}
                       aria-label="Close payment"
-                      className="p-2 hover:bg-[#f3ede4] rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50">
+                      className="p-2 hover:bg-[#f3ede4] rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    >
                       <X className="w-6 h-6 text-[#6b5e52]" />
                     </button>
                   </div>
@@ -1443,7 +1464,8 @@ function ReserveContent() {
                       {qrExpiresAt && (
                         <p
                           role="timer"
-                          className={`mt-2 text-xs font-medium ${qrSecondsRemaining > 0 ? "text-[#9b6810]" : "text-red-700"}`}>
+                          className={`mt-2 text-xs font-medium ${qrSecondsRemaining > 0 ? "text-[#9b6810]" : "text-red-700"}`}
+                        >
                           {qrSecondsRemaining > 0
                             ? `Expires in ${formatCountdown(qrSecondsRemaining)}`
                             : "QR code expired"}
@@ -1455,14 +1477,16 @@ function ReserveContent() {
                   {confirmationError && (
                     <div
                       role="alert"
-                      className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                      className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                    >
                       <p>{confirmationError}</p>
                       {bookingId && (
                         <button
                           type="button"
                           onClick={() => void createPaymongoQr(bookingId)}
                           disabled={isConfirmationLoading}
-                          className="mt-3 rounded-full bg-red-700 px-4 py-2 font-medium text-white transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60">
+                          className="mt-3 rounded-full bg-red-700 px-4 py-2 font-medium text-white transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
                           {isConfirmationLoading ? "Trying again…" : "Try generating QR again"}
                         </button>
                       )}
@@ -1472,7 +1496,8 @@ function ReserveContent() {
                   {cancellationError && (
                     <p
                       role="alert"
-                      className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                      className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                    >
                       {cancellationError}
                     </p>
                   )}
@@ -1524,7 +1549,8 @@ function ReserveContent() {
                       type="button"
                       onClick={() => void closePaymentModal()}
                       aria-label="Close confirmation"
-                      className="p-2 hover:bg-[#f3ede4] rounded-full transition-colors">
+                      className="p-2 hover:bg-[#f3ede4] rounded-full transition-colors"
+                    >
                       <X className="w-6 h-6 text-[#6b5e52]" />
                     </button>
                   </div>
@@ -1636,7 +1662,8 @@ function ReserveContent() {
                   <button
                     type="button"
                     onClick={() => void closePaymentModal()}
-                    className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl cursor-pointer">
+                    className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl cursor-pointer"
+                  >
                     Done
                   </button>
                 </>

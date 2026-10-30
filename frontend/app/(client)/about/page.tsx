@@ -56,7 +56,8 @@ export default function About() {
               initial={false}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8 }}>
+              transition={{ duration: 0.8 }}
+            >
               <h2 className="text-5xl md:text-4xl mb-6 text-[#2d2520]">Our Story</h2>
               <div className="space-y-4 text-lg md:text-lg text-[#6b5e52] leading-relaxed">
                 <p>
@@ -82,7 +83,8 @@ export default function About() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="relative">
+              className="relative"
+            >
               <div className="aspect-square rounded-3xl overflow-hidden shadow-2xl">
                 <Image
                   src="/images/desk-help.jpg"
@@ -108,7 +110,8 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="bg-white/70 backdrop-blur-sm p-10 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-colors">
+              className="bg-white/70 backdrop-blur-sm p-10 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-colors"
+            >
               <div className="w-16 h-16 bg-[#fef3dc] rounded-2xl flex items-center justify-center mb-6">
                 <Target className="w-8 h-8 text-[#e5a930]" />
               </div>
@@ -125,7 +128,8 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="bg-white/70 backdrop-blur-sm p-10 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-colors">
+              className="bg-white/70 backdrop-blur-sm p-10 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-colors"
+            >
               <div className="w-16 h-16 bg-[#fef3dc] rounded-2xl flex items-center justify-center mb-6">
                 <Eye className="w-8 h-8 text-[#e5a930]" />
               </div>
@@ -158,7 +162,8 @@ export default function About() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="bg-white/70 backdrop-blur-sm p-8 rounded-2xl border border-[#f3ede4] hover:border-[#e5a930] transition-all hover:shadow-lg group">
+                className="bg-white/70 backdrop-blur-sm p-8 rounded-2xl border border-[#f3ede4] hover:border-[#e5a930] transition-all hover:shadow-lg group"
+              >
                 <div className="w-14 h-14 bg-[#fef3dc] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <value.icon className="w-7 h-7 text-[#e5a930]" />
                 </div>
@@ -183,7 +188,8 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center">
+              className="text-center"
+            >
               <div className="text-5xl mb-4 text-[#e5a930]">98%</div>
               <h4 className="text-xl mb-2 text-[#2d2520]">Quiet Score</h4>
               <p className="text-[#6b5e52]">
@@ -196,7 +202,8 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-center">
+              className="text-center"
+            >
               <div className="text-5xl mb-4 text-[#e5a930]">16hrs</div>
               <h4 className="text-xl mb-2 text-[#2d2520]">Daily Operations</h4>
               <p className="text-[#6b5e52]">Extended hours to match your schedule, not ours</p>
@@ -207,7 +214,8 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-center">
+              className="text-center"
+            >
               <div className="text-5xl mb-4 text-[#e5a930]">5min</div>
               <h4 className="text-xl mb-2 text-[#2d2520]">From Campus</h4>
               <p className="text-[#6b5e52]">
@@ -234,7 +242,8 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="group relative overflow-hidden rounded-3xl shadow-lg">
+              className="group relative overflow-hidden rounded-3xl shadow-lg"
+            >
               <Image
                 src="/images/individual.jpg"
                 alt="Individual Study Pods"
@@ -256,7 +265,8 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="group relative overflow-hidden rounded-3xl shadow-lg">
+              className="group relative overflow-hidden rounded-3xl shadow-lg"
+            >
               <Image
                 src="/images/public.jpg"
                 alt="Public Workspace"
@@ -278,7 +288,8 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="group relative overflow-hidden rounded-3xl shadow-lg">
+              className="group relative overflow-hidden rounded-3xl shadow-lg"
+            >
               <Image
                 src="/images/sitting-down.jpg"
                 alt="Quiet Zone"
@@ -300,7 +311,8 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="group relative overflow-hidden rounded-3xl shadow-lg">
+              className="group relative overflow-hidden rounded-3xl shadow-lg"
+            >
               <div className="w-full h-80 bg-gradient-to-br from-[#fef3dc] to-[#fff8ed] flex items-center justify-center border-4 border-[#e5a930]">
                 <div className="text-center p-8">
                   <h3 className="text-2xl text-[#2d2520] mb-2">More Spaces</h3>
@@ -319,7 +331,8 @@ export default function About() {
             initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8 }}>
+            transition={{ duration: 0.8 }}
+          >
             <h2 className="text-4xl md:text-5xl mb-6 text-[#2d2520]">Ready to Find Your Focus?</h2>
             <p className="text-xl text-[#6b5e52] mb-8">
               Join hundreds of students and professionals who&apos;ve made Just In Time their
@@ -328,12 +341,14 @@ export default function About() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
                 href="/reserve"
-                className="inline-flex items-center justify-center gap-2 bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl transition-all duration-300 hover:scale-105">
+                className="inline-flex items-center justify-center gap-2 bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
                 Reserve Your Seat
               </a>
               <a
                 href="/virtual-tour"
-                className="inline-flex items-center justify-center gap-2 bg-white text-[#2d2520] px-8 py-4 rounded-full border border-[#f3ede4] hover:shadow-lg transition-all duration-300 hover:scale-105">
+                className="inline-flex items-center justify-center gap-2 bg-white text-[#2d2520] px-8 py-4 rounded-full border border-[#f3ede4] hover:shadow-lg transition-all duration-300 hover:scale-105"
+              >
                 Take a Tour
               </a>
             </div>

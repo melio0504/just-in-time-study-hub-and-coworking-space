@@ -115,7 +115,8 @@ export default function Login() {
               {errorMessage && (
                 <p
                   role="alert"
-                  className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                >
                   {errorMessage}
                 </p>
               )}
@@ -155,7 +156,8 @@ export default function Login() {
                     onClick={() => setShowPassword((visible) => !visible)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     aria-pressed={showPassword}
-                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition-colors hover:text-[#e5a930] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e5a930] rounded-r-xl cursor-pointer">
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition-colors hover:text-[#e5a930] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e5a930] rounded-r-xl cursor-pointer"
+                  >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
@@ -177,7 +179,8 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">
+                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 {isSubmitting ? "Signing In…" : "Sign In"}
               </button>
 

@@ -250,7 +250,8 @@ export default function AdminAnalyticsPage() {
             <select
               value={period}
               onChange={(event) => setPeriod(event.target.value as ReportPeriod)}
-              className="h-11 w-full rounded-xl border border-[#cfc3b6] bg-white px-3 text-sm font-semibold text-[#2d2520]">
+              className="h-11 w-full rounded-xl border border-[#cfc3b6] bg-white px-3 text-sm font-semibold text-[#2d2520]"
+            >
               <option value="daily">Daily report</option>
               <option value="weekly">Weekly report</option>
               <option value="monthly">Monthly report</option>
@@ -271,7 +272,8 @@ export default function AdminAnalyticsPage() {
           <button
             onClick={() => void exportPdf()}
             disabled={loading || exporting}
-            className="inline-flex h-11 items-center justify-center gap-2 self-end whitespace-nowrap rounded-xl bg-[#c4841a] px-4 text-sm font-semibold text-white hover:bg-[#a86f12] disabled:opacity-60">
+            className="inline-flex h-11 items-center justify-center gap-2 self-end whitespace-nowrap rounded-xl bg-[#c4841a] px-4 text-sm font-semibold text-white hover:bg-[#a86f12] disabled:opacity-60"
+          >
             {exporting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -285,7 +287,8 @@ export default function AdminAnalyticsPage() {
       {error && (
         <div
           role="alert"
-          className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">
+          className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800"
+        >
           {error}
         </div>
       )}
@@ -350,10 +353,12 @@ export default function AdminAnalyticsPage() {
           <div className="mb-6 grid gap-6 xl:grid-cols-2">
             <ChartCard
               title="Revenue by customer source"
-              subtitle={formatReportPeriod(period, range.startDate, range.endDate)}>
+              subtitle={formatReportPeriod(period, range.startDate, range.endDate)}
+            >
               <ChartContainer
                 config={chartConfigs.revenue}
-                className="h-[300px] w-full aspect-auto">
+                className="h-[300px] w-full aspect-auto"
+              >
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="label" tickLine={false} axisLine={false} />
@@ -417,10 +422,12 @@ export default function AdminAnalyticsPage() {
           <div className="mb-6 grid gap-6 xl:grid-cols-2">
             <ChartCard
               title="Seat utilization"
-              subtitle="Actual reservation check-ins and walk-in stays">
+              subtitle="Actual reservation check-ins and walk-in stays"
+            >
               <ChartContainer
                 config={chartConfigs.occupancy}
-                className="h-[270px] w-full aspect-auto">
+                className="h-[270px] w-full aspect-auto"
+              >
                 <AreaChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="label" tickLine={false} axisLine={false} />
@@ -448,7 +455,8 @@ export default function AdminAnalyticsPage() {
             <ChartCard title="Walk-in payment mix" subtitle="Paid walk-in revenue">
               <ChartContainer
                 config={chartConfigs.payments}
-                className="h-[270px] w-full aspect-auto">
+                className="h-[270px] w-full aspect-auto"
+              >
                 <BarChart data={paymentData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                   <XAxis
@@ -474,7 +482,8 @@ export default function AdminAnalyticsPage() {
           <div className="mb-6 grid gap-6 xl:grid-cols-2">
             <DetailCard
               title="Reservation activity"
-              subtitle={`${bookings.length} records in this report`}>
+              subtitle={`${bookings.length} records in this report`}
+            >
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[620px] text-left text-sm text-[#2d2520]">
                   <thead className="text-xs font-semibold uppercase tracking-wider text-[#3f3630]">
@@ -511,7 +520,8 @@ export default function AdminAnalyticsPage() {
             </DetailCard>
             <DetailCard
               title="Walk-in activity"
-              subtitle={`${walkIns.length} records in this report`}>
+              subtitle={`${walkIns.length} records in this report`}
+            >
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[620px] text-left text-sm text-[#2d2520]">
                   <thead className="text-xs font-semibold uppercase tracking-wider text-[#3f3630]">

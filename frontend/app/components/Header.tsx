@@ -20,7 +20,8 @@ function DesktopNavLink({ href, children }: { href: string; children: React.Reac
   return (
     <Link
       href={href}
-      className="group px-1 py-2 text-[#6b5e52] hover:text-[#3d3329] focus-visible:text-[#3d3329]">
+      className="group px-1 py-2 text-[#6b5e52] hover:text-[#3d3329] focus-visible:text-[#3d3329]"
+    >
       <span className="relative inline-block">
         <span className="relative z-10">{children}</span>
         <span
@@ -168,7 +169,8 @@ export function Header() {
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/reserve"
-              className="hidden rounded-full bg-[#e5a930] px-4 py-2 text-sm text-white hover:shadow-lg sm:inline-block sm:px-6 sm:py-2.5 sm:text-base">
+              className="hidden rounded-full bg-[#e5a930] px-4 py-2 text-sm text-white hover:shadow-lg sm:inline-block sm:px-6 sm:py-2.5 sm:text-base"
+            >
               Reserve
             </Link>
 
@@ -179,7 +181,8 @@ export function Header() {
                 aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mobile-navigation"
-                className="relative flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-full border border-[#f3ede4] bg-white/80 p-2 text-[#6b5e52] hover:border-[#e5a930] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5a930]">
+                className="relative flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-full border border-[#f3ede4] bg-white/80 p-2 text-[#6b5e52] hover:border-[#e5a930] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5a930]"
+              >
                 <Menu
                   className={`absolute h-6 w-6 transition-all duration-200 ${isMobileMenuOpen ? "rotate-90 scale-75 opacity-0" : "rotate-0 scale-100 opacity-100"}`}
                 />
@@ -199,7 +202,8 @@ export function Header() {
                       exit={{ opacity: 0, y: -8, scale: 0.97 }}
                       transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                       style={{ transformOrigin: "top center" }}
-                      className="mobile-navigation-menu pointer-events-auto max-h-[calc(100dvh-6rem)] w-full overscroll-contain overflow-y-auto rounded-3xl border border-[#f3ede4] p-5 shadow-2xl sm:p-6">
+                      className="mobile-navigation-menu pointer-events-auto max-h-[calc(100dvh-6rem)] w-full overscroll-contain overflow-y-auto rounded-3xl border border-[#f3ede4] p-5 shadow-2xl sm:p-6"
+                    >
                       <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#6b5e52]">
                         Menu
                       </p>
@@ -209,7 +213,8 @@ export function Header() {
                             <Link
                               href={item.href}
                               onClick={closeMobileMenu}
-                              className="group/link flex items-center justify-between border-b border-[#f3ede4]/60 py-3.5 active:bg-[#fef3dc]/50">
+                              className="group/link flex items-center justify-between border-b border-[#f3ede4]/60 py-3.5 active:bg-[#fef3dc]/50"
+                            >
                               <span className="text-xl font-medium tracking-tight text-[#2d2520] group-hover/link:text-[#e5a930]">
                                 {item.label}
                               </span>
@@ -221,7 +226,8 @@ export function Header() {
                           <Link
                             href={isLoggedIn ? "/account" : "/register"}
                             onClick={closeMobileMenu}
-                            className="flex items-center justify-between py-3.5 text-xl font-medium tracking-tight text-[#2d2520]">
+                            className="flex items-center justify-between py-3.5 text-xl font-medium tracking-tight text-[#2d2520]"
+                          >
                             Account
                             <ArrowRight className="h-5 w-5 shrink-0 text-[#e5a930]" />
                           </Link>
@@ -230,7 +236,8 @@ export function Header() {
                       <Link
                         href="/reserve"
                         onClick={closeMobileMenu}
-                        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3.5 text-base font-medium text-white shadow-[0_8px_24px_rgba(229,169,48,0.35)]">
+                        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3.5 text-base font-medium text-white shadow-[0_8px_24px_rgba(229,169,48,0.35)]"
+                      >
                         Reserve a desk
                         <ArrowRight className="h-4 w-4" />
                       </Link>

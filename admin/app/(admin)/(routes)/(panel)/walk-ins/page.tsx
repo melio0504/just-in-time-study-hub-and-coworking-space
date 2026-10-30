@@ -333,13 +333,15 @@ export default function WalkInsPage() {
         <div className="grid w-full shrink-0 gap-3 sm:w-auto sm:grid-cols-2">
           <button
             onClick={() => setShowManual(true)}
-            className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#cdbfae] bg-white px-5 py-3 text-sm font-semibold text-[#3f3630] shadow-sm hover:bg-[#fff8e8]">
+            className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#cdbfae] bg-white px-5 py-3 text-sm font-semibold text-[#3f3630] shadow-sm hover:bg-[#fff8e8]"
+          >
             <History className="h-4 w-4" />
             Add past walk-in
           </button>
           <button
             onClick={() => setShowStart(true)}
-            className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#c4841a] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a86f12]">
+            className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#c4841a] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a86f12]"
+          >
             <Plus className="h-4 w-4" />
             Start walk-in
           </button>
@@ -354,7 +356,8 @@ export default function WalkInsPage() {
       {error && (
         <div
           role="alert"
-          className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+          className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"
+        >
           {error}
         </div>
       )}
@@ -403,7 +406,8 @@ export default function WalkInsPage() {
               return (
                 <article
                   key={walkIn.id}
-                  className="rounded-2xl border border-amber-200 bg-[#fffbf3] p-4">
+                  className="rounded-2xl border border-amber-200 bg-[#fffbf3] p-4"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wider text-[#9b6810]">
@@ -425,7 +429,8 @@ export default function WalkInsPage() {
                   </dl>
                   <button
                     onClick={() => openCheckout(walkIn)}
-                    className="mt-4 w-full rounded-xl bg-[#2d2520] px-4 py-2.5 text-sm font-semibold text-white hover:bg-black">
+                    className="mt-4 w-full rounded-xl bg-[#2d2520] px-4 py-2.5 text-sm font-semibold text-white hover:bg-black"
+                  >
                     Checkout & record payment
                   </button>
                 </article>
@@ -492,7 +497,8 @@ export default function WalkInsPage() {
                       <button
                         disabled={saving}
                         onClick={() => void voidWalkIn(walkIn)}
-                        className="text-xs font-semibold text-red-700 hover:underline">
+                        className="text-xs font-semibold text-red-700 hover:underline"
+                      >
                         Void
                       </button>
                     )}
@@ -509,7 +515,8 @@ export default function WalkInsPage() {
         <Modal
           title="Start walk-in"
           subtitle="The timer begins as soon as you confirm."
-          onClose={() => setShowStart(false)}>
+          onClose={() => setShowStart(false)}
+        >
           <form onSubmit={startWalkIn} className="space-y-4">
             <SelectSeat
               value={startForm.seat}
@@ -544,7 +551,8 @@ export default function WalkInsPage() {
         <Modal
           title={`Checkout seat ${checkoutTarget.seat?.code ?? ""}`}
           subtitle={`${checkoutTarget.guest_name || "Walk-in guest"} · started ${formatDateTime(checkoutTarget.started_at)}`}
-          onClose={() => setCheckoutTarget(null)}>
+          onClose={() => setCheckoutTarget(null)}
+        >
           <form onSubmit={checkoutWalkIn} className="space-y-4">
             <Field label="Checkout time">
               <input
@@ -587,7 +595,8 @@ export default function WalkInsPage() {
         <Modal
           title="Add completed walk-in"
           subtitle="Recover a walk-in that was not recorded live."
-          onClose={() => setShowManual(false)}>
+          onClose={() => setShowManual(false)}
+        >
           <form onSubmit={createManualWalkIn} className="space-y-4">
             <SelectSeat
               value={manualForm.seat}
@@ -688,7 +697,8 @@ function Empty({ text }: { text: string }) {
 function StatusPill({ status }: { status: string }) {
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${status === "completed" ? "bg-emerald-100 text-emerald-700" : status === "voided" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"}`}>
+      className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${status === "completed" ? "bg-emerald-100 text-emerald-700" : status === "voided" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"}`}
+    >
       {status}
     </span>
   );
@@ -716,7 +726,8 @@ function SelectSeat({
         required
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="input">
+        className="input"
+      >
         <option value="">Select a seat</option>
         {seats.map((seat) => (
           <option key={seat.id} value={seat.code}>
@@ -778,7 +789,8 @@ function BillingFields<
             onChange={(event) =>
               onChange({ ...value, paymentMethod: event.target.value as PaymentMethod })
             }
-            className="input">
+            className="input"
+          >
             <option value="cash">Cash</option>
             <option value="gcash">GCash</option>
             <option value="qrph">QRPh</option>
@@ -791,7 +803,8 @@ function BillingFields<
             onChange={(event) =>
               onChange({ ...value, paymentStatus: event.target.value as PaymentStatus })
             }
-            className="input">
+            className="input"
+          >
             <option value="paid">Paid</option>
             <option value="unpaid">Unpaid</option>
           </select>
@@ -817,7 +830,8 @@ function SubmitButton({ saving, label }: { saving: boolean; label: string }) {
   return (
     <button
       disabled={saving}
-      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#c4841a] px-5 py-3 font-semibold text-white hover:bg-[#a86f12] disabled:opacity-60">
+      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#c4841a] px-5 py-3 font-semibold text-white hover:bg-[#a86f12] disabled:opacity-60"
+    >
       {saving && <Loader2 className="h-4 w-4 animate-spin" />}
       {saving ? "Saving…" : label}
     </button>
@@ -837,12 +851,14 @@ function Modal({
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-[#2d2520]/55 p-4 backdrop-blur-sm"
-      onMouseDown={onClose}>
+      onMouseDown={onClose}
+    >
       <div
         className="my-auto w-full max-w-2xl rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7"
         onMouseDown={(event) => event.stopPropagation()}
         role="dialog"
-        aria-modal="true">
+        aria-modal="true"
+      >
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold">{title}</h2>
@@ -852,7 +868,8 @@ function Modal({
             type="button"
             onClick={onClose}
             className="rounded-xl p-2 hover:bg-[#f7f1e8]"
-            aria-label="Close">
+            aria-label="Close"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>

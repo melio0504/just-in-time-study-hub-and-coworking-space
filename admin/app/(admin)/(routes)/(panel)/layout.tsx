@@ -47,7 +47,8 @@ export default async function AdminPanelLayout({
       profile={{
         name: profile.full_name || "Staff member",
         email: profile.email || user.email || "",
-      }}>
+      }}
+    >
       {children}
     </AdminShell>
   );

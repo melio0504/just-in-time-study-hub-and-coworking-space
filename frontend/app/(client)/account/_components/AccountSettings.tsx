@@ -163,7 +163,8 @@ export function AccountSettings({
           <div>
             <label
               htmlFor="account-username"
-              className="mb-2 block text-xs uppercase tracking-wider text-[#6b5e52]">
+              className="mb-2 block text-xs uppercase tracking-wider text-[#6b5e52]"
+            >
               <User className="mr-1 inline h-4 w-4" />
               Username
             </label>
@@ -185,7 +186,8 @@ export function AccountSettings({
             {usernameChangeOnCooldown ? (
               <p
                 role="status"
-                className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
+                className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800"
+              >
                 Username changes are limited to once every {USERNAME_CHANGE_COOLDOWN_DAYS} days. You
                 can change it again on {nextUsernameChangeLabel}.
               </p>
@@ -209,14 +211,16 @@ export function AccountSettings({
           {saveError && (
             <p
               role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+            >
               {saveError}
             </p>
           )}
           {saveMessage && (
             <p
               role="status"
-              className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+              className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700"
+            >
               {saveMessage}
             </p>
           )}
@@ -224,7 +228,8 @@ export function AccountSettings({
           <button
             type="submit"
             disabled={isSaving || nameUnchanged || usernameChangeOnCooldown}
-            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#e5a930] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-[#d69520] disabled:cursor-not-allowed disabled:opacity-50">
+            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#e5a930] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-[#d69520] disabled:cursor-not-allowed disabled:opacity-50"
+          >
             <Save className="h-4 w-4" />
             {isSaving ? "Saving…" : "Save username"}
           </button>
@@ -239,7 +244,8 @@ export function AccountSettings({
           <button
             type="button"
             onClick={openDeleteModal}
-            className="mt-4 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-red-200 bg-white px-5 py-3 text-sm font-medium text-red-700 transition-colors hover:bg-red-50">
+            className="mt-4 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-red-200 bg-white px-5 py-3 text-sm font-medium text-red-700 transition-colors hover:bg-red-50"
+          >
             <Trash2 className="h-4 w-4" />
             Delete my account
           </button>
@@ -251,13 +257,15 @@ export function AccountSettings({
           className="fixed inset-0 z-60 flex items-center justify-center bg-[#2d2520]/60 p-4 backdrop-blur-sm"
           onClick={(event) => {
             if (event.target === event.currentTarget && !isDeleting) setShowDeleteModal(false);
-          }}>
+          }}
+        >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-account-title"
             aria-describedby="delete-account-description"
-            className="w-full max-w-lg rounded-3xl border border-red-100 bg-white p-6 shadow-2xl sm:p-8">
+            className="w-full max-w-lg rounded-3xl border border-red-100 bg-white p-6 shadow-2xl sm:p-8"
+          >
             <div className="flex items-start justify-between gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
                 <Trash2 className="h-5 w-5" />
@@ -267,7 +275,8 @@ export function AccountSettings({
                 onClick={() => setShowDeleteModal(false)}
                 disabled={isDeleting}
                 aria-label="Close account deletion confirmation"
-                className="cursor-pointer rounded-full p-2 text-[#6b5e52] transition-colors hover:bg-[#f3ede4] disabled:cursor-not-allowed disabled:opacity-50">
+                className="cursor-pointer rounded-full p-2 text-[#6b5e52] transition-colors hover:bg-[#f3ede4] disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -283,7 +292,8 @@ export function AccountSettings({
 
             <label
               htmlFor="delete-account-confirmation"
-              className="mt-5 block text-sm font-medium text-[#2d2520]">
+              className="mt-5 block text-sm font-medium text-[#2d2520]"
+            >
               Type <strong>DELETE</strong> to confirm
             </label>
             <input
@@ -303,7 +313,8 @@ export function AccountSettings({
             {deleteError && (
               <p
                 role="alert"
-                className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+              >
                 {deleteError}
               </p>
             )}
@@ -313,14 +324,16 @@ export function AccountSettings({
                 type="button"
                 onClick={() => setShowDeleteModal(false)}
                 disabled={isDeleting}
-                className="cursor-pointer rounded-full border border-[#f3ede4] bg-white px-5 py-2.5 text-sm text-[#2d2520] transition-colors hover:border-[#e5a930] disabled:cursor-not-allowed disabled:opacity-50">
+                className="cursor-pointer rounded-full border border-[#f3ede4] bg-white px-5 py-2.5 text-sm text-[#2d2520] transition-colors hover:border-[#e5a930] disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 Keep my account
               </button>
               <button
                 type="button"
                 onClick={() => void deleteAccount()}
                 disabled={deleteConfirmation !== "DELETE" || isDeleting}
-                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 <Trash2 className="h-4 w-4" />
                 {isDeleting ? "Deleting…" : "Delete account permanently"}
               </button>

@@ -56,7 +56,8 @@ export default function ForgotPasswordPage() {
         <section className="w-full rounded-3xl border border-[#f3ede4] bg-white/80 p-8 shadow-lg backdrop-blur-sm sm:p-10">
           <Link
             href="/login"
-            className="mb-8 inline-flex items-center gap-2 text-sm text-[#6b5e52] transition-colors hover:text-[#e5a930]">
+            className="mb-8 inline-flex items-center gap-2 text-sm text-[#6b5e52] transition-colors hover:text-[#e5a930]"
+          >
             <ArrowLeft className="h-4 w-4" />
             Back to sign in
           </Link>
@@ -82,7 +83,8 @@ export default function ForgotPasswordPage() {
                   setSentTo("");
                   setErrorMessage("");
                 }}
-                className="w-full cursor-pointer rounded-full border border-[#e5a930] px-8 py-3 text-[#b57b08] transition-colors hover:bg-[#fef3dc]">
+                className="w-full cursor-pointer rounded-full border border-[#e5a930] px-8 py-3 text-[#b57b08] transition-colors hover:bg-[#fef3dc]"
+              >
                 Use another email
               </button>
             </div>
@@ -102,7 +104,8 @@ export default function ForgotPasswordPage() {
                 {errorMessage && (
                   <p
                     role="alert"
-                    className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                  >
                     {errorMessage}
                   </p>
                 )}
@@ -110,7 +113,8 @@ export default function ForgotPasswordPage() {
                 <div>
                   <label
                     htmlFor="recovery-email"
-                    className="mb-2 block text-sm uppercase tracking-wider text-[#6b5e52]">
+                    className="mb-2 block text-sm uppercase tracking-wider text-[#6b5e52]"
+                  >
                     Email address
                   </label>
                   <input
@@ -129,7 +133,8 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full cursor-pointer rounded-full bg-[#e5a930] px-8 py-4 text-white transition-shadow hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60">
+                  className="w-full cursor-pointer rounded-full bg-[#e5a930] px-8 py-4 text-white transition-shadow hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
+                >
                   {isSubmitting ? "Sending reset link…" : "Send reset link"}
                 </button>
               </form>

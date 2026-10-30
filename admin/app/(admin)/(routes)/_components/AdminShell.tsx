@@ -119,9 +119,11 @@ function AdminNav({
             aria-current={active ? "page" : undefined}
             aria-label={collapsed ? item.label : undefined}
             title={collapsed ? `${item.label} — ${item.description}` : undefined}
-            className={`group flex items-center rounded-2xl py-3 transition-all ${collapsed ? "justify-center px-2" : "gap-3 px-3.5"} ${active ? "bg-[#2d2520] text-white shadow-lg shadow-[#2d2520]/15" : "text-[#6b5e52] hover:bg-[#fef3dc] hover:text-[#2d2520]"}`}>
+            className={`group flex items-center rounded-2xl py-3 transition-all ${collapsed ? "justify-center px-2" : "gap-3 px-3.5"} ${active ? "bg-[#2d2520] text-white shadow-lg shadow-[#2d2520]/15" : "text-[#6b5e52] hover:bg-[#fef3dc] hover:text-[#2d2520]"}`}
+          >
             <span
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${active ? "bg-[#e5a930]" : "bg-[#f7f1e8] text-[#a27621] group-hover:bg-white"}`}>
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${active ? "bg-[#e5a930]" : "bg-[#f7f1e8] text-[#a27621] group-hover:bg-white"}`}
+            >
               <Icon className="h-5 w-5" />
             </span>
             {collapsed ? (
@@ -131,7 +133,8 @@ function AdminNav({
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold">{item.label}</span>
                   <span
-                    className={`block truncate text-xs ${active ? "text-white/60" : "text-[#6b5e52]"}`}>
+                    className={`block truncate text-xs ${active ? "text-white/60" : "text-[#6b5e52]"}`}
+                  >
                     {item.description}
                   </span>
                 </span>
@@ -182,7 +185,8 @@ export function AdminShell({
             type="button"
             onClick={() => setMobileOpen(false)}
             aria-label="Close navigation"
-            className="absolute right-0 rounded-xl p-2 text-[#6b5e52] hover:bg-[#f7f1e8]">
+            className="absolute right-0 rounded-xl p-2 text-[#6b5e52] hover:bg-[#f7f1e8]"
+          >
             <X className="h-5 w-5" />
           </button>
         )}
@@ -191,7 +195,8 @@ export function AdminShell({
         <div
           className="mb-5 flex h-10 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700"
           aria-label="Realtime operations connected"
-          title="Realtime operations connected">
+          title="Realtime operations connected"
+        >
           <Radio className="h-4 w-4 animate-pulse" />
         </div>
       ) : (
@@ -210,7 +215,8 @@ export function AdminShell({
           <div
             className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#fffbf5] text-sm font-bold text-[#a27621]"
             title={`${profile.name} · ${access.role === "admin" ? "Owner" : "Employee"}`}
-            aria-label={`${profile.name}, ${access.role === "admin" ? "Owner" : "Employee"}`}>
+            aria-label={`${profile.name}, ${access.role === "admin" ? "Owner" : "Employee"}`}
+          >
             {profile.name.trim().charAt(0).toUpperCase() || "A"}
           </div>
         ) : (
@@ -227,7 +233,8 @@ export function AdminShell({
           onClick={handleLogout}
           aria-label={collapsed ? "Sign out" : undefined}
           title={collapsed ? "Sign out" : undefined}
-          className={`flex w-full cursor-pointer items-center rounded-xl py-3 text-sm font-medium text-red-600 hover:bg-red-50 ${collapsed ? "justify-center px-2" : "gap-3 px-4"}`}>
+          className={`flex w-full cursor-pointer items-center rounded-xl py-3 text-sm font-medium text-red-600 hover:bg-red-50 ${collapsed ? "justify-center px-2" : "gap-3 px-4"}`}
+        >
           <LogOut className="h-4 w-4" />
           {!collapsed && "Sign out"}
         </button>
@@ -239,7 +246,8 @@ export function AdminShell({
     <AdminAccessContext.Provider value={access}>
       <div className="min-h-screen bg-[#f8f5f0]">
         <aside
-          className={`fixed inset-y-0 left-0 z-40 hidden border-r border-[#eee5da] bg-white transition-[width] duration-300 ease-out lg:block ${desktopCollapsed ? "w-24" : "w-72"}`}>
+          className={`fixed inset-y-0 left-0 z-40 hidden border-r border-[#eee5da] bg-white transition-[width] duration-300 ease-out lg:block ${desktopCollapsed ? "w-24" : "w-72"}`}
+        >
           {renderSidebar(desktopCollapsed)}
           <button
             type="button"
@@ -247,7 +255,8 @@ export function AdminShell({
             aria-label={desktopCollapsed ? "Expand sidebar" : "Minimize sidebar"}
             title={desktopCollapsed ? "Expand sidebar" : "Minimize sidebar"}
             aria-expanded={!desktopCollapsed}
-            className="absolute -right-4 top-7 flex h-8 w-8 items-center justify-center rounded-full border border-[#e7dccf] bg-white text-[#6b5e52] shadow-md transition-colors hover:border-[#e5a930] hover:bg-[#fff8ed] hover:text-[#9b6810] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5a930]">
+            className="absolute -right-4 top-7 flex h-8 w-8 items-center justify-center rounded-full border border-[#e7dccf] bg-white text-[#6b5e52] shadow-md transition-colors hover:border-[#e5a930] hover:bg-[#fff8ed] hover:text-[#9b6810] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5a930]"
+          >
             {desktopCollapsed ? (
               <PanelLeftOpen className="h-4 w-4" />
             ) : (
@@ -271,14 +280,16 @@ export function AdminShell({
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="rounded-xl border border-[#eee5da] p-2.5">
+            className="rounded-xl border border-[#eee5da] p-2.5"
+          >
             <Menu className="h-5 w-5" />
           </button>
           <span className="text-sm font-semibold">Operations Console</span>
           <span className="h-10 w-10" />
         </header>
         <main
-          className={`min-w-0 p-4 transition-[margin] duration-300 ease-out sm:p-6 lg:p-8 xl:p-10 ${desktopCollapsed ? "lg:ml-24" : "lg:ml-72"}`}>
+          className={`min-w-0 p-4 transition-[margin] duration-300 ease-out sm:p-6 lg:p-8 xl:p-10 ${desktopCollapsed ? "lg:ml-24" : "lg:ml-72"}`}
+        >
           {children}
         </main>
       </div>

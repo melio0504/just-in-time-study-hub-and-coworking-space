@@ -1,9 +1,17 @@
 import QRCode from "npm:qrcode@1.5.4";
 
 function escapeHtml(value: string) {
-  return value.replace(/[&<>'"]/g, (character) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",
-  })[character]!);
+  return value.replace(
+    /[&<>'"]/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;",
+      })[character]!,
+  );
 }
 
 function formatManila(value: string) {
@@ -26,7 +34,8 @@ function accountUrl() {
   if (!configured) return "";
   try {
     const url = new URL("/account", configured);
-    return url.protocol === "https:" || (url.protocol === "http:" && ['localhost', '127.0.0.1'].includes(url.hostname))
+    return url.protocol === "https:" ||
+      (url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname))
       ? url.toString()
       : "";
   } catch {
@@ -57,9 +66,11 @@ export async function sendBookingConfirmationEmail(
       <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#2d2520">
         <h1 style="color:#b57b12">Reservation confirmed</h1>
         <p>Hello ${escapeHtml(String(booking.guest_name))},</p>
-        <p>${options.resend
-          ? "Here is the replacement QR pass you requested for your Just In Time Study Hub reservation."
-          : "We received your QR PH payment and confirmed your Just In Time Study Hub reservation."}</p>
+        <p>${
+          options.resend
+            ? "Here is the replacement QR pass you requested for your Just In Time Study Hub reservation."
+            : "We received your QR PH payment and confirmed your Just In Time Study Hub reservation."
+        }</p>
         <div style="background:#fff8ed;border:1px solid #eadfce;border-radius:16px;padding:20px">
           <p><strong>Reservation:</strong> ${escapeHtml(reservationCode)}</p>
           <p><strong>Seats:</strong> ${escapeHtml(seats)}</p>
@@ -83,7 +94,9 @@ export async function sendBookingConfirmationEmail(
   };
 
   const provider = (Deno.env.get("EMAIL_PROVIDER") ?? "mailpit").trim().toLowerCase();
-  const fromEmail = Deno.env.get("EMAIL_FROM") ?? Deno.env.get("RESEND_FROM_EMAIL") ??
+  const fromEmail =
+    Deno.env.get("EMAIL_FROM") ??
+    Deno.env.get("RESEND_FROM_EMAIL") ??
     "Just In Time Study Hub <bookings@local.test>";
 
   if (provider === "mailpit") {
@@ -91,26 +104,33 @@ export async function sendBookingConfirmationEmail(
     const sender = senderMatch
       ? { Name: senderMatch[1], Email: senderMatch[2] }
       : { Email: fromEmail.trim() };
-    const response = await fetch(Deno.env.get("MAILPIT_API_URL") ?? "http://inbucket:8025/api/v1/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        From: sender,
-        To: [{ Email: email.to }],
-        Subject: email.subject,
-        HTML: email.html,
-        Tags: ["booking-confirmation", "paymongo-qrph"],
-        Attachments: [{
-          Filename: email.attachment.filename,
-          Content: email.attachment.content,
-          ContentType: email.attachment.contentType,
-          ContentID: email.attachment.contentId,
-        }],
-      }),
-    });
+    const response = await fetch(
+      Deno.env.get("MAILPIT_API_URL") ?? "http://inbucket:8025/api/v1/send",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          From: sender,
+          To: [{ Email: email.to }],
+          Subject: email.subject,
+          HTML: email.html,
+          Tags: ["booking-confirmation", "paymongo-qrph"],
+          Attachments: [
+            {
+              Filename: email.attachment.filename,
+              Content: email.attachment.content,
+              ContentType: email.attachment.contentType,
+              ContentID: email.attachment.contentId,
+            },
+          ],
+        }),
+      },
+    );
     if (!response.ok) {
       const detail = await response.text();
-      throw new Error(`Mailpit rejected the confirmation email (${response.status}): ${detail.slice(0, 300)}`);
+      throw new Error(
+        `Mailpit rejected the confirmation email (${response.status}): ${detail.slice(0, 300)}`,
+      );
     }
     return;
   }
@@ -131,16 +151,20 @@ export async function sendBookingConfirmationEmail(
       to: [email.to],
       subject: email.subject,
       html: email.html,
-      attachments: [{
-        filename: email.attachment.filename,
-        content: email.attachment.content,
-        content_type: email.attachment.contentType,
-        content_id: email.attachment.contentId,
-      }],
+      attachments: [
+        {
+          filename: email.attachment.filename,
+          content: email.attachment.content,
+          content_type: email.attachment.contentType,
+          content_id: email.attachment.contentId,
+        },
+      ],
     }),
   });
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(`Resend rejected the confirmation email (${response.status}): ${detail.slice(0, 300)}`);
+    throw new Error(
+      `Resend rejected the confirmation email (${response.status}): ${detail.slice(0, 300)}`,
+    );
   }
 }

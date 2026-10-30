@@ -662,7 +662,8 @@ export function ReservationManager() {
                 ? "Available"
                 : "Reserved for this time"
         }
-        className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xs font-semibold transition-all ${appearance}`}>
+        className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xs font-semibold transition-all ${appearance}`}
+      >
         {code}
       </button>
     );
@@ -684,7 +685,8 @@ export function ReservationManager() {
           type="button"
           onClick={() => void loadBookings()}
           disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-full border border-[#e5d8c8] bg-white px-4 py-2.5 text-sm font-medium text-[#4f443c] hover:bg-[#fff8ed] disabled:opacity-50">
+          className="inline-flex items-center justify-center gap-2 rounded-full border border-[#e5d8c8] bg-white px-4 py-2.5 text-sm font-medium text-[#4f443c] hover:bg-[#fff8ed] disabled:opacity-50"
+        >
           <RotateCcw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
         </button>
       </div>
@@ -699,7 +701,8 @@ export function ReservationManager() {
               setPage(1);
             }}
             aria-pressed={filter === value}
-            className={`rounded-full border px-4 py-2 text-sm font-semibold ${filter === value ? "border-[#2d2520] bg-[#2d2520] text-white" : "border-[#ded2c5] bg-white text-[#574b42] hover:bg-[#fff8ed]"}`}>
+            className={`rounded-full border px-4 py-2 text-sm font-semibold ${filter === value ? "border-[#2d2520] bg-[#2d2520] text-white" : "border-[#ded2c5] bg-white text-[#574b42] hover:bg-[#fff8ed]"}`}
+          >
             {titleCase(value)}
           </button>
         ))}
@@ -708,7 +711,8 @@ export function ReservationManager() {
       {error && !selected && (
         <p
           role="alert"
-          className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        >
           {error}
         </p>
       )}
@@ -728,7 +732,8 @@ export function ReservationManager() {
         {visibleBookings.map((booking) => (
           <article
             key={booking.id}
-            className="rounded-2xl border border-[#eee4d7] bg-white p-5 transition hover:border-[#e5a930]">
+            className="rounded-2xl border border-[#eee4d7] bg-white p-5 transition hover:border-[#e5a930]"
+          >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -736,7 +741,8 @@ export function ReservationManager() {
                     {booking.reservation_code}
                   </span>
                   <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(booking.status)}`}>
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(booking.status)}`}
+                  >
                     {titleCase(booking.status)}
                   </span>
                 </div>
@@ -760,7 +766,8 @@ export function ReservationManager() {
               <button
                 type="button"
                 onClick={() => openDetails(booking)}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#e5a930] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#d69520]">
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#e5a930] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#d69520]"
+              >
                 <Eye className="h-4 w-4" /> View details
               </button>
             </div>
@@ -771,12 +778,14 @@ export function ReservationManager() {
       {pageCount > 1 && (
         <nav
           aria-label="Reservation pages"
-          className="mt-6 flex items-center justify-between gap-3">
+          className="mt-6 flex items-center justify-between gap-3"
+        >
           <button
             type="button"
             disabled={currentPage === 1}
             onClick={() => setPage(currentPage - 1)}
-            className="rounded-full border border-[#ded2c5] bg-white px-4 py-2 text-sm font-semibold text-[#574b42] disabled:opacity-40">
+            className="rounded-full border border-[#ded2c5] bg-white px-4 py-2 text-sm font-semibold text-[#574b42] disabled:opacity-40"
+          >
             Previous
           </button>
           <span className="text-sm text-[#6b5e52]">
@@ -786,7 +795,8 @@ export function ReservationManager() {
             type="button"
             disabled={currentPage === pageCount}
             onClick={() => setPage(currentPage + 1)}
-            className="rounded-full border border-[#ded2c5] bg-white px-4 py-2 text-sm font-semibold text-[#574b42] disabled:opacity-40">
+            className="rounded-full border border-[#ded2c5] bg-white px-4 py-2 text-sm font-semibold text-[#574b42] disabled:opacity-40"
+          >
             Next
           </button>
         </nav>
@@ -796,13 +806,15 @@ export function ReservationManager() {
         createPortal(
           <div
             className="fixed inset-0 z-[100] flex items-center justify-center bg-[#211b17]/70 p-3 backdrop-blur-md sm:p-6"
-            onMouseDown={closeDetails}>
+            onMouseDown={closeDetails}
+          >
             <div
               role="dialog"
               aria-modal="true"
               aria-labelledby="reservation-title"
               className="max-h-[94vh] w-full max-w-6xl overflow-y-auto rounded-3xl border border-white/60 bg-white p-5 shadow-[0_30px_100px_rgba(0,0,0,0.45)] sm:p-8"
-              onMouseDown={(event) => event.stopPropagation()}>
+              onMouseDown={(event) => event.stopPropagation()}
+            >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-mono text-xs font-semibold tracking-wide text-[#9b6810]">
@@ -817,7 +829,8 @@ export function ReservationManager() {
                   onClick={closeDetails}
                   disabled={Boolean(action)}
                   aria-label="Close reservation details"
-                  className="rounded-full p-2 text-[#5f5248] hover:bg-[#f7f1e8] disabled:opacity-50">
+                  className="rounded-full p-2 text-[#5f5248] hover:bg-[#f7f1e8] disabled:opacity-50"
+                >
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -831,7 +844,8 @@ export function ReservationManager() {
               {error && (
                 <p
                   role="alert"
-                  className="mt-5 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                  className="mt-5 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                >
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   {error}
                 </p>
@@ -898,7 +912,8 @@ export function ReservationManager() {
 
                   {selectedRefund && (
                     <div
-                      className={`mt-4 rounded-2xl border p-5 ${selectedRefund.status === "failed" ? "border-red-200 bg-red-50" : "border-blue-200 bg-blue-50"}`}>
+                      className={`mt-4 rounded-2xl border p-5 ${selectedRefund.status === "failed" ? "border-red-200 bg-red-50" : "border-blue-200 bg-blue-50"}`}
+                    >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <h3 className="font-semibold text-[#2d2520]">Refund</h3>
                         <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4f443c]">
@@ -934,14 +949,16 @@ export function ReservationManager() {
                           type="button"
                           onClick={() => setConfirmingCancel(false)}
                           disabled={Boolean(action)}
-                          className="rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-800">
+                          className="rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-800"
+                        >
                           Keep reservation
                         </button>
                         <button
                           type="button"
                           onClick={() => void cancelBooking()}
                           disabled={Boolean(action)}
-                          className="inline-flex items-center gap-2 rounded-full bg-red-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                          className="inline-flex items-center gap-2 rounded-full bg-red-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                        >
                           {action === "cancel" && <Loader2 className="h-4 w-4 animate-spin" />}
                           {selected.payment_status === "paid"
                             ? "Cancel and refund"
@@ -956,7 +973,8 @@ export function ReservationManager() {
                       type="button"
                       onClick={beginEdit}
                       disabled={!canChangeBooking(selected, now) || Boolean(action)}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d8c9b9] bg-white px-4 py-3 text-sm font-semibold text-[#4f443c] hover:bg-[#fff8ed] disabled:cursor-not-allowed disabled:opacity-45">
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d8c9b9] bg-white px-4 py-3 text-sm font-semibold text-[#4f443c] hover:bg-[#fff8ed] disabled:cursor-not-allowed disabled:opacity-45"
+                    >
                       <Pencil className="h-4 w-4" />
                       Reschedule or change seats
                     </button>
@@ -964,7 +982,8 @@ export function ReservationManager() {
                       type="button"
                       onClick={() => void resendPass()}
                       disabled={!canResendPass(selected, now) || Boolean(action)}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d8c9b9] bg-white px-4 py-3 text-sm font-semibold text-[#4f443c] hover:bg-[#fff8ed] disabled:cursor-not-allowed disabled:opacity-45">
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d8c9b9] bg-white px-4 py-3 text-sm font-semibold text-[#4f443c] hover:bg-[#fff8ed] disabled:cursor-not-allowed disabled:opacity-45"
+                    >
                       {action === "resend" ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
@@ -976,7 +995,8 @@ export function ReservationManager() {
                       type="button"
                       onClick={() => void createReceipt()}
                       disabled={selected.payment_status !== "paid" || Boolean(action)}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d8c9b9] bg-white px-4 py-3 text-sm font-semibold text-[#4f443c] hover:bg-[#fff8ed] disabled:cursor-not-allowed disabled:opacity-45">
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d8c9b9] bg-white px-4 py-3 text-sm font-semibold text-[#4f443c] hover:bg-[#fff8ed] disabled:cursor-not-allowed disabled:opacity-45"
+                    >
                       {action === "receipt" ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
@@ -988,7 +1008,8 @@ export function ReservationManager() {
                       type="button"
                       onClick={() => setConfirmingCancel(true)}
                       disabled={!canCancelBooking(selected, now) || Boolean(action)}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45">
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
                       <X className="h-4 w-4" />
                       Cancel reservation
                     </button>
@@ -1060,7 +1081,8 @@ export function ReservationManager() {
                               Boolean(selectedClosure) ||
                               rescheduleTimes.length === 0
                             }
-                            className="mt-2 w-full rounded-xl border border-[#d8c9b9] bg-white px-4 py-3 font-normal text-[#2d2520] outline-none focus:border-[#e5a930] disabled:opacity-60">
+                            className="mt-2 w-full rounded-xl border border-[#d8c9b9] bg-white px-4 py-3 font-normal text-[#2d2520] outline-none focus:border-[#e5a930] disabled:opacity-60"
+                          >
                             <option value="">Choose a time</option>
                             {rescheduleTimes.map(([value, label]) => (
                               <option key={value} value={value}>
@@ -1073,7 +1095,8 @@ export function ReservationManager() {
                       {selectedClosure && (
                         <p
                           role="alert"
-                          className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                          className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                        >
                           <strong>{selectedClosure.name}:</strong> This date is closed. Please
                           choose another date.
                         </p>
@@ -1083,7 +1106,8 @@ export function ReservationManager() {
                         rescheduleTimes.length === 0 && (
                           <p
                             role="alert"
-                            className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                            className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                          >
                             The selected date does not have enough operating hours for this
                             reservation.
                           </p>
@@ -1091,7 +1115,8 @@ export function ReservationManager() {
                       {configurationError && (
                         <p
                           role="alert"
-                          className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                          className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                        >
                           {configurationError}
                         </p>
                       )}
@@ -1140,7 +1165,8 @@ export function ReservationManager() {
                             selectedSeatTotal === selected.subtotal_cents
                               ? "font-semibold text-emerald-700"
                               : "font-semibold text-red-700"
-                          }>
+                          }
+                        >
                           {formatPeso(selectedSeatTotal)} / {formatPeso(selected.subtotal_cents)}
                         </span>
                       </div>
@@ -1154,7 +1180,8 @@ export function ReservationManager() {
                           setError("");
                         }}
                         disabled={Boolean(action)}
-                        className="rounded-full border border-[#d8c9b9] bg-white px-5 py-3 text-sm font-semibold text-[#4f443c]">
+                        className="rounded-full border border-[#d8c9b9] bg-white px-5 py-3 text-sm font-semibold text-[#4f443c]"
+                      >
                         Discard changes
                       </button>
                       <button
@@ -1171,7 +1198,8 @@ export function ReservationManager() {
                           draft.seats.length === 0 ||
                           selectedSeatTotal !== selected.subtotal_cents
                         }
-                        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-5 py-3 text-sm font-semibold text-white hover:bg-[#d69520] disabled:cursor-not-allowed disabled:opacity-45">
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-5 py-3 text-sm font-semibold text-white hover:bg-[#d69520] disabled:cursor-not-allowed disabled:opacity-45"
+                      >
                         {action === "save" && <Loader2 className="h-4 w-4 animate-spin" />}Save
                         reservation
                       </button>

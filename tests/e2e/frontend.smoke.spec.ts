@@ -23,9 +23,7 @@ async function fulfillSupabaseJson(route: Route, body: unknown, status = 200) {
 }
 
 async function mockPublicSupabaseContext(page: Page) {
-  await page.route("**/rest/v1/business_hours*", (route) =>
-    fulfillSupabaseJson(route, null),
-  );
+  await page.route("**/rest/v1/business_hours*", (route) => fulfillSupabaseJson(route, null));
 }
 
 test("the landing page presents the primary booking journey", async ({ page }) => {
@@ -53,21 +51,15 @@ test("the landing page presents the primary booking journey", async ({ page }) =
   await expect(page).toHaveTitle(/Just In Time Study Hub/);
   const capstoneNotice = page.getByLabel("Capstone project disclaimer");
   await expect(capstoneNotice).toBeVisible();
-  await expect(capstoneNotice).toContainText(
-    /not the official Just In Time Study Hub.*website/,
-  );
-  await expect(capstoneNotice).toContainText(
-    /payments made here are (?:still )?not official/,
-  );
+  await expect(capstoneNotice).toContainText(/not the official Just In Time Study Hub.*website/);
+  await expect(capstoneNotice).toContainText(/payments made here are (?:still )?not official/);
   const announcement = page.getByLabel("Latest announcement");
   await expect(announcement).toBeVisible();
   const headerBox = await page.locator("header.site-header").boundingBox();
   const announcementBox = await announcement.boundingBox();
   expect(headerBox).not.toBeNull();
   expect(announcementBox).not.toBeNull();
-  expect(announcementBox!.y).toBeGreaterThanOrEqual(
-    headerBox!.y + headerBox!.height + 15,
-  );
+  expect(announcementBox!.y).toBeGreaterThanOrEqual(headerBox!.y + headerBox!.height + 15);
   await expect(
     page.getByRole("heading", { level: 1, name: /just in time.*focused success/i }),
   ).toBeVisible();
@@ -88,18 +80,13 @@ test("the landing page presents the primary booking journey", async ({ page }) =
       const scrolledAnnouncementBox = await announcement.boundingBox();
       if (!scrolledHeaderBox || !scrolledAnnouncementBox) return -1;
 
-      return (
-        scrolledAnnouncementBox.y -
-        (scrolledHeaderBox.y + scrolledHeaderBox.height)
-      );
+      return scrolledAnnouncementBox.y - (scrolledHeaderBox.y + scrolledHeaderBox.height);
     })
     .toBeGreaterThanOrEqual(15);
 });
 
 test("the back-to-top button scrolls gradually", async ({ page }) => {
-  await page.route("**/rest/v1/announcements*", (route) =>
-    fulfillSupabaseJson(route, []),
-  );
+  await page.route("**/rest/v1/announcements*", (route) => fulfillSupabaseJson(route, []));
   await page.goto("/about");
   await page.waitForTimeout(250);
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -120,27 +107,31 @@ test("the back-to-top button scrolls gradually", async ({ page }) => {
 
 test("pricing exposes hourly and package options", async ({ page }) => {
   await mockPublicSupabaseContext(page);
-  await page.route("**/rest/v1/service_rate_plans*", (route) => fulfillSupabaseJson(route, [
-    {
-      id: 1,
-      code: "whole-day",
-      name: "Whole day",
-      price_cents: 37000,
-      is_active: true,
-      sort_order: 90,
-    },
-  ]));
-  await page.route("**/rest/v1/package_rate_plans*", (route) => fulfillSupabaseJson(route, [
-    {
-      id: 1,
-      name: "5-Day Pass",
-      price_cents: 150000,
-      validity_days: 30,
-      is_popular: true,
-      is_active: true,
-      sort_order: 10,
-    },
-  ]));
+  await page.route("**/rest/v1/service_rate_plans*", (route) =>
+    fulfillSupabaseJson(route, [
+      {
+        id: 1,
+        code: "whole-day",
+        name: "Whole day",
+        price_cents: 37000,
+        is_active: true,
+        sort_order: 90,
+      },
+    ]),
+  );
+  await page.route("**/rest/v1/package_rate_plans*", (route) =>
+    fulfillSupabaseJson(route, [
+      {
+        id: 1,
+        name: "5-Day Pass",
+        price_cents: 150000,
+        validity_days: 30,
+        is_popular: true,
+        is_active: true,
+        sort_order: 10,
+      },
+    ]),
+  );
   await page.route("**/rest/v1/business_closures*", (route) => fulfillSupabaseJson(route, []));
   await page.goto("/pricing");
 
@@ -157,12 +148,16 @@ test("pricing explains when current rates are unavailable", async ({ page }) => 
   await mockPublicSupabaseContext(page);
   for (const table of ["service_rate_plans", "package_rate_plans", "business_closures"]) {
     await page.route(`**/rest/v1/${table}*`, (route) =>
-      fulfillSupabaseJson(route, {
-        code: "PGRST000",
-        details: null,
-        hint: null,
-        message: "Temporarily unavailable",
-      }, 400),
+      fulfillSupabaseJson(
+        route,
+        {
+          code: "PGRST000",
+          details: null,
+          hint: null,
+          message: "Temporarily unavailable",
+        },
+        400,
+      ),
     );
   }
 
@@ -179,17 +174,17 @@ test("pricing explains when current rates are unavailable", async ({ page }) => 
 
 test("reserve requires an account before schedule and seat selection", async ({ page }) => {
   await page.route("**/auth/v1/user*", (route) =>
-    fulfillSupabaseJson(route, {
-      code: "session_not_found",
-      message: "Auth session missing",
-    }, 401),
+    fulfillSupabaseJson(
+      route,
+      {
+        code: "session_not_found",
+        message: "Auth session missing",
+      },
+      401,
+    ),
   );
-  await page.route("**/rest/v1/business_hours*", (route) =>
-    fulfillSupabaseJson(route, []),
-  );
-  await page.route("**/rest/v1/business_closures*", (route) =>
-    fulfillSupabaseJson(route, []),
-  );
+  await page.route("**/rest/v1/business_hours*", (route) => fulfillSupabaseJson(route, []));
+  await page.route("**/rest/v1/business_closures*", (route) => fulfillSupabaseJson(route, []));
   await page.route("**/rest/v1/booking_settings*", (route) =>
     fulfillSupabaseJson(route, {
       max_seats_per_booking: 5,
@@ -209,10 +204,7 @@ test("reserve requires an account before schedule and seat selection", async ({ 
     hasText: "Sign in to reserve a seat",
   });
   await expect(notice).toBeVisible();
-  await expect(notice.getByRole("link", { name: "Sign in" })).toHaveAttribute(
-    "href",
-    "/register",
-  );
+  await expect(notice.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/register");
   await expect(page.getByRole("button", { name: "Select Date" })).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Time" })).toBeDisabled();
   await expect(page.getByRole("combobox", { name: "Duration" })).toBeDisabled();

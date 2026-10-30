@@ -15,7 +15,7 @@
     "lineEnding": "lf",
     "lineWidth": 100,
     "bracketSpacing": true,
-    "bracketSameLine": true
+    "bracketSameLine": false
   },
   "linter": {
     "enabled": true,

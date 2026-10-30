@@ -24,17 +24,20 @@ export default function CmsPage() {
         <div
           className="inline-flex w-full rounded-2xl border border-[#ded3c6] bg-white p-1.5 shadow-sm sm:w-auto"
           role="tablist"
-          aria-label="Content management section">
+          aria-label="Content management section"
+        >
           <CmsTab
             active={view === "announcements"}
             onClick={() => setView("announcements")}
-            icon={FileText}>
+            icon={FileText}
+          >
             Announcements
           </CmsTab>
           <CmsTab
             active={view === "business"}
             onClick={() => setView("business")}
-            icon={SlidersHorizontal}>
+            icon={SlidersHorizontal}
+          >
             Business settings
           </CmsTab>
         </div>
@@ -69,7 +72,8 @@ function CmsTab({
         active
           ? "bg-[#2d2520] text-white shadow-sm"
           : "text-[#6b5e52] hover:bg-[#fff8e8] hover:text-[#2d2520]"
-      }`}>
+      }`}
+    >
       <Icon className="h-4 w-4" />
       {children}
     </button>

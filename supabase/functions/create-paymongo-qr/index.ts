@@ -69,7 +69,10 @@ async function paymongoRequest<T>(
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
     const detail = Array.isArray(payload?.errors)
-      ? payload.errors.map((error: { detail?: string; code?: string }) => error.detail ?? error.code).filter(Boolean).join("; ")
+      ? payload.errors
+          .map((error: { detail?: string; code?: string }) => error.detail ?? error.code)
+          .filter(Boolean)
+          .join("; ")
       : `HTTP ${response.status}`;
     throw new Error(`PayMongo request failed: ${detail || `HTTP ${response.status}`}`);
   }
@@ -96,7 +99,9 @@ export default {
     }
 
     const bookingId = typeof body.bookingId === "string" ? body.bookingId.trim() : "";
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(bookingId)) {
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(bookingId)
+    ) {
       return json({ error: "Invalid booking." }, 400);
     }
 
@@ -104,10 +109,13 @@ export default {
       const keys = configuredKeys();
       const userId = context.userClaims!.id;
 
-      const { error: emailSyncError } = await context.supabaseAdmin.rpc("sync_booking_account_email", {
-        p_booking_id: bookingId,
-        p_user_id: userId,
-      });
+      const { error: emailSyncError } = await context.supabaseAdmin.rpc(
+        "sync_booking_account_email",
+        {
+          p_booking_id: bookingId,
+          p_user_id: userId,
+        },
+      );
       if (emailSyncError) throw new Error(emailSyncError.message);
 
       const { data, error } = await context.supabaseAdmin.rpc("prepare_paymongo_payment", {
@@ -164,7 +172,10 @@ export default {
         },
       );
 
-      if (intent.data.attributes.amount !== booking.amount_cents || intent.data.attributes.currency !== "PHP") {
+      if (
+        intent.data.attributes.amount !== booking.amount_cents ||
+        intent.data.attributes.currency !== "PHP"
+      ) {
         throw new Error("PayMongo returned an unexpected payment amount.");
       }
 
@@ -206,7 +217,8 @@ export default {
         },
       );
 
-      const createdAtSeconds = Number(method.data.attributes.created_at) || Math.floor(Date.now() / 1000);
+      const createdAtSeconds =
+        Number(method.data.attributes.created_at) || Math.floor(Date.now() / 1000);
       const expiresAt = new Date((createdAtSeconds + QR_EXPIRY_SECONDS) * 1000).toISOString();
       const { error: saveError } = await context.supabaseAdmin.rpc("save_paymongo_qr", {
         p_booking_id: bookingId,
@@ -219,14 +231,17 @@ export default {
       });
       if (saveError) throw new Error(saveError.message);
 
-      return json({
-        bookingId,
-        reservationCode: booking.reservation_code,
-        amountCents: booking.amount_cents,
-        qrImage: qrImage(attached),
-        expiresAt,
-        status: attached.data.attributes.status,
-      }, 201);
+      return json(
+        {
+          bookingId,
+          reservationCode: booking.reservation_code,
+          amountCents: booking.amount_cents,
+          qrImage: qrImage(attached),
+          expiresAt,
+          status: attached.data.attributes.status,
+        },
+        201,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to generate QR Ph.";
       console.error("PayMongo QR creation failed", message);

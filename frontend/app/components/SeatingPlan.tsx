@@ -40,7 +40,8 @@ export function SeatingPlan({ renderSeat }: SeatingPlanProps) {
       style={{ height: scaledHeight + 8 }}
       role="region"
       aria-label="Interactive seating plan"
-      tabIndex={0}>
+      tabIndex={0}
+    >
       <div className="relative" style={{ width: scaledWidth, height: scaledHeight }}>
         <div
           className="relative origin-top-left"
@@ -48,11 +49,13 @@ export function SeatingPlan({ renderSeat }: SeatingPlanProps) {
             width: DESIGN_WIDTH,
             height: DESIGN_HEIGHT,
             transform: `scale(${scale})`,
-          }}>
+          }}
+        >
           {/* Floor shell — outer walls */}
           <div
             className="absolute inset-2 rounded-2xl border-[3px] border-[#8b7355] bg-gradient-to-br from-[#faf8f5] via-[#f5f0e8] to-[#ebe4d8] shadow-[inset_0_2px_12px_rgba(45,37,32,0.06)]"
-            aria-hidden>
+            aria-hidden
+          >
             <div className="absolute inset-1.5 rounded-xl border border-[#c4b5a3]/60 pointer-events-none" />
             <div className="absolute top-2 left-2 w-7 h-7 border-t-2 border-l-2 border-[#6b5e52]/40 rounded-tl-sm pointer-events-none" />
             <div className="absolute top-2 right-2 w-7 h-7 border-t-2 border-r-2 border-[#6b5e52]/40 rounded-tr-sm pointer-events-none" />

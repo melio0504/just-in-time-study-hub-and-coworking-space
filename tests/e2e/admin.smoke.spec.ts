@@ -14,9 +14,7 @@ test("the operations portal renders its sign-in form", async ({ page }) => {
   expect(headers["x-powered-by"]).toBeUndefined();
 
   await expect(page).toHaveTitle(/Admin.*Just In Time Study Hub/);
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Administrator Access" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Administrator Access" })).toBeVisible();
   await expect(page.locator('input[name="email"]')).toHaveAttribute("type", "email");
   await expect(page.locator('input[name="password"]')).toHaveAttribute("type", "password");
   await expect(page.getByRole("button", { name: "Sign In to Admin Portal" })).toBeVisible();

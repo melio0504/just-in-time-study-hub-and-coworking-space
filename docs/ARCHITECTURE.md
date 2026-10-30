@@ -121,4 +121,3 @@ publishable key; privileged database keys must not be shipped to either app.
 - Generated database types must stay synchronized across frontend and admin.
 - Public pages belong in `frontend/`, staff pages in `admin/`, and the local
   scanner in `kiosk/`.
-

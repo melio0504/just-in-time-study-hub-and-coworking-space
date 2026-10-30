@@ -82,7 +82,8 @@ export default function Pricing() {
         <section className="px-6 pb-8">
           <div
             role="alert"
-            className="mx-auto flex max-w-4xl items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-950">
+            className="mx-auto flex max-w-4xl items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-950"
+          >
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
               <p className="font-semibold">
@@ -130,7 +131,8 @@ export default function Pricing() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="bg-white/70 backdrop-blur-sm rounded-3xl border border-[#f3ede4] overflow-hidden shadow-lg">
+            className="bg-white/70 backdrop-blur-sm rounded-3xl border border-[#f3ede4] overflow-hidden shadow-lg"
+          >
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -154,7 +156,8 @@ export default function Pricing() {
                       key={rate.id}
                       className={`border-b border-[#f3ede4] transition-colors hover:bg-[#fef3dc]/30 ${
                         rate.code === "whole-day" ? "bg-[#fef3dc]/50" : ""
-                      }`}>
+                      }`}
+                    >
                       <td className="p-6">
                         <div className="flex items-center gap-3">
                           <span className="text-[#2d2520] text-lg">{rate.name}</span>
@@ -198,7 +201,8 @@ export default function Pricing() {
             {pricingLoading && (
               <div
                 role="status"
-                className="col-span-full flex min-h-48 items-center justify-center gap-2 rounded-3xl border border-[#f3ede4] bg-white/70 text-[#6b5e52]">
+                className="col-span-full flex min-h-48 items-center justify-center gap-2 rounded-3xl border border-[#f3ede4] bg-white/70 text-[#6b5e52]"
+              >
                 <Loader2 className="h-5 w-5 animate-spin" /> Loading current package deals…
               </div>
             )}
@@ -213,7 +217,8 @@ export default function Pricing() {
                   pkg.is_popular
                     ? "border-[#e5a930] shadow-lg scale-105"
                     : "border-[#f3ede4] hover:border-[#e5a930]"
-                }`}>
+                }`}
+              >
                 {pkg.is_popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#e5a930] text-[#2d2520] px-4 py-1 rounded-full text-sm">
                     Best Value
@@ -254,7 +259,8 @@ export default function Pricing() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="relative group overflow-hidden rounded-3xl shadow-lg">
+              className="relative group overflow-hidden rounded-3xl shadow-lg"
+            >
               <Image
                 src="/images/individual.jpg"
                 alt="Private Study Pods"
@@ -276,7 +282,8 @@ export default function Pricing() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="relative group overflow-hidden rounded-3xl shadow-lg">
+              className="relative group overflow-hidden rounded-3xl shadow-lg"
+            >
               <Image
                 src="/images/sitting-down.jpg"
                 alt="Quiet Zones"
@@ -298,7 +305,8 @@ export default function Pricing() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="relative group overflow-hidden rounded-3xl shadow-lg">
+              className="relative group overflow-hidden rounded-3xl shadow-lg"
+            >
               <Image
                 src="/images/public.jpg"
                 alt="Open Workspace"
@@ -346,7 +354,8 @@ export default function Pricing() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="flex items-start gap-3">
+                className="flex items-start gap-3"
+              >
                 <div className="w-6 h-6 bg-[#fef3dc] rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                   <Check className="w-4 h-4 text-[#e5a930]" />
                 </div>
@@ -364,7 +373,8 @@ export default function Pricing() {
             initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8 }}>
+            transition={{ duration: 0.8 }}
+          >
             <h2 className="text-4xl md:text-5xl mb-6 text-[#2d2520]">Ready to Get Started?</h2>
             <p className="text-xl text-[#6b5e52] mb-8">
               Reserve your seat now and experience productivity like never before
@@ -372,12 +382,14 @@ export default function Pricing() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/reserve"
-                className="inline-flex items-center justify-center gap-2 bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl transition-all duration-300 hover:scale-105">
+                className="inline-flex items-center justify-center gap-2 bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
                 Reserve Your Seat
               </Link>
               <Link
                 href="/virtual-tour"
-                className="inline-flex items-center justify-center gap-2 bg-white text-[#2d2520] px-8 py-4 rounded-full border border-[#f3ede4] hover:shadow-lg transition-all duration-300 hover:scale-105">
+                className="inline-flex items-center justify-center gap-2 bg-white text-[#2d2520] px-8 py-4 rounded-full border border-[#f3ede4] hover:shadow-lg transition-all duration-300 hover:scale-105"
+              >
                 Take a Tour First
               </Link>
             </div>

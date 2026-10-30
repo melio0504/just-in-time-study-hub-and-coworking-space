@@ -19,7 +19,8 @@ export default function Home() {
           className="absolute right-0 top-0 hidden h-dvh w-1/2 md:block"
           initial={false}
           animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 1.2, ease: "easeOut" }}>
+          transition={{ duration: 1.2, ease: "easeOut" }}
+        >
           <Image
             src="/images/solo-learner.jpg"
             alt="Study Hub Interior"
@@ -36,7 +37,8 @@ export default function Home() {
               className="relative h-[46svh] min-h-72 max-h-[30rem] overflow-hidden sm:rounded-3xl md:hidden"
               initial={false}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}>
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
               <Image
                 src="/images/solo-learner.jpg"
                 alt="Quiet individual study desks inside Just In Time Study Hub"
@@ -56,24 +58,28 @@ export default function Home() {
               className="relative z-10 mx-4 -mt-10 rounded-[2rem] border border-[#f3ede4] bg-[#fffcf7]/95 p-6 shadow-[0_24px_60px_rgba(45,37,32,0.14)] backdrop-blur-md sm:mx-0 sm:-mt-12 sm:p-8 md:m-0 md:rounded-none md:border-0 md:bg-transparent md:p-0 md:pr-8 md:shadow-none md:backdrop-blur-none"
               initial={false}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}>
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
               <motion.h1
                 className="mb-5 text-4xl leading-[1.08] tracking-tight text-[#2d2520] sm:text-5xl md:mb-6 md:text-6xl md:leading-[1.1] md:tracking-normal lg:text-7xl"
                 initial={false}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}>
+                transition={{ duration: 0.8, delay: 0.4 }}
+              >
                 <motion.span
                   className="inline-block"
                   initial={false}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.6 }}>
+                  transition={{ duration: 0.6, delay: 0.6 }}
+                >
                   You&apos;re
                 </motion.span>{" "}
                 <motion.span
                   className="inline-block relative"
                   initial={false}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.8 }}>
+                  transition={{ duration: 0.6, delay: 0.8 }}
+                >
                   <span className="relative z-10 text-[#e5a930]">just in time</span>
                   <motion.span
                     aria-hidden="true"
@@ -87,7 +93,8 @@ export default function Home() {
                 <motion.span
                   initial={false}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 1 }}>
+                  transition={{ duration: 0.6, delay: 1 }}
+                >
                   for focused success
                 </motion.span>
               </motion.h1>
@@ -96,7 +103,8 @@ export default function Home() {
                 className="mb-7 text-base leading-relaxed text-[#6b5e52] sm:text-lg md:mb-8 md:text-xl"
                 initial={false}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.8, delay: 1.4 }}>
+                transition={{ duration: 0.8, delay: 1.4 }}
+              >
                 Your perfect study sanctuary awaits in the heart of Manila. Premium spaces, extended
                 hours, and everything you need to excel.
               </motion.p>
@@ -105,16 +113,19 @@ export default function Home() {
                 className="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:gap-4"
                 initial={false}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 1.6 }}>
+                transition={{ duration: 0.8, delay: 1.6 }}
+              >
                 <Link
                   href="/reserve"
-                  className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#e5a930] px-5 py-4 text-center text-white transition-all duration-300 hover:shadow-xl sm:w-auto sm:px-8 sm:hover:scale-105">
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#e5a930] px-5 py-4 text-center text-white transition-all duration-300 hover:shadow-xl sm:w-auto sm:px-8 sm:hover:scale-105"
+                >
                   Reserve Your Seat Now
                   <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <Link
                   href="/virtual-tour"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#f3ede4] bg-white/80 px-5 py-4 text-center text-[#2d2520] backdrop-blur-sm transition-all duration-300 hover:shadow-lg sm:w-auto sm:px-8 sm:hover:scale-105">
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#f3ede4] bg-white/80 px-5 py-4 text-center text-[#2d2520] backdrop-blur-sm transition-all duration-300 hover:shadow-lg sm:w-auto sm:px-8 sm:hover:scale-105"
+                >
                   Take a Virtual Tour
                 </Link>
               </motion.div>
@@ -127,7 +138,8 @@ export default function Home() {
             className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto"
             initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 2 }}>
+            transition={{ duration: 0.8, delay: 2 }}
+          >
             <div className="bg-white/60 backdrop-blur-sm p-8 rounded-2xl border border-[#f3ede4] hover:border-[#e5a930] transition-colors">
               <div className="w-12 h-12 bg-[#fef3dc] rounded-xl flex items-center justify-center mb-4">
                 <MapPin className="w-6 h-6 text-[#e5a930]" />
@@ -303,7 +315,8 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="flex h-full flex-col rounded-3xl border border-[#f3ede4] bg-white/70 p-8 backdrop-blur-sm transition-all hover:border-[#e5a930]">
+                className="flex h-full flex-col rounded-3xl border border-[#f3ede4] bg-white/70 p-8 backdrop-blur-sm transition-all hover:border-[#e5a930]"
+              >
                 <Quote className="mb-4 h-10 w-10 text-[#e5a930]" />
                 <p className="mb-6 flex-1 leading-relaxed text-[#2d2520] italic">
                   &ldquo;{review.review}&rdquo;
@@ -311,7 +324,8 @@ export default function Home() {
                 <div
                   className="mb-4 flex items-center gap-1"
                   role="img"
-                  aria-label="5 out of 5 stars">
+                  aria-label="5 out of 5 stars"
+                >
                   {Array.from({ length: 5 }).map((_, starIndex) => (
                     <Star
                       key={starIndex}
@@ -335,7 +349,8 @@ export default function Home() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-[#6b5e52] underline-offset-4 transition-colors hover:text-[#b47b0d] hover:underline"
-                      aria-label={`Read ${review.name}'s review on Google Maps`}>
+                      aria-label={`Read ${review.name}'s review on Google Maps`}
+                    >
                       Review on Google Maps
                     </a>
                   </div>
@@ -366,7 +381,8 @@ export default function Home() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="relative group overflow-hidden rounded-3xl shadow-xl">
+              className="relative group overflow-hidden rounded-3xl shadow-xl"
+            >
               <Image
                 src="/images/sitting-down.jpg"
                 alt="Quiet Zone"
@@ -388,7 +404,8 @@ export default function Home() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="relative group overflow-hidden rounded-3xl shadow-xl">
+              className="relative group overflow-hidden rounded-3xl shadow-xl"
+            >
               <Image
                 src="/images/public.jpg"
                 alt="Open Workspace"
@@ -457,7 +474,8 @@ export default function Home() {
                 href="https://www.google.com/maps/dir//''/data=!4m7!4m6!1m1!4e2!1m2!1m1!1s0x3397c9a81a0f8499:0x859c0de05fd302ec!3e0?g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAMYASAF"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-8 flex items-center gap-2 text-[#e5a930] hover:text-[#d69520] transition-colors">
+                className="mt-8 flex items-center gap-2 text-[#e5a930] hover:text-[#d69520] transition-colors"
+              >
                 Get Directions
                 <ArrowRight className="w-4 h-4" />
               </a>
@@ -484,7 +502,8 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-6">
             <Link
               href="/about"
-              className="group bg-white/80 backdrop-blur-sm p-8 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-all hover:shadow-xl text-center">
+              className="group bg-white/80 backdrop-blur-sm p-8 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-all hover:shadow-xl text-center"
+            >
               <div className="w-16 h-16 bg-[#fef3dc] rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                 <ArrowRight className="w-8 h-8 text-[#e5a930]" />
               </div>
@@ -494,7 +513,8 @@ export default function Home() {
 
             <Link
               href="/virtual-tour"
-              className="group bg-white/80 backdrop-blur-sm p-8 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-all hover:shadow-xl text-center">
+              className="group bg-white/80 backdrop-blur-sm p-8 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-all hover:shadow-xl text-center"
+            >
               <div className="w-16 h-16 bg-[#fef3dc] rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                 <ArrowRight className="w-8 h-8 text-[#e5a930]" />
               </div>
@@ -504,7 +524,8 @@ export default function Home() {
 
             <Link
               href="/reserve"
-              className="group bg-[#e5a930] p-8 rounded-3xl border border-[#e5a930] transition-all hover:shadow-xl text-center hover:scale-105">
+              className="group bg-[#e5a930] p-8 rounded-3xl border border-[#e5a930] transition-all hover:shadow-xl text-center hover:scale-105"
+            >
               <div className="w-16 h-16 bg-white/30 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                 <ArrowRight className="w-8 h-8 text-white" />
               </div>
@@ -517,7 +538,8 @@ export default function Home() {
             <p className="text-[#6b5e52] mb-4">Have questions? We&apos;d love to hear from you!</p>
             <a
               href="mailto:jit.studyhub@gmail.com"
-              className="text-[#e5a930] hover:text-[#d69520] transition-colors">
+              className="text-[#e5a930] hover:text-[#d69520] transition-colors"
+            >
               jit.studyhub@gmail.com
             </a>
           </div>

@@ -84,7 +84,8 @@ export default async function AnnouncementsPage({
               return (
                 <article
                   key={announcement.id}
-                  className={`relative overflow-hidden rounded-3xl border p-7 shadow-[0_18px_50px_rgba(95,72,39,0.08)] ${isLatest ? "border-[#e8bd61] bg-[#fffaf0] lg:col-span-2" : "border-[#eee4d7] bg-white/80"}`}>
+                  className={`relative overflow-hidden rounded-3xl border p-7 shadow-[0_18px_50px_rgba(95,72,39,0.08)] ${isLatest ? "border-[#e8bd61] bg-[#fffaf0] lg:col-span-2" : "border-[#eee4d7] bg-white/80"}`}
+                >
                   {isLatest && <div className="absolute inset-x-0 top-0 h-1 bg-[#e5a930]" />}
                   <div className="mb-5 flex items-center justify-between">
                     <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fef0cf] text-[#c98d17]">
@@ -122,12 +123,14 @@ export default async function AnnouncementsPage({
           {pageCount > 1 && (
             <nav
               aria-label="Announcement pages"
-              className="mt-10 flex flex-wrap items-center justify-center gap-2">
+              className="mt-10 flex flex-wrap items-center justify-center gap-2"
+            >
               <Link
                 href={`/announcements?page=${Math.max(1, currentPage - 1)}`}
                 aria-disabled={currentPage === 1}
                 tabIndex={currentPage === 1 ? -1 : undefined}
-                className={`rounded-full border px-5 py-2.5 text-sm font-semibold transition ${currentPage === 1 ? "pointer-events-none border-[#e5ddd3] text-[#a89c90]" : "border-[#d8c9b9] bg-white text-[#4f443c] hover:bg-[#fff4dc]"}`}>
+                className={`rounded-full border px-5 py-2.5 text-sm font-semibold transition ${currentPage === 1 ? "pointer-events-none border-[#e5ddd3] text-[#a89c90]" : "border-[#d8c9b9] bg-white text-[#4f443c] hover:bg-[#fff4dc]"}`}
+              >
                 Previous
               </Link>
               {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
@@ -136,7 +139,8 @@ export default async function AnnouncementsPage({
                   href={`/announcements?page=${page}`}
                   aria-label={`Go to announcement page ${page}`}
                   aria-current={page === currentPage ? "page" : undefined}
-                  className={`flex h-11 min-w-11 items-center justify-center rounded-full border px-3 text-sm font-semibold transition ${page === currentPage ? "border-[#2d2520] bg-[#2d2520] text-white" : "border-[#d8c9b9] bg-white text-[#4f443c] hover:bg-[#fff4dc]"}`}>
+                  className={`flex h-11 min-w-11 items-center justify-center rounded-full border px-3 text-sm font-semibold transition ${page === currentPage ? "border-[#2d2520] bg-[#2d2520] text-white" : "border-[#d8c9b9] bg-white text-[#4f443c] hover:bg-[#fff4dc]"}`}
+                >
                   {page}
                 </Link>
               ))}
@@ -144,7 +148,8 @@ export default async function AnnouncementsPage({
                 href={`/announcements?page=${Math.min(pageCount, currentPage + 1)}`}
                 aria-disabled={currentPage === pageCount}
                 tabIndex={currentPage === pageCount ? -1 : undefined}
-                className={`rounded-full border px-5 py-2.5 text-sm font-semibold transition ${currentPage === pageCount ? "pointer-events-none border-[#e5ddd3] text-[#a89c90]" : "border-[#d8c9b9] bg-white text-[#4f443c] hover:bg-[#fff4dc]"}`}>
+                className={`rounded-full border px-5 py-2.5 text-sm font-semibold transition ${currentPage === pageCount ? "pointer-events-none border-[#e5ddd3] text-[#a89c90]" : "border-[#d8c9b9] bg-white text-[#4f443c] hover:bg-[#fff4dc]"}`}
+              >
                 Next
               </Link>
             </nav>
@@ -171,7 +176,8 @@ export default async function AnnouncementsPage({
           </div>
           <Link
             href="/reserve"
-            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#e5a930] px-6 py-3.5 font-medium transition hover:bg-[#d69b27]">
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#e5a930] px-6 py-3.5 font-medium transition hover:bg-[#d69b27]"
+          >
             Reserve a seat
             <ArrowRight className="h-4 w-4" />
           </Link>

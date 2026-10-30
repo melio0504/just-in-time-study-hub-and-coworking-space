@@ -57,7 +57,8 @@ export function AnnouncementNotification() {
           aria-label="Latest announcement"
           aria-live="polite"
           style={{ top: "calc(var(--site-header-bottom, 6rem) + 1rem)" }}
-          className="fixed right-4 z-40 w-[calc(100%-2rem)] max-w-80">
+          className="fixed right-4 z-40 w-[calc(100%-2rem)] max-w-80"
+        >
           <div className="rounded-xl border border-[#f3ede4] bg-white/90 p-4 shadow-lg backdrop-blur-sm">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
@@ -70,7 +71,8 @@ export function AnnouncementNotification() {
                 type="button"
                 onClick={() => setIsVisible(false)}
                 aria-label="Dismiss announcement"
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-[#f3ede4]">
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-[#f3ede4]"
+              >
                 <X className="h-3 w-3 text-[#6b5e52]" />
               </button>
             </div>
@@ -86,7 +88,8 @@ export function AnnouncementNotification() {
             <p className="text-sm leading-relaxed text-[#2d2520]">{announcement.body}</p>
             <Link
               href="/announcements"
-              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#b47b0d] transition-colors hover:text-[#8d5f08]">
+              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#b47b0d] transition-colors hover:text-[#8d5f08]"
+            >
               View all announcements
               <ArrowRight className="h-3 w-3" />
             </Link>

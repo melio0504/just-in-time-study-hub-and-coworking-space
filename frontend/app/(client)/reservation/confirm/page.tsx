@@ -155,7 +155,8 @@ function PaymentContent() {
               type="button"
               onClick={() => history.back()}
               className="rounded-full p-2 hover:bg-white/10"
-              aria-label="Go back">
+              aria-label="Go back"
+            >
               <ChevronLeft className="h-6 w-6" />
             </button>
             <div className="text-center">
@@ -241,7 +242,8 @@ function PaymentContent() {
                 <button
                   type="button"
                   onClick={() => void pay()}
-                  className="min-h-14 w-full rounded-2xl bg-[#0877e8] px-5 py-4 text-lg font-bold text-white shadow-lg shadow-blue-200 transition hover:bg-[#0668cc] active:scale-[0.99]">
+                  className="min-h-14 w-full rounded-2xl bg-[#0877e8] px-5 py-4 text-lg font-bold text-white shadow-lg shadow-blue-200 transition hover:bg-[#0668cc] active:scale-[0.99]"
+                >
                   {preview.confirmed ? "Continue" : `Pay ${formatPrice(preview.subtotalCents)}`}
                 </button>
               </div>
@@ -262,7 +264,8 @@ function PaymentContent() {
               </p>
               <p className="mt-4 max-w-xs text-sm leading-6 text-slate-500">{message}</p>
               <div
-                className={`mt-6 flex max-w-sm gap-3 rounded-2xl p-4 text-left text-sm ${state === "email_error" ? "bg-red-50 text-red-800" : "bg-blue-50 text-blue-900"}`}>
+                className={`mt-6 flex max-w-sm gap-3 rounded-2xl p-4 text-left text-sm ${state === "email_error" ? "bg-red-50 text-red-800" : "bg-blue-50 text-blue-900"}`}
+              >
                 <Mail className="mt-0.5 h-5 w-5 shrink-0" />
                 <p>
                   {state === "email_error"
@@ -318,7 +321,8 @@ function ErrorNotice({ message }: { message: string }) {
   return (
     <div
       role="alert"
-      className="mt-4 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+      className="mt-4 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+    >
       <AlertCircle className="h-5 w-5 shrink-0" />
       <p>{message}</p>
     </div>

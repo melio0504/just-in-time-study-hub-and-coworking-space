@@ -22,7 +22,8 @@ export default async function OpenGraphImage() {
         padding: "64px 76px",
         position: "relative",
         width: "100%",
-      }}>
+      }}
+    >
       <div
         style={{
           background: "#e5a930",
@@ -54,11 +55,13 @@ export default async function OpenGraphImage() {
           flexDirection: "column",
           maxWidth: 1020,
           width: "100%",
-        }}>
+        }}
+      >
         <div
           style={{
             display: "flex",
-          }}>
+          }}
+        >
           <img
             alt="Just In Time Study Hub and Coworking Space"
             src={logoUrl}
@@ -78,7 +81,8 @@ export default async function OpenGraphImage() {
             letterSpacing: -3,
             lineHeight: 1.06,
             marginTop: 50,
-          }}>
+          }}
+        >
           <span>You are</span>
           <span style={{ color: "#c4860e" }}>just in time.</span>
         </div>
@@ -88,7 +92,8 @@ export default async function OpenGraphImage() {
             display: "flex",
             fontSize: 29,
             marginTop: 42,
-          }}>
+          }}
+        >
           Study Hub &amp; Coworking Spaces · Mendiola, Manila
         </div>
       </div>

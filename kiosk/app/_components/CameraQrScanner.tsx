@@ -101,7 +101,8 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
   return (
     <div
       data-testid="camera-frame"
-      className="relative mb-3 aspect-square w-[min(100%,58dvh,560px)] shrink overflow-hidden rounded-2xl bg-[#2d2520] shadow-xl sm:rounded-3xl">
+      className="relative mb-3 aspect-square w-[min(100%,58dvh,560px)] shrink overflow-hidden rounded-2xl bg-[#2d2520] shadow-xl sm:rounded-3xl"
+    >
       <video
         ref={videoRef}
         className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
@@ -131,7 +132,8 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 text-center">
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}>
+            transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+          >
             <ScanLine className="mb-4 h-16 w-16 text-[#e5a930]" />
           </motion.div>
           <p className="text-xl text-[#2d2520]">Starting camera…</p>

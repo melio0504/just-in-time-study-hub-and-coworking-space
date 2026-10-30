@@ -457,7 +457,8 @@ export function KioskScanner() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col items-center justify-center">
+                className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col items-center justify-center"
+              >
                 <h2 className="mb-1 shrink-0 text-center text-2xl leading-tight text-[#2d2520] sm:text-3xl">
                   Scan your <span className="text-[#e5a930]">QR pass</span>
                 </h2>
@@ -476,7 +477,8 @@ export function KioskScanner() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex-1 flex flex-col items-center justify-center min-h-0">
+                className="flex-1 flex flex-col items-center justify-center min-h-0"
+              >
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
@@ -495,7 +497,8 @@ export function KioskScanner() {
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col items-center justify-center overflow-y-auto px-2 py-3 text-center">
+                className="mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col items-center justify-center overflow-y-auto px-2 py-3 text-center"
+              >
                 <div className="w-20 h-20 bg-[#dcfce7] rounded-full flex items-center justify-center mb-4 shrink-0">
                   <CheckCircle2 className="w-12 h-12 text-[#16a34a]" />
                 </div>
@@ -574,7 +577,8 @@ export function KioskScanner() {
                 className="mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col items-center justify-center px-4 text-center"
                 role="alertdialog"
                 aria-modal="true"
-                aria-labelledby="overtime-alert-title">
+                aria-labelledby="overtime-alert-title"
+              >
                 <div className="mb-5 flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-amber-100">
                   <AlertTriangle className="h-12 w-12 text-amber-700" />
                 </div>
@@ -583,7 +587,8 @@ export function KioskScanner() {
                 </p>
                 <h2
                   id="overtime-alert-title"
-                  className="mb-3 text-3xl font-semibold text-[#2d2520] sm:text-4xl">
+                  className="mb-3 text-3xl font-semibold text-[#2d2520] sm:text-4xl"
+                >
                   Additional payment required
                 </h2>
                 <p className="text-lg leading-relaxed text-[#6b5e52] sm:text-xl">
@@ -615,7 +620,8 @@ export function KioskScanner() {
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex-1 flex flex-col items-center justify-center min-h-0 max-w-lg mx-auto w-full text-center px-4">
+                className="flex-1 flex flex-col items-center justify-center min-h-0 max-w-lg mx-auto w-full text-center px-4"
+              >
                 <div className="w-20 h-20 bg-[#fee2e2] rounded-full flex items-center justify-center mb-5 shrink-0">
                   <XCircle className="w-12 h-12 text-[#dc2626]" />
                 </div>
@@ -627,7 +633,8 @@ export function KioskScanner() {
                 </p>
                 <p
                   className="shrink-0 text-base font-medium text-[#2d2520] sm:text-lg"
-                  aria-live="polite">
+                  aria-live="polite"
+                >
                   Scanner resuming in {errorSecondsRemaining}{" "}
                   {errorSecondsRemaining === 1 ? "second" : "seconds"}…
                 </p>
@@ -683,7 +690,8 @@ export function KioskScanner() {
                 {visibleSessions.map((s) => (
                   <li
                     key={s.bookingId}
-                    className="rounded-lg border border-[#f3ede4] bg-white p-3 text-base">
+                    className="rounded-lg border border-[#f3ede4] bg-white p-3 text-base"
+                  >
                     <p className="truncate text-lg font-medium text-[#2d2520]">{s.guestName}</p>
                     <p className="text-sm text-[#6b5e52]">
                       {s.seats.join(", ")} · {getRemainingMinutes(s.scheduledEnd)} min left
@@ -708,7 +716,8 @@ export function KioskScanner() {
                 {recentActivity.map((a) => (
                   <li
                     key={a.id}
-                    className="flex items-start gap-2 border-b border-[#f3ede4]/80 pb-2 text-base last:border-0">
+                    className="flex items-start gap-2 border-b border-[#f3ede4]/80 pb-2 text-base last:border-0"
+                  >
                     {a.type === "check-in" ? (
                       <LogIn className="w-4 h-4 text-[#16a34a] shrink-0 mt-0.5" />
                     ) : (

@@ -230,7 +230,8 @@ function SeatMarkers({
         // portal. This prevents unprojected and behind-camera markers from
         // flashing across the panorama until the user moves the camera.
         eps={isProjectionReady ? MARKER_PROJECTION_EPSILON : -1}
-        style={{ visibility: isProjectionReady ? "visible" : "hidden" }}>
+        style={{ visibility: isProjectionReady ? "visible" : "hidden" }}
+      >
         <button
           type="button"
           disabled={!isSelectable}
@@ -245,20 +246,23 @@ function SeatMarkers({
             isSelectable
               ? "pointer-events-auto cursor-pointer group"
               : "pointer-events-none cursor-default"
-          }`}>
+          }`}
+        >
           <div
             className={`min-w-20 rounded-lg border px-2.5 py-1.5 text-center shadow-[0_5px_18px_rgba(0,0,0,0.35)] backdrop-blur-sm transition ${
               isSelected
                 ? "border-blue-300 bg-blue-50 ring-2 ring-blue-400"
                 : "border-white/70 bg-white/95 group-hover:border-[#f5cf82] group-hover:ring-2 group-hover:ring-[#e5a930]"
-            }`}>
+            }`}
+          >
             <p className="whitespace-nowrap text-[11px] font-bold leading-tight text-[#2d2520]">
               Seat {seat.code}
             </p>
             <span
               className={`mt-1 inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[9px] font-semibold leading-tight ${
                 isSelected ? "bg-blue-100 text-blue-700" : details.badgeClass
-              }`}>
+              }`}
+            >
               {isSelected ? "Selected" : details.label}
             </span>
           </div>
@@ -266,7 +270,8 @@ function SeatMarkers({
           <div
             className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-white shadow-[0_4px_16px_rgba(0,0,0,0.5)] backdrop-blur-sm transition ${
               isSelected ? "scale-110 bg-blue-600" : "bg-black/70 group-hover:scale-110"
-            }`}>
+            }`}
+          >
             {isSelected ? (
               <Check className="h-4 w-4" aria-hidden />
             ) : (
@@ -333,13 +338,15 @@ function TourNavigation({
       <div
         className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/20 bg-black/55 p-2 shadow-[0_12px_36px_rgba(0,0,0,0.35)] backdrop-blur-xl"
         role="group"
-        aria-label="Choose a virtual tour view">
+        aria-label="Choose a virtual tour view"
+      >
         <button
           type="button"
           onClick={onPrevious}
           disabled={disabled}
           className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-[#e5a930] hover:text-[#241b0f] active:scale-95 disabled:cursor-wait disabled:opacity-40"
-          aria-label="Previous virtual tour view">
+          aria-label="Previous virtual tour view"
+        >
           <ArrowLeft className="h-5 w-5" aria-hidden />
         </button>
 
@@ -356,14 +363,16 @@ function TourNavigation({
                   : "text-white/70 hover:bg-white/10 hover:text-white"
               }`}
               aria-label={`Open ${scene.title}`}
-              aria-current={index === activeIndex ? "true" : undefined}>
+              aria-current={index === activeIndex ? "true" : undefined}
+            >
               <span
                 className={`h-2 rounded-full transition-all ${
                   index === activeIndex ? "w-6 bg-[#e5a930]" : "w-2 bg-current group-hover:w-4"
                 }`}
               />
               <span
-                className={`ml-2 text-xs font-semibold ${index === activeIndex ? "" : "hidden sm:inline"}`}>
+                className={`ml-2 text-xs font-semibold ${index === activeIndex ? "" : "hidden sm:inline"}`}
+              >
                 {index + 1}
               </span>
             </button>
@@ -375,7 +384,8 @@ function TourNavigation({
           onClick={onNext}
           disabled={disabled}
           className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e5a930] text-[#241b0f] transition hover:bg-[#f5cf82] active:scale-95 disabled:cursor-wait disabled:opacity-40"
-          aria-label="Next virtual tour view">
+          aria-label="Next virtual tour view"
+        >
           <ArrowRight className="h-5 w-5" aria-hidden />
         </button>
       </div>
@@ -654,7 +664,8 @@ export function VirtualStreetView() {
         isFullscreen
           ? "h-dvh rounded-none border-0"
           : "h-130 rounded-3xl border-4 border-[#e5a930] md:h-175"
-      }`}>
+      }`}
+    >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,240,212,0.3),transparent_45%),linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.35)_100%)]" />
 
       <div className="absolute left-4 right-4 top-4 z-20 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -686,7 +697,8 @@ export function VirtualStreetView() {
           ) : (
             <div
               className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-medium text-white/80"
-              aria-live="polite">
+              aria-live="polite"
+            >
               {isAvailabilityLoading ? (
                 <span>Checking seats…</span>
               ) : (
@@ -711,7 +723,8 @@ export function VirtualStreetView() {
                 setZoomTarget(Number(Math.max(minZoom, zoomLevel - zoomStep).toFixed(2)))
               }
               className="px-4 py-3 text-sm font-medium text-white transition hover:bg-white/10"
-              aria-label="Zoom out">
+              aria-label="Zoom out"
+            >
               −
             </button>
             <div className="px-4 py-3 text-sm font-medium text-white/80">Zoom</div>
@@ -721,7 +734,8 @@ export function VirtualStreetView() {
                 setZoomTarget(Number(Math.min(maxZoom, zoomLevel + zoomStep).toFixed(2)))
               }
               className="px-4 py-3 text-sm font-medium text-white transition hover:bg-white/10"
-              aria-label="Zoom in">
+              aria-label="Zoom in"
+            >
               +
             </button>
           </div>
@@ -729,7 +743,8 @@ export function VirtualStreetView() {
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="inline-flex items-center rounded-full border border-white/20 bg-black/35 px-4 py-3 text-sm font-medium text-white backdrop-blur-md transition hover:bg-black/55">
+            className="inline-flex items-center rounded-full border border-white/20 bg-black/35 px-4 py-3 text-sm font-medium text-white backdrop-blur-md transition hover:bg-black/55"
+          >
             {isFullscreen ? "Exit Full Screen" : "Full Screen"}
           </button>
         </div>
@@ -740,7 +755,8 @@ export function VirtualStreetView() {
           gl={{ antialias: true, alpha: true }}
           eventSource={eventSource ?? undefined}
           eventPrefix="client"
-          className="touch-none">
+          className="touch-none"
+        >
           <PerspectiveCamera
             ref={cameraRef}
             makeDefault
@@ -800,13 +816,15 @@ export function VirtualStreetView() {
               <button
                 type="button"
                 onClick={() => setIsReservePromptOpen(true)}
-                className="rounded-full bg-[#e5a930] px-3 py-1.5 text-xs font-semibold text-[#241b0f] transition hover:bg-[#f5cf82]">
+                className="rounded-full bg-[#e5a930] px-3 py-1.5 text-xs font-semibold text-[#241b0f] transition hover:bg-[#f5cf82]"
+              >
                 Reserve selected
               </button>
               <button
                 type="button"
                 onClick={clearSelectedSeats}
-                className="rounded-full border border-white/25 px-3 py-1.5 text-xs font-medium transition hover:bg-white/10">
+                className="rounded-full border border-white/25 px-3 py-1.5 text-xs font-medium transition hover:bg-white/10"
+              >
                 Clear
               </button>
             </div>
@@ -825,7 +843,8 @@ export function VirtualStreetView() {
             aria-modal="true"
             aria-labelledby="reserve-seat-title"
             aria-describedby="reserve-seat-description"
-            className="w-full max-w-md rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl">
+            className="w-full max-w-md rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl"
+          >
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c98d17]">
               Selected {selectedSeatCodes.length}/5
             </p>
@@ -847,13 +866,15 @@ export function VirtualStreetView() {
               <button
                 type="button"
                 onClick={() => setIsReservePromptOpen(false)}
-                className="rounded-full border border-[#ded4c7] px-5 py-2.5 text-sm font-semibold text-[#6b5e52] transition hover:bg-[#f8f3ec]">
+                className="rounded-full border border-[#ded4c7] px-5 py-2.5 text-sm font-semibold text-[#6b5e52] transition hover:bg-[#f8f3ec]"
+              >
                 Choose more seats
               </button>
               <button
                 type="button"
                 onClick={() => void continueToReservation()}
-                className="rounded-full bg-[#e5a930] px-5 py-2.5 text-sm font-semibold text-[#241b0f] transition hover:bg-[#f5cf82]">
+                className="rounded-full bg-[#e5a930] px-5 py-2.5 text-sm font-semibold text-[#241b0f] transition hover:bg-[#f5cf82]"
+              >
                 Yes, reserve
               </button>
             </div>

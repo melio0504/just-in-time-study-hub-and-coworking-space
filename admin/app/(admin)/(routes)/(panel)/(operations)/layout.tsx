@@ -54,7 +54,8 @@ export default async function DashboardLayout({
         announcements: announcementResult.data ?? [],
         logs: (logResult.data ?? []) as DashboardAuditLog[],
         error: firstError?.message ?? "",
-      }}>
+      }}
+    >
       {children}
     </DashboardDataProvider>
   );

@@ -39,7 +39,8 @@ export default {
     if (!uuidPattern.test(bookingId)) return json({ error: "Invalid reservation." }, 400);
 
     const secret = Deno.env.get("QR_ACCESS_TOKEN_SECRET")?.trim();
-    if (!secret || secret.length < 32) return json({ error: "QR-pass delivery is not configured." }, 503);
+    if (!secret || secret.length < 32)
+      return json({ error: "QR-pass delivery is not configured." }, 503);
 
     const { data, error } = await context.supabaseAdmin.rpc("get_customer_booking_pass", {
       p_booking_id: bookingId,

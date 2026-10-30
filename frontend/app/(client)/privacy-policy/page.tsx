@@ -111,7 +111,8 @@ export default function PrivacyPolicyPage() {
         <div className="mx-auto max-w-4xl">
           <Link
             href="/"
-            className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-[#8a671a] transition-colors hover:text-[#684b0c]">
+            className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-[#8a671a] transition-colors hover:text-[#684b0c]"
+          >
             <ArrowLeft className="h-4 w-4" />
             Back to home
           </Link>
@@ -148,7 +149,8 @@ export default function PrivacyPolicyPage() {
           {sections.map(({ title, icon: Icon, content }) => (
             <section
               key={title}
-              className="rounded-3xl border border-[#eadfce] bg-white p-6 shadow-sm sm:p-8">
+              className="rounded-3xl border border-[#eadfce] bg-white p-6 shadow-sm sm:p-8"
+            >
               <div className="flex items-center gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#fef3dc] text-[#9b6810]">
                   <Icon className="h-5 w-5" />
@@ -185,7 +187,8 @@ export default function PrivacyPolicyPage() {
                 href="https://privacy.gov.ph/data-subject-rights/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-[#8a671a] underline decoration-[#d7b36a] underline-offset-4 hover:text-[#684b0c]">
+                className="font-semibold text-[#8a671a] underline decoration-[#d7b36a] underline-offset-4 hover:text-[#684b0c]"
+              >
                 National Privacy Commission
               </a>
               .
@@ -205,7 +208,8 @@ export default function PrivacyPolicyPage() {
                 </p>
                 <a
                   href="mailto:jit.studyhub@gmail.com"
-                  className="mt-4 inline-flex rounded-full bg-[#e5a930] px-5 py-3 font-semibold text-white transition-colors hover:bg-[#cf9220]">
+                  className="mt-4 inline-flex rounded-full bg-[#e5a930] px-5 py-3 font-semibold text-white transition-colors hover:bg-[#cf9220]"
+                >
                   jit.studyhub@gmail.com
                 </a>
               </div>

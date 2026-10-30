@@ -134,4 +134,3 @@ service before restarting the project.
 This is expected for `npm run dev:admin`, which listens only on `127.0.0.1`.
 Use `admin.jit-studyhub.com` for the deployed remote dashboard. The kiosk is a
 separate Electron application on the facility computer.
-

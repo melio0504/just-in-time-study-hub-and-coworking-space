@@ -37,21 +37,31 @@ export default {
       .maybeSingle();
 
     if (reservationError) {
-      console.error("Active reservation lookup failed", reservationError.code, reservationError.message);
+      console.error(
+        "Active reservation lookup failed",
+        reservationError.code,
+        reservationError.message,
+      );
       return json({ error: "Your reservations could not be checked. Please try again." }, 500);
     }
     if (activeReservation) {
-      return json({
-        error: "Cancel or complete your active reservations before deleting your account.",
-      }, 409);
+      return json(
+        {
+          error: "Cancel or complete your active reservations before deleting your account.",
+        },
+        409,
+      );
     }
 
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId, false);
     if (deleteError) {
       console.error("Customer account deletion failed", deleteError.status, deleteError.message);
-      return json({
-        error: "Your account could not be deleted. Please try again or contact the front desk.",
-      }, 500);
+      return json(
+        {
+          error: "Your account could not be deleted. Please try again or contact the front desk.",
+        },
+        500,
+      );
     }
 
     return json({ deleted: true });

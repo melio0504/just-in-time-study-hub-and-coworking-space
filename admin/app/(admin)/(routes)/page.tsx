@@ -148,7 +148,8 @@ export default function AdminLogin() {
               {errorMessage && (
                 <p
                   role="alert"
-                  className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                >
                   {errorMessage}
                 </p>
               )}
@@ -189,7 +190,8 @@ export default function AdminLogin() {
                     onClick={() => setShowPassword((current) => !current)}
                     aria-label={`${showPassword ? "Hide" : "Show"} admin password`}
                     aria-pressed={showPassword}
-                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition hover:text-[#2d2520] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#b47b0d]">
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition hover:text-[#2d2520] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#b47b0d]"
+                  >
                     {showPassword ? (
                       <EyeOff className="h-4.5 w-4.5" aria-hidden="true" />
                     ) : (
@@ -202,7 +204,8 @@ export default function AdminLogin() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
+                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+              >
                 {isSubmitting ? "Signing In…" : "Sign In to Admin Portal"}
               </button>
             </form>

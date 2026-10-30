@@ -39,7 +39,9 @@ export default {
     }
 
     const bookingId = typeof body.bookingId === "string" ? body.bookingId.trim() : "";
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(bookingId)) {
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(bookingId)
+    ) {
       return json({ error: "Invalid reservation." }, 400);
     }
 
@@ -62,16 +64,21 @@ export default {
     if (!booking) return json({ error: "The QR pass could not be prepared." }, 500);
 
     try {
-      const accessToken = base64Url(await hmac(`booking:${bookingId}:access-pass:v1`, accessSecret));
+      const accessToken = base64Url(
+        await hmac(`booking:${bookingId}:access-pass:v1`, accessSecret),
+      );
       const sendMinute = Math.floor(Date.now() / 60_000);
       await sendBookingConfirmationEmail(booking, accessToken, {
         resend: true,
         idempotencyKey: `booking-pass-resend/${bookingId}/${sendMinute}`,
       });
-      const { error: markError } = await context.supabaseAdmin.rpc("mark_booking_confirmation_email", {
-        p_booking_id: bookingId,
-        p_error: null,
-      });
+      const { error: markError } = await context.supabaseAdmin.rpc(
+        "mark_booking_confirmation_email",
+        {
+          p_booking_id: bookingId,
+          p_error: null,
+        },
+      );
       if (markError) throw new Error(markError.message);
       return json({ sent: true, email: booking.guest_email });
     } catch (sendError) {

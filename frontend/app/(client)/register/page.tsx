@@ -174,14 +174,16 @@ export default function Register() {
               {errorMessage && (
                 <p
                   role="alert"
-                  className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                >
                   {errorMessage}
                 </p>
               )}
               {successMessage && (
                 <div
                   role="status"
-                  className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                  className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+                >
                   <p className="font-semibold">Check your inbox</p>
                   <p className="mt-1 leading-6">{successMessage}</p>
                 </div>
@@ -191,7 +193,8 @@ export default function Register() {
                 type="button"
                 onClick={handleGoogleSignUp}
                 disabled={isSubmitting || isGoogleSubmitting}
-                className="flex w-full items-center justify-center gap-3 rounded-full border border-[#d8d0c5] bg-white px-8 py-4 font-medium text-[#2d2520] transition-colors hover:bg-[#fffcf7] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
+                className="flex w-full items-center justify-center gap-3 rounded-full border border-[#d8d0c5] bg-white px-8 py-4 font-medium text-[#2d2520] transition-colors hover:bg-[#fffcf7] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+              >
                 <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
                   <path
                     fill="#4285F4"
@@ -274,7 +277,8 @@ export default function Register() {
                     onClick={() => setShowPassword((visible) => !visible)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     aria-pressed={showPassword}
-                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition-colors hover:text-[#e5a930] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e5a930] rounded-r-xl cursor-pointer">
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition-colors hover:text-[#e5a930] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e5a930] rounded-r-xl cursor-pointer"
+                  >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
@@ -304,7 +308,8 @@ export default function Register() {
                         : "Show confirmation password"
                     }
                     aria-pressed={showConfirmPassword}
-                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition-colors hover:text-[#e5a930] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e5a930] rounded-r-xl">
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition-colors hover:text-[#e5a930] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e5a930] rounded-r-xl"
+                  >
                     {showConfirmPassword ? (
                       <EyeOff className="h-5 w-5" />
                     ) : (
@@ -317,7 +322,8 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={isSubmitting || isGoogleSubmitting}
-                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">
+                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 {isSubmitting ? "Creating Account…" : "Create Account"}
               </button>
 

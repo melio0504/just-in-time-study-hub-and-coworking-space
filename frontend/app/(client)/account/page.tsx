@@ -321,7 +321,8 @@ export default function Account() {
               setLogoutError("");
               setShowLogoutModal(true);
             }}
-            className="flex items-center gap-2 bg-white text-[#2d2520] px-6 py-3 rounded-full border border-[#f3ede4] hover:shadow-lg cursor-pointer">
+            className="flex items-center gap-2 bg-white text-[#2d2520] px-6 py-3 rounded-full border border-[#f3ede4] hover:shadow-lg cursor-pointer"
+          >
             <LogOut className="w-4 h-4" />
             Logout
           </button>
@@ -368,7 +369,8 @@ export default function Account() {
                         className="grid flex-1 gap-1.5"
                         style={{
                           gridTemplateColumns: `repeat(${STUDY_HISTORY_WEEKS}, minmax(0, 1fr))`,
-                        }}>
+                        }}
+                      >
                         {Array.from({ length: STUDY_HISTORY_WEEKS }).map((_, weekIndex) => {
                           const weekData = getWeekData(weekIndex);
                           const dayData = weekData[rowIndex];
@@ -400,7 +402,8 @@ export default function Account() {
 
                 <div
                   className="mt-4 flex items-center justify-end gap-4 text-xs text-[#6b5e52]"
-                  aria-label="Study history color legend">
+                  aria-label="Study history color legend"
+                >
                   <span className="flex items-center gap-1.5">
                     <span className="h-3 w-3 rounded-[3px] bg-[#f3ede4]" aria-hidden="true" />
                     No booking
@@ -478,7 +481,8 @@ export default function Account() {
                   onClick={() => setShowTimerSettings(!showTimerSettings)}
                   aria-label="Timer settings"
                   aria-expanded={showTimerSettings}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e5a930] bg-white text-[#2d2520] transition-colors hover:bg-[#f3ede4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] cursor-pointer">
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e5a930] bg-white text-[#2d2520] transition-colors hover:bg-[#f3ede4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] cursor-pointer"
+                >
                   <Settings className="w-5 h-5" />
                 </button>
               </div>
@@ -497,7 +501,8 @@ export default function Account() {
                           : Math.max(customTimerValue, 1),
                       );
                     }}
-                    className="w-full px-3 py-2 rounded-lg border border-[#f3ede4] focus:outline-none focus:ring-2 focus:ring-[#e5a930] mb-3 bg-white text-[#2d2520]">
+                    className="w-full px-3 py-2 rounded-lg border border-[#f3ede4] focus:outline-none focus:ring-2 focus:ring-[#e5a930] mb-3 bg-white text-[#2d2520]"
+                  >
                     <option value="minutes">Minutes</option>
                     <option value="seconds">Seconds</option>
                   </select>
@@ -523,14 +528,16 @@ export default function Account() {
                           setCustomTimerValue(preset);
                           applyTimerSettings(preset, timerUnit);
                         }}
-                        className="px-3 py-2 rounded-full border border-[#e5a930] bg-[#fef3dc] text-[#2d2520] text-sm hover:bg-[#f3ede4] transition-colors cursor-pointer">
+                        className="px-3 py-2 rounded-full border border-[#e5a930] bg-[#fef3dc] text-[#2d2520] text-sm hover:bg-[#f3ede4] transition-colors cursor-pointer"
+                      >
                         {preset} {timerUnitShortLabel}
                       </button>
                     ))}
                   </div>
                   <button
                     onClick={() => applyTimerSettings()}
-                    className="w-full bg-[#e5a930] text-white px-4 py-2 rounded-lg hover:bg-[#d69520] transition-colors text-sm cursor-pointer">
+                    className="w-full bg-[#e5a930] text-white px-4 py-2 rounded-lg hover:bg-[#d69520] transition-colors text-sm cursor-pointer"
+                  >
                     Apply {timerUnitLabel} setting
                   </button>
                 </div>
@@ -552,7 +559,8 @@ export default function Account() {
                     <button
                       type="button"
                       onClick={stopPomodoroSound}
-                      className="inline-flex min-w-32 items-center justify-center gap-2 rounded-full bg-[#2d2520] px-6 py-3 text-white shadow-sm transition-all hover:bg-[#44382f] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2d2520] focus-visible:ring-offset-2 cursor-pointer">
+                      className="inline-flex min-w-32 items-center justify-center gap-2 rounded-full bg-[#2d2520] px-6 py-3 text-white shadow-sm transition-all hover:bg-[#44382f] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2d2520] focus-visible:ring-offset-2 cursor-pointer"
+                    >
                       <VolumeX className="h-5 w-5" />
                       Stop the sound
                     </button>
@@ -560,7 +568,8 @@ export default function Account() {
                     <button
                       type="button"
                       onClick={toggleTimer}
-                      className="inline-flex min-w-32 items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white shadow-sm transition-all hover:bg-[#d69520] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d69520] focus-visible:ring-offset-2 cursor-pointer">
+                      className="inline-flex min-w-32 items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white shadow-sm transition-all hover:bg-[#d69520] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d69520] focus-visible:ring-offset-2 cursor-pointer"
+                    >
                       {isTimerRunning ? (
                         <Pause className="w-5 h-5" />
                       ) : (
@@ -571,7 +580,8 @@ export default function Account() {
                   )}
                   <button
                     onClick={resetTimer}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#e5a930] bg-white px-5 py-3 text-[#2d2520] transition-colors hover:bg-[#f3ede4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] cursor-pointer">
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#e5a930] bg-white px-5 py-3 text-[#2d2520] transition-colors hover:bg-[#f3ede4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] cursor-pointer"
+                  >
                     <RotateCcw className="w-5 h-5" />
                     Reset
                   </button>
@@ -629,13 +639,15 @@ export default function Account() {
                     <button
                       onClick={() => setShowAddCard(false)}
                       aria-label="Close flashcard form"
-                      className="flex h-9 w-9 items-center justify-center rounded-full text-[#6b5e52] hover:bg-white hover:text-[#2d2520] cursor-pointer">
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-[#6b5e52] hover:bg-white hover:text-[#2d2520] cursor-pointer"
+                    >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                   <label
                     htmlFor="flashcard-question"
-                    className="mb-1.5 block text-sm font-medium text-[#2d2520]">
+                    className="mb-1.5 block text-sm font-medium text-[#2d2520]"
+                  >
                     Question or prompt
                   </label>
                   <textarea
@@ -648,7 +660,8 @@ export default function Account() {
                   />
                   <label
                     htmlFor="flashcard-answer"
-                    className="mb-1.5 block text-sm font-medium text-[#2d2520]">
+                    className="mb-1.5 block text-sm font-medium text-[#2d2520]"
+                  >
                     Answer
                   </label>
                   <textarea
@@ -662,7 +675,8 @@ export default function Account() {
                   <button
                     onClick={addFlashcard}
                     disabled={!newCard.question.trim() || !newCard.answer.trim()}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#e5a930] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#d69520] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50">
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#e5a930] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#d69520] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  >
                     <Plus className="h-4 w-4" />
                     Add Card
                   </button>
@@ -673,7 +687,8 @@ export default function Account() {
                 <>
                   <button
                     onClick={flipCard}
-                    className="mb-5 flex min-h-56 w-full flex-col items-center justify-center rounded-2xl border-2 border-[#e5a930] bg-[#fef3dc] p-8 text-center transition-all hover:-translate-y-0.5 hover:bg-[#f4d98d] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] focus-visible:ring-offset-2 cursor-pointer">
+                    className="mb-5 flex min-h-56 w-full flex-col items-center justify-center rounded-2xl border-2 border-[#e5a930] bg-[#fef3dc] p-8 text-center transition-all hover:-translate-y-0.5 hover:bg-[#f4d98d] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a930] focus-visible:ring-offset-2 cursor-pointer"
+                  >
                     <span className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-[#8b6518]">
                       {isCardFlipped ? "Answer" : "Question"}
                     </span>
@@ -690,26 +705,30 @@ export default function Account() {
                       <button
                         onClick={previousCard}
                         disabled={flashcards.length <= 1}
-                        className="rounded-full border border-[#f3ede4] bg-white px-4 py-2 text-sm text-[#2d2520] hover:border-[#e5a930] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40">
+                        className="rounded-full border border-[#f3ede4] bg-white px-4 py-2 text-sm text-[#2d2520] hover:border-[#e5a930] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                      >
                         Previous
                       </button>
                       <button
                         onClick={nextCard}
                         disabled={flashcards.length <= 1}
-                        className="rounded-full border border-[#f3ede4] bg-white px-4 py-2 text-sm text-[#2d2520] hover:border-[#e5a930] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40">
+                        className="rounded-full border border-[#f3ede4] bg-white px-4 py-2 text-sm text-[#2d2520] hover:border-[#e5a930] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                      >
                         Next
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => setShowDeleteCardModal(true)}
-                        className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer">
+                        className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 cursor-pointer"
+                      >
                         <Trash2 className="h-4 w-4" />
                         Delete card
                       </button>
                       <button
                         onClick={() => setShowAddCard(true)}
-                        className="inline-flex items-center gap-2 rounded-full bg-[#e5a930] px-4 py-2 text-sm text-white hover:bg-[#d69520] cursor-pointer">
+                        className="inline-flex items-center gap-2 rounded-full bg-[#e5a930] px-4 py-2 text-sm text-white hover:bg-[#d69520] cursor-pointer"
+                      >
                         <Plus className="h-4 w-4" />
                         New card
                       </button>
@@ -727,7 +746,8 @@ export default function Account() {
                   </p>
                   <button
                     onClick={() => setShowAddCard(true)}
-                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#e5a930] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#d69520] cursor-pointer">
+                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#e5a930] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#d69520] cursor-pointer"
+                  >
                     <Plus className="h-4 w-4" />
                     Create first card
                   </button>
@@ -768,13 +788,15 @@ export default function Account() {
               if (event.target === event.currentTarget && !isLoggingOut) {
                 setShowLogoutModal(false);
               }
-            }}>
+            }}
+          >
             <div
               role="dialog"
               aria-modal="true"
               aria-labelledby="logout-title"
               aria-describedby="logout-description"
-              className="w-full max-w-md rounded-3xl border border-[#f3ede4] bg-white p-6 shadow-2xl sm:p-8">
+              className="w-full max-w-md rounded-3xl border border-[#f3ede4] bg-white p-6 shadow-2xl sm:p-8"
+            >
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#fef3dc] text-[#b47b0d]">
                 <LogOut className="h-5 w-5" />
               </div>
@@ -789,7 +811,8 @@ export default function Account() {
               {logoutError && (
                 <p
                   role="alert"
-                  className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                >
                   {logoutError}
                 </p>
               )}
@@ -800,14 +823,16 @@ export default function Account() {
                   onClick={() => setShowLogoutModal(false)}
                   disabled={isLoggingOut}
                   autoFocus
-                  className="cursor-pointer rounded-full border border-[#f3ede4] bg-white px-5 py-2.5 text-sm text-[#2d2520] transition-colors hover:border-[#e5a930] hover:bg-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-50">
+                  className="cursor-pointer rounded-full border border-[#f3ede4] bg-white px-5 py-2.5 text-sm text-[#2d2520] transition-colors hover:border-[#e5a930] hover:bg-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-50"
+                >
                   Stay signed in
                 </button>
                 <button
                   type="button"
                   onClick={() => void handleLogout()}
                   disabled={isLoggingOut}
-                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#2d2520] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#44382f] disabled:cursor-not-allowed disabled:opacity-60">
+                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#2d2520] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#44382f] disabled:cursor-not-allowed disabled:opacity-60"
+                >
                   <LogOut className="h-4 w-4" />
                   {isLoggingOut ? "Logging out…" : "Log out"}
                 </button>
@@ -821,13 +846,15 @@ export default function Account() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm"
             onClick={(event) => {
               if (event.target === event.currentTarget) setShowDeleteCardModal(false);
-            }}>
+            }}
+          >
             <div
               role="dialog"
               aria-modal="true"
               aria-labelledby="delete-flashcard-title"
               aria-describedby="delete-flashcard-description"
-              className="w-full max-w-md rounded-3xl border border-red-100 bg-white p-6 shadow-2xl">
+              className="w-full max-w-md rounded-3xl border border-red-100 bg-white p-6 shadow-2xl"
+            >
               <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
                 <Trash2 className="h-5 w-5" />
               </div>
@@ -836,7 +863,8 @@ export default function Account() {
               </h2>
               <p
                 id="delete-flashcard-description"
-                className="mt-2 text-sm leading-6 text-[#6b5e52]">
+                className="mt-2 text-sm leading-6 text-[#6b5e52]"
+              >
                 This will permanently remove “{currentFlashcard.question}” from your flashcards.
                 This action cannot be undone.
               </p>
@@ -845,13 +873,15 @@ export default function Account() {
                   type="button"
                   onClick={() => setShowDeleteCardModal(false)}
                   autoFocus
-                  className="rounded-full border border-[#f3ede4] bg-white px-5 py-2.5 text-sm text-[#2d2520] transition-colors hover:border-[#e5a930] hover:bg-[#fffaf0] cursor-pointer">
+                  className="rounded-full border border-[#f3ede4] bg-white px-5 py-2.5 text-sm text-[#2d2520] transition-colors hover:border-[#e5a930] hover:bg-[#fffaf0] cursor-pointer"
+                >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={deleteCurrentFlashcard}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 cursor-pointer">
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 cursor-pointer"
+                >
                   <Trash2 className="h-4 w-4" />
                   Delete card
                 </button>

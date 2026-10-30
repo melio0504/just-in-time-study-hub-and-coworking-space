@@ -4,11 +4,11 @@
 
 The frontend and admin `.env.local` files require these variables:
 
-| Variable | Purpose | Browser-visible? |
-| --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project API URL | Yes |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key used by the Supabase client | Yes |
-| `NEXT_PUBLIC_SITE_URL` | Canonical URL for the application | Yes |
+| Variable                               | Purpose                                     | Browser-visible? |
+| -------------------------------------- | ------------------------------------------- | ---------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase project API URL                    | Yes              |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key used by the Supabase client | Yes              |
+| `NEXT_PUBLIC_SITE_URL`                 | Canonical URL for the application           | Yes              |
 
 The kiosk requires `NEXT_PUBLIC_SUPABASE_URL`,
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and a kiosk-scoped
@@ -99,20 +99,20 @@ to Supabase's development mail service.
 PayMongo and transactional email credentials belong in **Supabase Edge
 Function secrets**, not in Vercel:
 
-| Variable | Local value | Production value |
-| --- | --- | --- |
-| `PAYMONGO_MODE` | `test` | `live` |
-| `PAYMONGO_SIMULATE_REFUNDS` | `true` | `false` (required for real refunds) |
-| `PAYMONGO_SECRET_KEY` | PayMongo test secret key | PayMongo live secret key |
-| `PAYMONGO_PUBLIC_KEY` | PayMongo test public key | PayMongo live public key |
-| `PAYMONGO_WEBHOOK_SECRET` | Test endpoint signing secret | Live endpoint signing secret |
-| `QR_ACCESS_TOKEN_SECRET` | Random value of at least 32 characters | A separate production random value |
-| `KIOSK_ACCESS_TOKEN` | Random value of at least 32 characters | The device token embedded in the facility kiosk installer |
-| `PUBLIC_SITE_URL` | `http://localhost:3000` | Deployed Vercel URL used in confirmation emails |
-| `EMAIL_PROVIDER` | `mailpit` | `resend` |
-| `MAILPIT_API_URL` | `http://inbucket:8025/api/v1/send` | Not used |
-| `RESEND_API_KEY` | Not used | Resend API key |
-| `EMAIL_FROM` | Local test sender | Sender on the verified Resend domain |
+| Variable                    | Local value                            | Production value                                          |
+| --------------------------- | -------------------------------------- | --------------------------------------------------------- |
+| `PAYMONGO_MODE`             | `test`                                 | `live`                                                    |
+| `PAYMONGO_SIMULATE_REFUNDS` | `true`                                 | `false` (required for real refunds)                       |
+| `PAYMONGO_SECRET_KEY`       | PayMongo test secret key               | PayMongo live secret key                                  |
+| `PAYMONGO_PUBLIC_KEY`       | PayMongo test public key               | PayMongo live public key                                  |
+| `PAYMONGO_WEBHOOK_SECRET`   | Test endpoint signing secret           | Live endpoint signing secret                              |
+| `QR_ACCESS_TOKEN_SECRET`    | Random value of at least 32 characters | A separate production random value                        |
+| `KIOSK_ACCESS_TOKEN`        | Random value of at least 32 characters | The device token embedded in the facility kiosk installer |
+| `PUBLIC_SITE_URL`           | `http://localhost:3000`                | Deployed Vercel URL used in confirmation emails           |
+| `EMAIL_PROVIDER`            | `mailpit`                              | `resend`                                                  |
+| `MAILPIT_API_URL`           | `http://inbucket:8025/api/v1/send`     | Not used                                                  |
+| `RESEND_API_KEY`            | Not used                               | Resend API key                                            |
+| `EMAIL_FROM`                | Local test sender                      | Sender on the verified Resend domain                      |
 
 See [PayMongo QR Ph and confirmation email setup](PAYMENTS_AND_EMAIL.md) for
 the complete local and production workflow.
@@ -136,4 +136,3 @@ Before committing, check that no environment file is staged:
 git status --short
 git diff --cached
 ```
-

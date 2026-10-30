@@ -105,7 +105,7 @@ In the production Supabase Dashboard:
      HTML from `supabase/templates/confirmation.html`.
    - **Reset password**: copy the subject from `supabase/config.toml` and the
      HTML from `supabase/templates/recovery.html`.
-   Local template files are not automatically uploaded to hosted projects.
+     Local template files are not automatically uploaded to hosted projects.
 4. Configure a production SMTP provider before launch. Supabase's default
    email sender is intended only for limited testing.
 5. Put the production URL and publishable key in Vercel as

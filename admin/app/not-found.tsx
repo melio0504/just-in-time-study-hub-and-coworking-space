@@ -13,7 +13,8 @@ export default function NotFound() {
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
             href="/"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white transition hover:shadow-lg">
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white transition hover:shadow-lg"
+          >
             <MonitorCog className="h-4 w-4" />
             Admin
           </Link>

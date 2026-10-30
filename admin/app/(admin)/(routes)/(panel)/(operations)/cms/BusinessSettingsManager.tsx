@@ -349,12 +349,14 @@ export function BusinessSettingsManager() {
               onClick={() => void saveHours()}
               label="Save hours"
             />
-          }>
+          }
+        >
           <div className="grid gap-3 xl:grid-cols-2">
             {hours.map((item, index) => (
               <div
                 key={item.day_of_week}
-                className="min-w-0 rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-4">
+                className="min-w-0 rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-4"
+              >
                 <div className="flex min-w-0 items-center justify-between gap-3">
                   <p className="min-w-0 font-semibold text-[#2d2520]">
                     {dayNames[item.day_of_week]}
@@ -405,11 +407,13 @@ export function BusinessSettingsManager() {
         <SettingsCard
           icon={CalendarOff}
           title="Holidays and temporary closures"
-          description="Active closure dates are unavailable in the reservation calendar and rejected by the booking system.">
+          description="Active closure dates are unavailable in the reservation calendar and rejected by the booking system."
+        >
           <div className="grid gap-5 xl:grid-cols-[minmax(300px,0.75fr)_1.4fr]">
             <form
               onSubmit={addClosure}
-              className="space-y-4 rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-5">
+              className="space-y-4 rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-5"
+            >
               <h3 className="font-semibold text-[#2d2520]">Add closure</h3>
               <Field label="Name">
                 <input
@@ -430,7 +434,8 @@ export function BusinessSettingsManager() {
                       closure_type: event.target.value as "holiday" | "temporary",
                     })
                   }
-                  className="input">
+                  className="input"
+                >
                   <option value="temporary">Temporary closure</option>
                   <option value="holiday">Holiday</option>
                 </select>
@@ -490,7 +495,8 @@ export function BusinessSettingsManager() {
               {closures.map((closure) => (
                 <article
                   key={closure.id}
-                  className="flex flex-col gap-4 rounded-2xl border border-[#e8dfd4] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                  className="flex flex-col gap-4 rounded-2xl border border-[#e8dfd4] bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold text-[#2d2520]">{closure.name}</h3>
@@ -517,7 +523,8 @@ export function BusinessSettingsManager() {
                       onClick={() => requestDelete({ kind: "closure", item: closure })}
                       disabled={saving === `closure-${closure.id}`}
                       className="rounded-xl border border-red-100 p-2.5 text-red-600 hover:bg-red-50 disabled:opacity-50"
-                      aria-label={`Delete ${closure.name}`}>
+                      aria-label={`Delete ${closure.name}`}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -530,7 +537,8 @@ export function BusinessSettingsManager() {
         <SettingsCard
           icon={PhilippinePeso}
           title="Customer pricing"
-          description="Hourly walk-in plans and package deals appear on the public pricing page immediately after saving.">
+          description="Hourly walk-in plans and package deals appear on the public pricing page immediately after saving."
+        >
           <div className="space-y-6">
             <div>
               <h3 className="mb-3 font-semibold text-[#2d2520]">Hourly rates</h3>
@@ -576,7 +584,8 @@ export function BusinessSettingsManager() {
                   type="button"
                   onClick={() => void addPackageRate()}
                   disabled={saving === "new-package"}
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#d8c9b9] bg-white px-3 py-2 text-sm font-semibold text-[#4f443c] hover:bg-[#fff8ed] disabled:opacity-50">
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#d8c9b9] bg-white px-3 py-2 text-sm font-semibold text-[#4f443c] hover:bg-[#fff8ed] disabled:opacity-50"
+                >
                   {saving === "new-package" ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
@@ -589,7 +598,8 @@ export function BusinessSettingsManager() {
                 {packageRates.map((rate, index) => (
                   <div
                     key={rate.id}
-                    className="rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-4">
+                    className="rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-4"
+                  >
                     <div className="grid gap-3 sm:grid-cols-2">
                       <Field label="Package name">
                         <input
@@ -682,7 +692,8 @@ export function BusinessSettingsManager() {
                           type="button"
                           onClick={() => requestDelete({ kind: "package", item: rate })}
                           className="rounded-xl border border-red-100 p-2.5 text-red-600 hover:bg-red-50"
-                          aria-label={`Delete ${rate.name}`}>
+                          aria-label={`Delete ${rate.name}`}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                         <SaveButton
@@ -702,7 +713,8 @@ export function BusinessSettingsManager() {
         <SettingsCard
           icon={Armchair}
           title="Reservation seat rates"
-          description="These hourly rates calculate the online reservation total. Saving a category updates every active seat in it.">
+          description="These hourly rates calculate the online reservation total. Saving a category updates every active seat in it."
+        >
           <div className="grid min-w-0 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
             {seatRates.map((rate) => (
               <SeatRateEditor
@@ -726,7 +738,8 @@ export function BusinessSettingsManager() {
                 onClick={() => void saveSettings()}
                 label="Save limits"
               />
-            }>
+            }
+          >
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
               <NumberSetting
                 label="Maximum seats"
@@ -836,14 +849,16 @@ function DeleteConfirmationModal({
       className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-[#2d2520]/55 p-4 backdrop-blur-sm"
       onMouseDown={() => {
         if (!busy) onClose();
-      }}>
+      }}
+    >
       <div
         className="my-auto w-full max-w-md rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7"
         onMouseDown={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-setting-title"
-        aria-describedby="delete-setting-description">
+        aria-describedby="delete-setting-description"
+      >
         <div className="mb-5 flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700">
@@ -863,7 +878,8 @@ function DeleteConfirmationModal({
             onClick={onClose}
             disabled={busy}
             className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:opacity-50"
-            aria-label="Close delete dialog">
+            aria-label="Close delete dialog"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -883,7 +899,8 @@ function DeleteConfirmationModal({
         {error && (
           <p
             role="alert"
-            className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+            className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"
+          >
             {error}
           </p>
         )}
@@ -892,7 +909,8 @@ function DeleteConfirmationModal({
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50">
+            className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50"
+          >
             Keep {itemType}
           </button>
           <button
@@ -900,7 +918,8 @@ function DeleteConfirmationModal({
             autoFocus
             onClick={onConfirm}
             disabled={busy}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50">
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
             {busy ? "Deleting…" : `Delete ${itemType}`}
           </button>
@@ -1015,7 +1034,8 @@ function SaveButton({
       type={type}
       onClick={onClick}
       disabled={busy}
-      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2d2520] px-4 py-2.5 text-sm font-semibold text-white hover:bg-black disabled:opacity-50">
+      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2d2520] px-4 py-2.5 text-sm font-semibold text-white hover:bg-black disabled:opacity-50"
+    >
       {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
       {label}
     </button>

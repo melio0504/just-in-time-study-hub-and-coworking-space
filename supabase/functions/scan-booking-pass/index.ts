@@ -148,11 +148,14 @@ export default {
             `(${earlyMinutes} minutes before) and remains available until ` +
             `${formatBookingDateTime(checkInWindow.scheduledEnd)}.`;
 
-          return json({
-            error: message,
-            code: "check_in_not_open",
-            ...checkInWindow,
-          }, status);
+          return json(
+            {
+              error: message,
+              code: "check_in_not_open",
+              ...checkInWindow,
+            },
+            status,
+          );
         }
       }
 

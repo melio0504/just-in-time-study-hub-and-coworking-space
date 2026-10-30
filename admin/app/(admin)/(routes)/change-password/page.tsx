@@ -127,7 +127,8 @@ export default function ChangeInitialPasswordPage() {
           {error && (
             <p
               role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
               {error}
             </p>
           )}
@@ -154,7 +155,8 @@ export default function ChangeInitialPasswordPage() {
           </p>
           <button
             disabled={saving}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2d2520] px-5 py-3.5 font-semibold text-white hover:bg-[#463a31] disabled:opacity-60">
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2d2520] px-5 py-3.5 font-semibold text-white hover:bg-[#463a31] disabled:opacity-60"
+          >
             {saving ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -202,7 +204,8 @@ function PasswordField({
           onClick={() => setVisible((current) => !current)}
           aria-label={`${visible ? "Hide" : "Show"} ${label.toLowerCase()}`}
           aria-pressed={visible}
-          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition hover:text-[#2d2520] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#b47b0d]">
+          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition hover:text-[#2d2520] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#b47b0d]"
+        >
           {visible ? (
             <EyeOff className="h-4.5 w-4.5" aria-hidden="true" />
           ) : (

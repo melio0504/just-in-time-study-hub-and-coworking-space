@@ -21,9 +21,17 @@ function json(body: Record<string, unknown>, status = 200) {
 }
 
 function escapeHtml(value: string) {
-  return value.replace(/[&<>'"]/g, (character) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",
-  })[character]!);
+  return value.replace(
+    /[&<>'"]/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;",
+      })[character]!,
+  );
 }
 
 function formatManila(value: string) {
@@ -87,7 +95,9 @@ async function sendReminderEmail(reminder: Reminder) {
   };
 
   const provider = (Deno.env.get("EMAIL_PROVIDER") ?? "mailpit").trim().toLowerCase();
-  const fromEmail = Deno.env.get("EMAIL_FROM") ?? Deno.env.get("RESEND_FROM_EMAIL") ??
+  const fromEmail =
+    Deno.env.get("EMAIL_FROM") ??
+    Deno.env.get("RESEND_FROM_EMAIL") ??
     "Just In Time Study Hub <bookings@local.test>";
 
   if (provider === "mailpit") {
@@ -111,7 +121,9 @@ async function sendReminderEmail(reminder: Reminder) {
     );
     if (!response.ok) {
       const detail = await response.text();
-      throw new Error(`Mailpit rejected the reminder email (${response.status}): ${detail.slice(0, 300)}`);
+      throw new Error(
+        `Mailpit rejected the reminder email (${response.status}): ${detail.slice(0, 300)}`,
+      );
     }
     return;
   }
@@ -136,7 +148,9 @@ async function sendReminderEmail(reminder: Reminder) {
   });
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(`Resend rejected the reminder email (${response.status}): ${detail.slice(0, 300)}`);
+    throw new Error(
+      `Resend rejected the reminder email (${response.status}): ${detail.slice(0, 300)}`,
+    );
   }
 }
 

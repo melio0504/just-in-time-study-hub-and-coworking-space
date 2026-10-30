@@ -37,7 +37,8 @@ export function SeatingPlanMini({ seats, onSeatClick, busySeatId }: SeatingPlanM
         }
         className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xs font-medium transition-all ${colors[status]} ${onSeatClick && status !== "reserved" && status !== "maintenance" ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-lg" : "cursor-default"}`}
         aria-label={`${id}, ${status}`}
-        title={`${id} — ${status}`}>
+        title={`${id} — ${status}`}
+      >
         {busySeatId === id ? "…" : id}
       </button>
     );
@@ -49,12 +50,14 @@ export function SeatingPlanMini({ seats, onSeatClick, busySeatId }: SeatingPlanM
         className="seating-plan-viewport w-full overflow-x-auto overscroll-x-contain pb-2 [scrollbar-color:#c4b5a3_transparent] [scrollbar-width:thin]"
         role="region"
         aria-label="Current seating plan"
-        tabIndex={0}>
+        tabIndex={0}
+      >
         <div className="seating-plan-sizer relative mx-auto">
           <div className="seating-plan-canvas relative origin-top-left">
             <div
               className="absolute inset-2 rounded-2xl border-[3px] border-[#8b7355] bg-linear-to-br from-[#faf8f5] via-[#f5f0e8] to-[#ebe4d8] shadow-[inset_0_2px_12px_rgba(45,37,32,0.06)]"
-              aria-hidden>
+              aria-hidden
+            >
               <div className="pointer-events-none absolute inset-1.5 rounded-xl border border-[#c4b5a3]/60" />
               <div className="pointer-events-none absolute top-2 left-2 h-7 w-7 rounded-tl-sm border-t-2 border-l-2 border-[#6b5e52]/40" />
               <div className="pointer-events-none absolute top-2 right-2 h-7 w-7 rounded-tr-sm border-t-2 border-r-2 border-[#6b5e52]/40" />

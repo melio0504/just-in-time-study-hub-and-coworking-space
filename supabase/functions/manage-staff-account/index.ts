@@ -4,7 +4,7 @@ const permissionValues = ["seating", "reservations", "announcements"] as const;
 const allowedPermissions = new Set<string>(permissionValues);
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-type StaffPermission = typeof permissionValues[number];
+type StaffPermission = (typeof permissionValues)[number];
 type RequestBody = {
   action?: unknown;
   staffId?: unknown;
@@ -125,7 +125,11 @@ export default {
           .eq("role", "staff");
         if (profileError) {
           await adminClient.auth.admin.updateUserById(staffId, { ban_duration: "876000h" });
-          console.error("Staff profile reactivation failed", profileError.code, profileError.message);
+          console.error(
+            "Staff profile reactivation failed",
+            profileError.code,
+            profileError.message,
+          );
           return json({ error: "The employee account could not be reactivated." }, 500);
         }
 
@@ -137,7 +141,11 @@ export default {
           .eq("id", staffId)
           .eq("role", "staff");
         if (profileError) {
-          console.error("Staff profile deactivation failed", profileError.code, profileError.message);
+          console.error(
+            "Staff profile deactivation failed",
+            profileError.code,
+            profileError.message,
+          );
           return json({ error: "The employee account could not be deactivated." }, 500);
         }
 
@@ -146,15 +154,26 @@ export default {
         });
         if (authError) {
           console.error("Staff Auth deactivation failed", authError.code, authError.message);
-          return json({ error: "Dashboard access is blocked, but Auth sign-in could not be disabled." }, 500);
+          return json(
+            { error: "Dashboard access is blocked, but Auth sign-in could not be disabled." },
+            500,
+          );
         }
 
-        const { data: revoked, error: revokeError } = await adminClient.rpc("revoke_staff_sessions", {
-          p_staff_id: staffId,
-        });
+        const { data: revoked, error: revokeError } = await adminClient.rpc(
+          "revoke_staff_sessions",
+          {
+            p_staff_id: staffId,
+          },
+        );
         if (revokeError) {
           console.error("Staff session revocation failed", revokeError.code, revokeError.message);
-          return json({ error: "The account is inactive, but its refreshable sessions could not be revoked." }, 500);
+          return json(
+            {
+              error: "The account is inactive, but its refreshable sessions could not be revoked.",
+            },
+            500,
+          );
         }
 
         auditAction = "Deactivated employee account";
@@ -165,11 +184,18 @@ export default {
       result = { ...result, isActive: body.isActive };
     } else if (action === "reset_password") {
       const password = typeof body.password === "string" ? body.password : "";
-      if (password.length < 8 || password.length > 72 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      if (
+        password.length < 8 ||
+        password.length > 72 ||
+        !/[A-Za-z]/.test(password) ||
+        !/\d/.test(password)
+      ) {
         return json({ error: "Use 8 to 72 characters with at least one letter and number." }, 400);
       }
 
-      const { error: authError } = await adminClient.auth.admin.updateUserById(staffId, { password });
+      const { error: authError } = await adminClient.auth.admin.updateUserById(staffId, {
+        password,
+      });
       if (authError) {
         console.error("Staff password reset failed", authError.code, authError.message);
         return json({ error: "The temporary password could not be set." }, 500);
@@ -182,16 +208,33 @@ export default {
         .eq("role", "staff");
       if (profileError) {
         await adminClient.auth.admin.updateUserById(staffId, { ban_duration: "876000h" });
-        console.error("Staff password-reset profile update failed", profileError.code, profileError.message);
-        return json({ error: "The password changed, but the account was disabled because the required-reset flag could not be saved." }, 500);
+        console.error(
+          "Staff password-reset profile update failed",
+          profileError.code,
+          profileError.message,
+        );
+        return json(
+          {
+            error:
+              "The password changed, but the account was disabled because the required-reset flag could not be saved.",
+          },
+          500,
+        );
       }
 
       const { data: revoked, error: revokeError } = await adminClient.rpc("revoke_staff_sessions", {
         p_staff_id: staffId,
       });
       if (revokeError) {
-        console.error("Staff session revocation after password reset failed", revokeError.code, revokeError.message);
-        return json({ error: "The password changed, but refreshable sessions could not be revoked." }, 500);
+        console.error(
+          "Staff session revocation after password reset failed",
+          revokeError.code,
+          revokeError.message,
+        );
+        return json(
+          { error: "The password changed, but refreshable sessions could not be revoked." },
+          500,
+        );
       }
 
       auditAction = "Reset employee password";
