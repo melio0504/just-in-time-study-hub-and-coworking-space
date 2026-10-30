@@ -4,7 +4,9 @@ import {
   formatReservedSeatWindow,
   getOperatingDayAvailabilityWindow,
   getReservationAvailabilityWindow,
+  getSeatSelectionAvailabilityWindow,
   groupReservedSeatWindows,
+  isReservationWindowFullyReserved,
 } from "./seatAvailability";
 
 describe("seat availability windows", () => {
@@ -32,6 +34,19 @@ describe("seat availability windows", () => {
       startsAt: "2026-10-13T15:00:00.000Z",
       endsAt: "2026-10-13T19:00:00.000Z",
     });
+  });
+
+  it("uses the minimum duration as soon as a reservation time is selected", () => {
+    expect(getSeatSelectionAvailabilityWindow("2026-11-11", "08:00", "", 1)).toEqual({
+      startsAt: "2026-11-11T00:00:00.000Z",
+      endsAt: "2026-11-11T01:00:00.000Z",
+    });
+  });
+
+  it("keeps the whole operating day before a reservation time is selected", () => {
+    expect(getSeatSelectionAvailabilityWindow("2026-11-11", "", "", 1)).toEqual(
+      getOperatingDayAvailabilityWindow("2026-11-11"),
+    );
   });
 
   it("groups reservation windows by seat code", () => {
@@ -78,5 +93,40 @@ describe("seat availability windows", () => {
         endsAt: "2026-11-11T17:00:00.000Z",
       }),
     ).toBe("9:00 PM – 1:00 AM (next day)");
+  });
+
+  it("detects a time window only when every seat is reserved", () => {
+    const windowsBySeat = {
+      SO01: [{ startsAt: "2026-11-11T01:00:00.000Z", endsAt: "2026-11-11T04:00:00.000Z" }],
+      SO02: [{ startsAt: "2026-11-11T02:00:00.000Z", endsAt: "2026-11-11T05:00:00.000Z" }],
+    };
+
+    expect(
+      isReservationWindowFullyReserved(windowsBySeat, ["SO01", "SO02"], {
+        startsAt: "2026-11-11T02:00:00.000Z",
+        endsAt: "2026-11-11T03:00:00.000Z",
+      }),
+    ).toBe(true);
+    expect(
+      isReservationWindowFullyReserved(windowsBySeat, ["SO01", "SO02", "SO03"], {
+        startsAt: "2026-11-11T02:00:00.000Z",
+        endsAt: "2026-11-11T03:00:00.000Z",
+      }),
+    ).toBe(false);
+  });
+
+  it("treats reservations ending at the requested start as non-overlapping", () => {
+    expect(
+      isReservationWindowFullyReserved(
+        {
+          SO01: [{ startsAt: "2026-11-11T01:00:00.000Z", endsAt: "2026-11-11T02:00:00.000Z" }],
+        },
+        ["SO01"],
+        {
+          startsAt: "2026-11-11T02:00:00.000Z",
+          endsAt: "2026-11-11T03:00:00.000Z",
+        },
+      ),
+    ).toBe(false);
   });
 });

@@ -10,6 +10,8 @@ type DropdownLayoutInput = {
   viewportHeight: number;
 };
 
+type ReservationOption = readonly [value: string, label: string, disabled?: boolean];
+
 const timeValueInMinutes = (value: string) => {
   const match = /^(\d{2}):(\d{2})$/.exec(value);
   if (!match) return null;
@@ -22,6 +24,21 @@ export function startsNextReservationDay(previousValue: string, currentValue: st
   const currentMinutes = timeValueInMinutes(currentValue);
 
   return previousMinutes !== null && currentMinutes !== null && currentMinutes < previousMinutes;
+}
+
+export function findEnabledReservationOptionIndex(
+  options: ReservationOption[],
+  startIndex: number,
+  direction: 1 | -1,
+) {
+  let index = Math.max(0, Math.min(startIndex, options.length - 1));
+
+  while (index >= 0 && index < options.length) {
+    if (!options[index]?.[2]) return index;
+    index += direction;
+  }
+
+  return -1;
 }
 
 export function getReservationDropdownLayout({

@@ -3,9 +3,13 @@
 import { ChevronDown } from "lucide-react";
 import { Fragment, type RefObject, useEffect, useRef, useState } from "react";
 
-import { getReservationDropdownLayout, startsNextReservationDay } from "@/lib/reservation-dropdown";
+import {
+  findEnabledReservationOptionIndex,
+  getReservationDropdownLayout,
+  startsNextReservationDay,
+} from "@/lib/reservation-dropdown";
 
-type ReservationOption = readonly [value: string, label: string];
+type ReservationOption = readonly [value: string, label: string, disabled?: boolean];
 
 type ReservationSelectProps = {
   buttonRef?: RefObject<HTMLButtonElement | null>;
@@ -49,7 +53,7 @@ export function ReservationSelect({
   const triggerRef = buttonRef ?? internalButtonRef;
   const optionsId = `${id}-options`;
 
-  const openMenu = (preferredIndex = selectedIndex >= 0 ? selectedIndex : 0) => {
+  const openMenu = (preferredIndex = Math.max(selectedIndex, 0)) => {
     if (disabled) return;
 
     const trigger = triggerRef.current;
@@ -66,7 +70,14 @@ export function ReservationSelect({
       setMenuHeight(layout.maxHeight);
     }
 
-    setActiveIndex(Math.max(0, Math.min(preferredIndex, options.length - 1)));
+    const preferredOption = options[preferredIndex];
+    const nextEnabledIndex = findEnabledReservationOptionIndex(options, preferredIndex, 1);
+    const nextActiveIndex = preferredOption?.[2]
+      ? nextEnabledIndex >= 0
+        ? nextEnabledIndex
+        : findEnabledReservationOptionIndex(options, preferredIndex, -1)
+      : preferredIndex;
+    setActiveIndex(Math.max(nextActiveIndex, 0));
     setIsOpen(true);
   };
 
@@ -92,13 +103,15 @@ export function ReservationSelect({
     };
   }, [activeIndex, isOpen]);
 
-  const focusOption = (index: number) => {
-    const nextIndex = Math.max(0, Math.min(index, options.length - 1));
+  const focusOption = (index: number, direction: 1 | -1) => {
+    const nextIndex = findEnabledReservationOptionIndex(options, index, direction);
+    if (nextIndex < 0) return;
     setActiveIndex(nextIndex);
     optionRefs.current[nextIndex]?.focus({ preventScroll: true });
   };
 
   const selectOption = (optionValue: string) => {
+    if (options.find(([value]) => value === optionValue)?.[2]) return;
     onChange(optionValue);
     setIsOpen(false);
     window.requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }));
@@ -148,7 +161,7 @@ export function ReservationSelect({
           style={{ maxHeight: menuHeight }}
         >
           {options.length > 0 ? (
-            options.map(([optionValue, label], index) => {
+            options.map(([optionValue, label, optionDisabled], index) => {
               const previousValue = options[index - 1]?.[0];
               const showNextDay = Boolean(
                 separateNextDay &&
@@ -174,28 +187,30 @@ export function ReservationSelect({
                     type="button"
                     role="option"
                     aria-selected={optionValue === value}
+                    aria-disabled={optionDisabled}
+                    disabled={optionDisabled}
                     tabIndex={-1}
                     onClick={() => selectOption(optionValue)}
                     onKeyDown={(event) => {
                       if (event.key === "ArrowDown") {
                         event.preventDefault();
-                        focusOption(index + 1);
+                        focusOption(index + 1, 1);
                       } else if (event.key === "ArrowUp") {
                         event.preventDefault();
-                        focusOption(index - 1);
+                        focusOption(index - 1, -1);
                       } else if (event.key === "Home") {
                         event.preventDefault();
-                        focusOption(0);
+                        focusOption(0, 1);
                       } else if (event.key === "End") {
                         event.preventDefault();
-                        focusOption(options.length - 1);
+                        focusOption(options.length - 1, -1);
                       } else if (event.key === "Escape") {
                         event.preventDefault();
                         setIsOpen(false);
                         triggerRef.current?.focus({ preventScroll: true });
                       }
                     }}
-                    className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#e5a930] ${optionValue === value ? "bg-[#fef3dc] font-medium text-[#8b6518]" : "text-[#2d2520] hover:bg-[#fff8ed]"}`}
+                    className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#e5a930] ${optionDisabled ? "cursor-not-allowed bg-[#f3f0eb] text-[#9a8f83]" : optionValue === value ? "bg-[#fef3dc] font-medium text-[#8b6518]" : "text-[#2d2520] hover:bg-[#fff8ed]"}`}
                   >
                     {label}
                   </button>

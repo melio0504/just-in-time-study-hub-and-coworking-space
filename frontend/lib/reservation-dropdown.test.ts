@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { getReservationDropdownLayout, startsNextReservationDay } from "./reservation-dropdown";
+import {
+  findEnabledReservationOptionIndex,
+  getReservationDropdownLayout,
+  startsNextReservationDay,
+} from "./reservation-dropdown";
 
 describe("startsNextReservationDay", () => {
   it("separates the next day when the clock wraps after midnight", () => {
@@ -44,5 +48,21 @@ describe("getReservationDropdownLayout", () => {
         viewportHeight: 200,
       }),
     ).toEqual({ maxHeight: 64, opensAbove: true });
+  });
+});
+
+describe("findEnabledReservationOptionIndex", () => {
+  const options = [
+    ["08:00", "8:00 AM", true],
+    ["09:00", "9:00 AM (Reserved)", true],
+    ["10:00", "10:00 AM", false],
+  ] as const;
+
+  it("skips reserved options while moving forward", () => {
+    expect(findEnabledReservationOptionIndex([...options], 0, 1)).toBe(2);
+  });
+
+  it("returns no index when every remaining option is reserved", () => {
+    expect(findEnabledReservationOptionIndex([...options], 1, -1)).toBe(-1);
   });
 });

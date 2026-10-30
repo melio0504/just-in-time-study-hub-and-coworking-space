@@ -63,6 +63,18 @@ export const getReservationAvailabilityWindow = (
   };
 };
 
+export const getSeatSelectionAvailabilityWindow = (
+  date: string,
+  time: string,
+  durationHours: string,
+  minimumDurationHours: number,
+): SeatAvailabilityWindow =>
+  getReservationAvailabilityWindow(
+    date,
+    time,
+    time ? durationHours || String(minimumDurationHours) : "",
+  );
+
 export const groupReservedSeatWindows = (
   rows: ReservedSeatWindowRow[],
 ): Record<string, ReservedSeatWindow[]> =>
@@ -81,4 +93,23 @@ export const formatReservedSeatWindow = ({ startsAt, endsAt }: ReservedSeatWindo
   const endsNextDay = manilaDateFormatter.format(start) !== manilaDateFormatter.format(end);
 
   return `${manilaTimeFormatter.format(start)} – ${manilaTimeFormatter.format(end)}${endsNextDay ? " (next day)" : ""}`;
+};
+
+export const isReservationWindowFullyReserved = (
+  windowsBySeat: Record<string, ReservedSeatWindow[]>,
+  seatIds: string[],
+  { startsAt, endsAt }: SeatAvailabilityWindow,
+): boolean => {
+  if (seatIds.length === 0) return false;
+
+  const requestedStart = new Date(startsAt).getTime();
+  const requestedEnd = new Date(endsAt).getTime();
+
+  return seatIds.every((seatId) =>
+    (windowsBySeat[seatId] ?? []).some((reservedWindow) => {
+      const reservedStart = new Date(reservedWindow.startsAt).getTime();
+      const reservedEnd = new Date(reservedWindow.endsAt).getTime();
+      return reservedStart < requestedEnd && reservedEnd > requestedStart;
+    }),
+  );
 };

@@ -39,7 +39,9 @@ import {
   formatReservedSeatWindow,
   getOperatingDayAvailabilityWindow,
   getReservationAvailabilityWindow,
+  getSeatSelectionAvailabilityWindow,
   groupReservedSeatWindows,
+  isReservationWindowFullyReserved,
   type ReservedSeatWindow,
   SEAT_AVAILABILITY_REFRESH_MS,
 } from "@/lib/seatAvailability";
@@ -494,14 +496,14 @@ function ReserveContent() {
       setAvailabilityError("");
       setReservationDetailsError("");
       setActiveReservedSeatId(null);
-      const bookingDate =
-        formData.time && formData.duration
-          ? reservationDateForTime(formData.date, formData.time, businessHours)
-          : formData.date;
-      const { startsAt, endsAt } = getReservationAvailabilityWindow(
+      const bookingDate = formData.time
+        ? reservationDateForTime(formData.date, formData.time, businessHours)
+        : formData.date;
+      const { startsAt, endsAt } = getSeatSelectionAvailabilityWindow(
         bookingDate,
         formData.time,
         formData.duration,
+        bookingSettings.min_duration_hours,
       );
       const operatingDay = getOperatingDayAvailabilityWindow(formData.date);
       const supabase = createClient();
@@ -552,7 +554,14 @@ function ReserveContent() {
       window.clearInterval(refreshInterval);
       window.removeEventListener("focus", refreshAvailability);
     };
-  }, [businessHours, formData.date, formData.duration, formData.time, hasRestoredDraft]);
+  }, [
+    bookingSettings.min_duration_hours,
+    businessHours,
+    formData.date,
+    formData.duration,
+    formData.time,
+    hasRestoredDraft,
+  ]);
 
   useEffect(
     () => () => {
@@ -789,7 +798,7 @@ function ReserveContent() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "Select Date";
-    const date = new Date(dateString + "T00:00:00");
+    const date = new Date(`${dateString}T00:00:00`);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
@@ -1068,14 +1077,35 @@ function ReserveContent() {
     },
     (_, index) => bookingSettings.min_duration_hours + index,
   ).map((hours) => [String(hours), `${hours} hour${hours === 1 ? "" : "s"}`] as const);
-  const availableTimeOptions = reservationTimeOptions(formData.date, businessHours).filter(
-    ([time]) =>
+  const reservationTimeAvailabilityDuration =
+    formData.duration || String(bookingSettings.min_duration_hours);
+  const availableTimeOptions = reservationTimeOptions(formData.date, businessHours)
+    .filter(([time]) =>
       meetsMinimumNotice(
         reservationDateForTime(formData.date, time, businessHours),
         time,
         bookingSettings.minimum_notice_minutes,
         currentTime,
       ),
+    )
+    .map(([time, label]) => {
+      const bookingDate = reservationDateForTime(formData.date, time, businessHours);
+      const reservationWindow = getReservationAvailabilityWindow(
+        bookingDate,
+        time,
+        reservationTimeAvailabilityDuration,
+      );
+      const fullyReserved = isReservationWindowFullyReserved(
+        reservedSeatWindows,
+        allSeatIds,
+        reservationWindow,
+      );
+
+      return [time, fullyReserved ? `${label} (Reserved)` : label, fullyReserved] as const;
+    });
+  const hasAvailableTimeOption = availableTimeOptions.some(([, , disabled]) => !disabled);
+  const selectedTimeIsReserved = availableTimeOptions.some(
+    ([time, , disabled]) => time === formData.time && disabled,
   );
   const selectedClosure = closureForDate(formData.date, closures);
   const selectedDayHours = businessHours.find(
@@ -1087,6 +1117,13 @@ function ReserveContent() {
   const activeReservedSeatWindows = activeReservedSeatId
     ? (reservedSeatWindows[activeReservedSeatId] ?? [])
     : [];
+
+  useEffect(() => {
+    if (!formData.time) return;
+    if (!selectedTimeIsReserved) return;
+
+    setFormData((current) => ({ ...current, time: "", duration: "" }));
+  }, [formData.time, selectedTimeIsReserved]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] to-[#fff8ed] pt-20 sm:pt-24">
@@ -1360,20 +1397,20 @@ function ReserveContent() {
                   : selectedDayClosed
                     ? "Closed on this day based on the regular operating schedule."
                     : selectedDayHours
-                      ? `${formatHoursRange(selectedDayHours)} · Past times are unavailable.`
+                      ? `${formatHoursRange(selectedDayHours)} · Past times are unavailable. Fully booked times are marked Reserved.`
                       : "Loading current operating hours…"}
               </p>
               {!configurationLoading &&
                 !configurationError &&
                 !selectedDateUnavailable &&
-                availableTimeOptions.length === 0 && (
+                !hasAvailableTimeOption && (
                   <p
                     role="status"
                     className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
                   >
                     {formData.date === getManilaDateString(currentTime)
                       ? "No more booking times are available today. Please select another date."
-                      : "No booking times are available for this date. Please select another date."}
+                      : "All booking times are reserved for this date. Please select another date."}
                   </p>
                 )}
             </div>
