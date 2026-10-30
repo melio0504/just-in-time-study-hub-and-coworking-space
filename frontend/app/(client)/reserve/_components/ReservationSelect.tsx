@@ -1,7 +1,8 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { Fragment, type RefObject, useEffect, useRef, useState } from "react";
+import { type CSSProperties, Fragment, type RefObject, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import {
   findEnabledReservationOptionIndex,
@@ -22,6 +23,7 @@ type ReservationSelectProps = {
   onChange: (value: string) => void;
   options: ReservationOption[];
   placeholder: string;
+  portalMenu?: boolean;
   separateNextDay?: boolean;
   value: string;
 };
@@ -37,15 +39,18 @@ export function ReservationSelect({
   onChange,
   options,
   placeholder,
+  portalMenu = false,
   separateNextDay = false,
   value,
 }: ReservationSelectProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const internalButtonRef = useRef<HTMLButtonElement>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [opensAbove, setOpensAbove] = useState(false);
   const [menuHeight, setMenuHeight] = useState(240);
+  const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
   const [activeIndex, setActiveIndex] = useState(0);
 
   const selectedIndex = options.findIndex(([optionValue]) => optionValue === value);
@@ -68,6 +73,15 @@ export function ReservationSelect({
 
       setOpensAbove(layout.opensAbove);
       setMenuHeight(layout.maxHeight);
+      if (portalMenu) {
+        setPortalStyle({
+          left: bounds.left,
+          width: bounds.width,
+          ...(layout.opensAbove
+            ? { bottom: window.innerHeight - bounds.top + 8 }
+            : { top: bounds.bottom + 8 }),
+        });
+      }
     }
 
     const preferredOption = options[preferredIndex];
@@ -88,10 +102,16 @@ export function ReservationSelect({
       optionRefs.current[activeIndex]?.focus({ preventScroll: true });
     });
     const closeOnPointerDown = (event: PointerEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) setIsOpen(false);
+      const target = event.target as Node;
+      if (!containerRef.current?.contains(target) && !menuRef.current?.contains(target)) {
+        setIsOpen(false);
+      }
     };
     const closeOnFocusOutside = (event: FocusEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) setIsOpen(false);
+      const target = event.target as Node;
+      if (!containerRef.current?.contains(target) && !menuRef.current?.contains(target)) {
+        setIsOpen(false);
+      }
     };
 
     document.addEventListener("pointerdown", closeOnPointerDown);
@@ -116,6 +136,78 @@ export function ReservationSelect({
     setIsOpen(false);
     window.requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }));
   };
+
+  const menu = isOpen ? (
+    <div
+      ref={menuRef}
+      id={optionsId}
+      role="listbox"
+      aria-label={listboxLabel}
+      className={`${portalMenu ? "fixed z-[45]" : `absolute inset-x-0 z-50 ${opensAbove ? "bottom-full mb-2" : "top-full mt-2"}`} overflow-y-auto overscroll-contain rounded-xl border border-[#e8e0d4] bg-white p-1.5 shadow-2xl [scrollbar-color:#c4b5a3_transparent] [scrollbar-width:thin]`}
+      style={{ maxHeight: menuHeight, ...(portalMenu ? portalStyle : {}) }}
+    >
+      {options.length > 0 ? (
+        options.map(([optionValue, label, optionDisabled], index) => {
+          const previousValue = options[index - 1]?.[0];
+          const showNextDay = Boolean(
+            separateNextDay &&
+              previousValue &&
+              startsNextReservationDay(previousValue, optionValue),
+          );
+
+          return (
+            <Fragment key={optionValue}>
+              {showNextDay && (
+                <div aria-hidden="true" className="flex items-center gap-2 px-3 py-2">
+                  <span className="h-px flex-1 bg-[#d8cfc2]" />
+                  <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#8b7355]">
+                    Next Day
+                  </span>
+                  <span className="h-px flex-1 bg-[#d8cfc2]" />
+                </div>
+              )}
+              <button
+                ref={(element) => {
+                  optionRefs.current[index] = element;
+                }}
+                type="button"
+                role="option"
+                aria-selected={optionValue === value}
+                aria-disabled={optionDisabled}
+                disabled={optionDisabled}
+                tabIndex={-1}
+                onClick={() => selectOption(optionValue)}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowDown") {
+                    event.preventDefault();
+                    focusOption(index + 1, 1);
+                  } else if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    focusOption(index - 1, -1);
+                  } else if (event.key === "Home") {
+                    event.preventDefault();
+                    focusOption(0, 1);
+                  } else if (event.key === "End") {
+                    event.preventDefault();
+                    focusOption(options.length - 1, -1);
+                  } else if (event.key === "Escape") {
+                    event.preventDefault();
+                    setIsOpen(false);
+                    triggerRef.current?.focus({ preventScroll: true });
+                  }
+                }}
+                className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#e5a930] ${optionDisabled ? "cursor-not-allowed bg-[#f3f0eb] text-[#9a8f83]" : optionValue === value ? "bg-[#fef3dc] font-medium text-[#8b6518]" : "text-[#2d2520] hover:bg-[#fff8ed]"}`}
+              >
+                {label}
+              </button>
+            </Fragment>
+          );
+        })
+      ) : (
+        <p className="px-3 py-3 text-sm text-[#6b5e52]">{emptyMessage}</p>
+      )}
+    </div>
+  ) : null;
 
   return (
     <div ref={containerRef} className="relative">
@@ -152,76 +244,7 @@ export function ReservationSelect({
         />
       </button>
 
-      {isOpen && (
-        <div
-          id={optionsId}
-          role="listbox"
-          aria-label={listboxLabel}
-          className={`absolute inset-x-0 z-50 overflow-y-auto overscroll-contain rounded-xl border border-[#e8e0d4] bg-white p-1.5 shadow-2xl [scrollbar-color:#c4b5a3_transparent] [scrollbar-width:thin] ${opensAbove ? "bottom-full mb-2" : "top-full mt-2"}`}
-          style={{ maxHeight: menuHeight }}
-        >
-          {options.length > 0 ? (
-            options.map(([optionValue, label, optionDisabled], index) => {
-              const previousValue = options[index - 1]?.[0];
-              const showNextDay = Boolean(
-                separateNextDay &&
-                  previousValue &&
-                  startsNextReservationDay(previousValue, optionValue),
-              );
-
-              return (
-                <Fragment key={optionValue}>
-                  {showNextDay && (
-                    <div aria-hidden="true" className="flex items-center gap-2 px-3 py-2">
-                      <span className="h-px flex-1 bg-[#d8cfc2]" />
-                      <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#8b7355]">
-                        Next Day
-                      </span>
-                      <span className="h-px flex-1 bg-[#d8cfc2]" />
-                    </div>
-                  )}
-                  <button
-                    ref={(element) => {
-                      optionRefs.current[index] = element;
-                    }}
-                    type="button"
-                    role="option"
-                    aria-selected={optionValue === value}
-                    aria-disabled={optionDisabled}
-                    disabled={optionDisabled}
-                    tabIndex={-1}
-                    onClick={() => selectOption(optionValue)}
-                    onKeyDown={(event) => {
-                      if (event.key === "ArrowDown") {
-                        event.preventDefault();
-                        focusOption(index + 1, 1);
-                      } else if (event.key === "ArrowUp") {
-                        event.preventDefault();
-                        focusOption(index - 1, -1);
-                      } else if (event.key === "Home") {
-                        event.preventDefault();
-                        focusOption(0, 1);
-                      } else if (event.key === "End") {
-                        event.preventDefault();
-                        focusOption(options.length - 1, -1);
-                      } else if (event.key === "Escape") {
-                        event.preventDefault();
-                        setIsOpen(false);
-                        triggerRef.current?.focus({ preventScroll: true });
-                      }
-                    }}
-                    className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#e5a930] ${optionDisabled ? "cursor-not-allowed bg-[#f3f0eb] text-[#9a8f83]" : optionValue === value ? "bg-[#fef3dc] font-medium text-[#8b6518]" : "text-[#2d2520] hover:bg-[#fff8ed]"}`}
-                  >
-                    {label}
-                  </button>
-                </Fragment>
-              );
-            })
-          ) : (
-            <p className="px-3 py-3 text-sm text-[#6b5e52]">{emptyMessage}</p>
-          )}
-        </div>
-      )}
+      {portalMenu && menu ? createPortal(menu, document.body) : menu}
     </div>
   );
 }
