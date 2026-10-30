@@ -26,16 +26,69 @@ select ok(
   'anonymous users cannot resolve overtime sessions'
 );
 
+-- Prepare these rows as non-demo fixtures so the scheduled demo checkout job
+-- cannot consume them while this test exercises the staff resolution flow.
+update public.bookings
+set
+  reservation_code = case id
+    when 'a1000000-0000-4000-8000-000000000003' then 'JIT-TEST-OVERTIME-003'
+    when 'a1000000-0000-4000-8000-000000000023' then 'JIT-TEST-OVERTIME-023'
+    when 'a1000000-0000-4000-8000-000000000024' then 'JIT-TEST-OVERTIME-024'
+  end,
+  status = 'checked_in'
+where id in (
+  'a1000000-0000-4000-8000-000000000003',
+  'a1000000-0000-4000-8000-000000000023',
+  'a1000000-0000-4000-8000-000000000024'
+);
+
+update public.booking_seats
+set active = true
+where booking_id in (
+  'a1000000-0000-4000-8000-000000000003',
+  'a1000000-0000-4000-8000-000000000023',
+  'a1000000-0000-4000-8000-000000000024'
+);
+
+update public.qr_access_passes
+set revoked_at = null
+where booking_id in (
+  'a1000000-0000-4000-8000-000000000003',
+  'a1000000-0000-4000-8000-000000000023',
+  'a1000000-0000-4000-8000-000000000024'
+);
+
 update public.check_in_sessions
-set status = 'overtime', overtime_minutes = 65, overtime_charge_cents = 2460000
+set
+  status = 'overtime',
+  checked_out_at = null,
+  overtime_minutes = 65,
+  overtime_charge_cents = 2460000,
+  overtime_resolution = null,
+  overtime_resolved_at = null,
+  overtime_resolved_by = null
 where booking_id = 'a1000000-0000-4000-8000-000000000003';
 
 update public.check_in_sessions
-set status = 'overtime', overtime_minutes = 70, overtime_charge_cents = 820000
+set
+  status = 'overtime',
+  checked_out_at = null,
+  overtime_minutes = 70,
+  overtime_charge_cents = 820000,
+  overtime_resolution = null,
+  overtime_resolved_at = null,
+  overtime_resolved_by = null
 where booking_id = 'a1000000-0000-4000-8000-000000000024';
 
 update public.check_in_sessions
-set status = 'overtime', overtime_minutes = 75, overtime_charge_cents = 815000
+set
+  status = 'overtime',
+  checked_out_at = null,
+  overtime_minutes = 75,
+  overtime_charge_cents = 815000,
+  overtime_resolution = null,
+  overtime_resolved_at = null,
+  overtime_resolved_by = null
 where booking_id = 'a1000000-0000-4000-8000-000000000023';
 
 update public.seats
