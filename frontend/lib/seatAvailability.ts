@@ -7,6 +7,31 @@ export type SeatAvailabilityWindow = {
   endsAt: string;
 };
 
+export type ReservedSeatWindowRow = {
+  seat_code: string;
+  starts_at: string;
+  ends_at: string;
+};
+
+export type ReservedSeatWindow = {
+  startsAt: string;
+  endsAt: string;
+};
+
+const manilaTimeFormatter = new Intl.DateTimeFormat("en-PH", {
+  timeZone: "Asia/Manila",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
+const manilaDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Manila",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 const getNextDateString = (date: string) => {
   const [year, month, day] = date.split("-").map(Number);
   const nextDate = new Date(Date.UTC(year, month - 1, day + 1));
@@ -36,4 +61,24 @@ export const getReservationAvailabilityWindow = (
     startsAt: start.toISOString(),
     endsAt: end.toISOString(),
   };
+};
+
+export const groupReservedSeatWindows = (
+  rows: ReservedSeatWindowRow[],
+): Record<string, ReservedSeatWindow[]> =>
+  rows.reduce<Record<string, ReservedSeatWindow[]>>((windowsBySeat, row) => {
+    windowsBySeat[row.seat_code] ??= [];
+    windowsBySeat[row.seat_code].push({
+      startsAt: row.starts_at,
+      endsAt: row.ends_at,
+    });
+    return windowsBySeat;
+  }, {});
+
+export const formatReservedSeatWindow = ({ startsAt, endsAt }: ReservedSeatWindow): string => {
+  const start = new Date(startsAt);
+  const end = new Date(endsAt);
+  const endsNextDay = manilaDateFormatter.format(start) !== manilaDateFormatter.format(end);
+
+  return `${manilaTimeFormatter.format(start)} – ${manilaTimeFormatter.format(end)}${endsNextDay ? " (next day)" : ""}`;
 };

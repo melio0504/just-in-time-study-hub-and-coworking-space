@@ -36,7 +36,11 @@ import {
 import { formatCountdown, getCountdownSeconds } from "@/lib/paymentCountdown";
 import { getManilaDateString, isReservationTimePast } from "@/lib/reservationTime";
 import {
+  formatReservedSeatWindow,
+  getOperatingDayAvailabilityWindow,
   getReservationAvailabilityWindow,
+  groupReservedSeatWindows,
+  type ReservedSeatWindow,
   SEAT_AVAILABILITY_REFRESH_MS,
 } from "@/lib/seatAvailability";
 import { allSeatIds } from "@/lib/seats";
@@ -111,6 +115,11 @@ function ReserveContent() {
   const [lastSelectedSeats, setLastSelectedSeats] = useState<string[]>([]);
   const [bookingError, setBookingError] = useState("");
   const [availabilityError, setAvailabilityError] = useState("");
+  const [reservationDetailsError, setReservationDetailsError] = useState("");
+  const [reservedSeatWindows, setReservedSeatWindows] = useState<
+    Record<string, ReservedSeatWindow[]>
+  >({});
+  const [activeReservedSeatId, setActiveReservedSeatId] = useState<string | null>(null);
   const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(isSupabaseConfigured);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [memberIdentity, setMemberIdentity] = useState<MemberIdentity | null>(null);
@@ -123,6 +132,8 @@ function ReserveContent() {
   const [configurationLoading, setConfigurationLoading] = useState(isSupabaseConfigured);
   const [configurationError, setConfigurationError] = useState("");
   const qrRequestVersionRef = useRef(0);
+  const reservedSeatHoldTimerRef = useRef<number | null>(null);
+  const reservedSeatDismissTimerRef = useRef<number | null>(null);
   const paymentSuccessSoundRef = useRef<HTMLAudioElement>(null);
   const soundedBookingIdRef = useRef("");
   const reservationControlsDisabled = isIdentityLoading || !memberIdentity;
@@ -481,6 +492,8 @@ function ReserveContent() {
     const loadAvailability = async () => {
       setIsAvailabilityLoading(true);
       setAvailabilityError("");
+      setReservationDetailsError("");
+      setActiveReservedSeatId(null);
       const bookingDate =
         formData.time && formData.duration
           ? reservationDateForTime(formData.date, formData.time, businessHours)
@@ -490,17 +503,33 @@ function ReserveContent() {
         formData.time,
         formData.duration,
       );
-      const { data, error } = await createClient().rpc("get_available_seats", {
-        p_starts_at: startsAt,
-        p_ends_at: endsAt,
-      });
+      const operatingDay = getOperatingDayAvailabilityWindow(formData.date);
+      const supabase = createClient();
+      const [availabilityResult, reservationDetailsResult] = await Promise.all([
+        supabase.rpc("get_available_seats", {
+          p_starts_at: startsAt,
+          p_ends_at: endsAt,
+        }),
+        supabase.rpc("get_reserved_seat_windows", {
+          p_starts_at: operatingDay.startsAt,
+          p_ends_at: operatingDay.endsAt,
+        }),
+      ]);
       if (cancelled) return;
-      if (error) {
-        setAvailabilityError(`Unable to refresh seat availability: ${error.message}`);
+      if (availabilityResult.error) {
+        setAvailabilityError(
+          `Unable to refresh seat availability: ${availabilityResult.error.message}`,
+        );
         setIsAvailabilityLoading(false);
         return;
       }
-      const available = new Set((data ?? []).map((seat) => seat.code));
+      if (reservationDetailsResult.error) {
+        setReservedSeatWindows({});
+        setReservationDetailsError("Reserved-seat times are temporarily unavailable.");
+      } else {
+        setReservedSeatWindows(groupReservedSeatWindows(reservationDetailsResult.data ?? []));
+      }
+      const available = new Set((availabilityResult.data ?? []).map((seat) => seat.code));
       setSeats((currentSeats) => {
         const selected = new Set(
           currentSeats.filter((seat) => seat.status === "selected").map((seat) => seat.id),
@@ -524,6 +553,18 @@ function ReserveContent() {
       window.removeEventListener("focus", refreshAvailability);
     };
   }, [businessHours, formData.date, formData.duration, formData.time, hasRestoredDraft]);
+
+  useEffect(
+    () => () => {
+      if (reservedSeatHoldTimerRef.current !== null) {
+        window.clearTimeout(reservedSeatHoldTimerRef.current);
+      }
+      if (reservedSeatDismissTimerRef.current !== null) {
+        window.clearTimeout(reservedSeatDismissTimerRef.current);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (configurationLoading || isIdentityLoading) return;
@@ -829,6 +870,35 @@ function ReserveContent() {
     return seats.find((s) => s.id === seatId)?.status || "available";
   };
 
+  const clearReservedSeatHold = () => {
+    if (reservedSeatHoldTimerRef.current !== null) {
+      window.clearTimeout(reservedSeatHoldTimerRef.current);
+      reservedSeatHoldTimerRef.current = null;
+    }
+  };
+
+  const showReservedSeatDetails = (seatId: string, autoDismiss: boolean) => {
+    setActiveReservedSeatId(seatId);
+    if (reservedSeatDismissTimerRef.current !== null) {
+      window.clearTimeout(reservedSeatDismissTimerRef.current);
+      reservedSeatDismissTimerRef.current = null;
+    }
+    if (autoDismiss) {
+      reservedSeatDismissTimerRef.current = window.setTimeout(() => {
+        setActiveReservedSeatId(null);
+        reservedSeatDismissTimerRef.current = null;
+      }, 4_000);
+    }
+  };
+
+  const beginReservedSeatHold = (seatId: string) => {
+    clearReservedSeatHold();
+    reservedSeatHoldTimerRef.current = window.setTimeout(() => {
+      showReservedSeatDetails(seatId, true);
+      reservedSeatHoldTimerRef.current = null;
+    }, 500);
+  };
+
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBookingError("");
@@ -917,14 +987,18 @@ function ReserveContent() {
 
   const renderSeatButton = (id: string) => {
     const status = getSeatStatus(id);
-    const isSeatDisabled =
+    const selectionDisabled =
       reservationControlsDisabled ||
-      status === "reserved" ||
       isAvailabilityLoading ||
       configurationLoading ||
       Boolean(availabilityError) ||
       Boolean(configurationError) ||
       selectedDateUnavailable;
+    const reservedSeatIsInspectable =
+      status === "reserved" && (reservedSeatWindows[id]?.length ?? 0) > 0;
+    const isSeatDisabled = selectionDisabled || status === "reserved";
+    const isButtonDisabled = isSeatDisabled && !reservedSeatIsInspectable;
+    const detailsId = `reserved-seat-${id}-details`;
     const colors = {
       available: "bg-[#e8e8e8] enabled:hover:bg-[#d0d0d0] text-[#2d2520]",
       reserved: "bg-[#9ca3af] text-white",
@@ -935,12 +1009,46 @@ function ReserveContent() {
       <button
         key={id}
         type="button"
-        onClick={() => handleSeatClick(id)}
+        onClick={() => {
+          if (reservedSeatIsInspectable) {
+            showReservedSeatDetails(id, true);
+            return;
+          }
+          handleSeatClick(id);
+        }}
+        onPointerEnter={(event) => {
+          if (reservedSeatIsInspectable && event.pointerType === "mouse") {
+            showReservedSeatDetails(id, false);
+          }
+        }}
+        onPointerLeave={(event) => {
+          clearReservedSeatHold();
+          if (event.pointerType === "mouse") setActiveReservedSeatId(null);
+        }}
+        onPointerDown={(event) => {
+          if (reservedSeatIsInspectable && event.pointerType === "touch") {
+            beginReservedSeatHold(id);
+          }
+        }}
+        onPointerUp={clearReservedSeatHold}
+        onPointerCancel={clearReservedSeatHold}
+        onFocus={() => {
+          if (reservedSeatIsInspectable) showReservedSeatDetails(id, false);
+        }}
+        onBlur={() => setActiveReservedSeatId(null)}
+        onContextMenu={(event) => {
+          if (reservedSeatIsInspectable) event.preventDefault();
+        }}
+        aria-disabled={isSeatDisabled}
         aria-describedby={
-          !isIdentityLoading && !memberIdentity ? "reservation-sign-in-notice" : undefined
+          activeReservedSeatId === id
+            ? detailsId
+            : !isIdentityLoading && !memberIdentity
+              ? "reservation-sign-in-notice"
+              : undefined
         }
-        className={`w-14 h-14 shrink-0 rounded-xl ${isAvailabilityLoading ? "bg-[#d1d5db] cursor-wait text-white animate-pulse" : colors[status]} ${isSeatDisabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"} transition-all text-xs font-medium flex items-center justify-center`}
-        disabled={isSeatDisabled}
+        className={`w-14 h-14 shrink-0 rounded-xl ${isAvailabilityLoading ? "bg-[#d1d5db] cursor-wait text-white animate-pulse" : colors[status]} ${reservedSeatIsInspectable ? "cursor-help opacity-80" : isSeatDisabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"} transition-all text-xs font-medium flex items-center justify-center`}
+        disabled={isButtonDisabled}
       >
         {id}
       </button>
@@ -976,6 +1084,9 @@ function ReserveContent() {
   const selectedDayClosed = isRegularlyClosedDate(formData.date, businessHours);
   const selectedDateUnavailable = Boolean(selectedClosure) || selectedDayClosed;
   const qrSecondsRemaining = qrExpiresAt ? getCountdownSeconds(qrExpiresAt, qrCountdownNow) : 0;
+  const activeReservedSeatWindows = activeReservedSeatId
+    ? (reservedSeatWindows[activeReservedSeatId] ?? [])
+    : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffcf7] to-[#fff8ed] pt-20 sm:pt-24">
@@ -1171,7 +1282,7 @@ function ReserveContent() {
                 ? "Sign in to select seats from the floor plan."
                 : isAvailabilityLoading
                   ? "Checking live seat availability…"
-                  : `Layout follows the in-store floor plan — tap a seat to select (up to ${bookingSettings.max_seats_per_booking}).`}
+                  : `Tap a seat to select it (up to ${bookingSettings.max_seats_per_booking}). Hover or hold a reserved seat to see its time.`}
             </p>
             {availabilityError && (
               <p
@@ -1181,8 +1292,14 @@ function ReserveContent() {
                 {availabilityError} Seat selection is disabled until it reconnects.
               </p>
             )}
+            {reservationDetailsError && (
+              <p className="mb-3 px-1 text-xs text-[#8b7355]" role="status">
+                {reservationDetailsError}
+              </p>
+            )}
             <p className="text-xs text-[#8b7355] mb-3 px-1 sm:hidden">
-              Swipe sideways to explore the full floor plan.
+              Swipe sideways to explore the floor plan. Press and hold a reserved seat to see its
+              time.
             </p>
             <SeatingPlan renderSeat={renderSeatButton} />
           </div>
@@ -1364,6 +1481,25 @@ function ReserveContent() {
           </button>
         </form>
       </div>
+
+      {activeReservedSeatId && activeReservedSeatWindows.length > 0 && (
+        <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[80] flex justify-center sm:bottom-6">
+          <div
+            id={`reserved-seat-${activeReservedSeatId}-details`}
+            role="tooltip"
+            className="w-full max-w-sm rounded-2xl border border-[#d8cbbb] bg-[#2d2520] px-5 py-4 text-white shadow-2xl"
+          >
+            <p className="text-sm font-semibold">{activeReservedSeatId} is reserved</p>
+            <ul className="mt-2 space-y-1 text-sm text-[#f8ead5]">
+              {activeReservedSeatWindows.map((window) => (
+                <li key={`${window.startsAt}-${window.endsAt}`}>
+                  {formatReservedSeatWindow(window)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* Local QR confirmation modal */}
       {isModalOpen && (

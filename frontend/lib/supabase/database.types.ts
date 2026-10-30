@@ -679,6 +679,11 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"get_reserved_seat_windows":
+{ Args: { "p_ends_at": string,"p_starts_at": string }; Returns: {
+              "ends_at": string,"seat_code": string,"starts_at": string
+            }[]
+                           },
 "get_available_seats_for_booking":
 { Args: { "p_booking_id": string,"p_ends_at": string,"p_starts_at": string }; Returns: {
               "code": string,
