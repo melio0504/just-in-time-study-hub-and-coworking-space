@@ -69,6 +69,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Clean up stale local Supabase instances
+        run: npm run supabase:stop -- --all --no-backup
+
       - name: Start local Supabase
         run: npm run supabase:start
 
@@ -77,4 +80,4 @@ jobs:
 
       - name: Stop local Supabase
         if: always()
-        run: npm run supabase:stop -- --no-backup
+        run: npm run supabase:stop -- --all --no-backup
