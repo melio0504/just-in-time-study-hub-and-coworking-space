@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { type CreateBookingInput, cancelBooking, createBooking, listMyBookings } from "./bookings";
+import {
+  abandonBooking,
+  type CreateBookingInput,
+  cancelBooking,
+  createBooking,
+  listMyBookings,
+} from "./bookings";
 import { createClient } from "./client";
 
 vi.mock("./client", () => ({ createClient: vi.fn() }));
@@ -82,6 +88,31 @@ describe("cancelBooking", () => {
     } as never);
 
     await expect(cancelBooking("booking-1")).rejects.toThrow("Booking cannot be cancelled");
+  });
+});
+
+describe("abandonBooking", () => {
+  it("calls the unpaid checkout abandonment function", async () => {
+    const invoke = vi.fn().mockResolvedValue({ data: { abandoned: true }, error: null });
+    createClientMock.mockReturnValue({ functions: { invoke } } as never);
+
+    await expect(abandonBooking("booking-1")).resolves.toBeUndefined();
+    expect(invoke).toHaveBeenCalledWith("abandon-booking", {
+      body: { bookingId: "booking-1" },
+    });
+  });
+
+  it("surfaces abandonment errors", async () => {
+    createClientMock.mockReturnValue({
+      functions: {
+        invoke: vi.fn().mockResolvedValue({
+          data: { error: "Payment was already received." },
+          error: { message: "Edge Function returned a non-2xx status code" },
+        }),
+      },
+    } as never);
+
+    await expect(abandonBooking("booking-1")).rejects.toThrow("Payment was already received.");
   });
 });
 

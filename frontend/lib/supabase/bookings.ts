@@ -52,6 +52,19 @@ export async function cancelBooking(bookingId: string): Promise<void> {
   }
 }
 
+export async function abandonBooking(bookingId: string): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase.functions.invoke("abandon-booking", {
+    body: { bookingId },
+  });
+
+  if (error || data?.error) {
+    throw new Error(
+      typeof data?.error === "string" ? data.error : error?.message || "Unable to close checkout.",
+    );
+  }
+}
+
 export async function listMyBookings(): Promise<Booking[]> {
   const supabase = createClient();
   const { data, error } = await supabase

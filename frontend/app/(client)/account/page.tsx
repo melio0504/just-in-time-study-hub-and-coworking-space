@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { belongsInAccountHistory } from "@/lib/account-bookings";
 import {
   buildStudyHistory,
   getStudyHistoryDateRange,
@@ -98,14 +99,14 @@ export default function Account() {
           .single(),
         supabase
           .from("bookings")
-          .select("booking_date, duration_hours")
+          .select("booking_date, duration_hours, status, payment_status")
           .eq("user_id", user.id)
           .gte("booking_date", startDate)
           .lte("booking_date", endDate),
       ]);
 
       const profile = profileResult.data;
-      const bookingHistory = bookingHistoryResult.data ?? [];
+      const bookingHistory = (bookingHistoryResult.data ?? []).filter(belongsInAccountHistory);
 
       if (!cancelled) {
         setUserName(profile?.full_name || user.user_metadata.full_name || "User");

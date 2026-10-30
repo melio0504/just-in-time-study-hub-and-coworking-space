@@ -18,6 +18,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { SeatingPlan } from "@/app/components/SeatingPlan";
+import { belongsInAccountHistory } from "@/lib/account-bookings";
 import {
   type BookingSettings,
   type BusinessClosure,
@@ -293,7 +294,7 @@ export function ReservationManager() {
     setError("");
     const { data, error: queryError } = await fetchManagedBookings();
     if (queryError) setError(queryError.message);
-    setBookings((data ?? []) as unknown as ManagedBooking[]);
+    setBookings(((data ?? []) as unknown as ManagedBooking[]).filter(belongsInAccountHistory));
     setLoading(false);
   }, []);
 
@@ -302,7 +303,7 @@ export function ReservationManager() {
     void fetchManagedBookings().then(({ data, error: queryError }) => {
       if (!active) return;
       if (queryError) setError(queryError.message);
-      setBookings((data ?? []) as unknown as ManagedBooking[]);
+      setBookings(((data ?? []) as unknown as ManagedBooking[]).filter(belongsInAccountHistory));
       setLoading(false);
     });
     return () => {
@@ -367,7 +368,7 @@ export function ReservationManager() {
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
       if (filter === "all") return true;
-      if (filter === "cancelled") return ["cancelled", "declined"].includes(booking.status);
+      if (filter === "cancelled") return booking.status === "cancelled";
       if (filter === "past") {
         return (
           new Date(booking.ends_at).getTime() <= now ||

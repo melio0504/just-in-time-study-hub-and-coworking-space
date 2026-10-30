@@ -46,7 +46,7 @@ import {
   SEAT_AVAILABILITY_REFRESH_MS,
 } from "@/lib/seatAvailability";
 import { allSeatIds } from "@/lib/seats";
-import { cancelBooking, createBooking } from "@/lib/supabase/bookings";
+import { abandonBooking, createBooking } from "@/lib/supabase/bookings";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { ReservationSelect } from "./_components/ReservationSelect";
@@ -286,12 +286,12 @@ function ReserveContent() {
       setConfirmationStep("pending");
       return;
     }
-    if (isCancellingReservation) return;
+    if (isCancellingReservation || isConfirmationLoading) return;
 
     setIsCancellingReservation(true);
     setCancellationError("");
     try {
-      await cancelBooking(bookingId);
+      await abandonBooking(bookingId);
       finishCancelledBooking();
     } catch (error) {
       const supabase = createClient();
@@ -304,13 +304,13 @@ function ReserveContent() {
       if (data?.status === "confirmed") {
         setConfirmationStep("success");
         setConfirmationError("");
-      } else if (data?.status === "cancelled") {
+      } else if (data?.status === "declined" || data?.status === "cancelled") {
         finishCancelledBooking();
       } else {
         setCancellationError(
           error instanceof Error
             ? error.message
-            : "Unable to cancel this reservation. Please try again.",
+            : "Unable to close this checkout. Please try again.",
         );
       }
     } finally {
@@ -1567,7 +1567,7 @@ function ReserveContent() {
                       ref={paymentModalCloseRef}
                       type="button"
                       onClick={() => void closePaymentModal()}
-                      disabled={isCancellingReservation}
+                      disabled={isCancellingReservation || isConfirmationLoading}
                       aria-label="Close payment"
                       className="p-2 hover:bg-[#f3ede4] rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     >
