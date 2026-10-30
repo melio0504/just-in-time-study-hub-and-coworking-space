@@ -349,6 +349,8 @@ export function ReservationManager() {
 
   const selected = bookings.find((booking) => booking.id === selectedId) ?? null;
   const selectedRefund = selected ? firstRelation(selected.payment_refunds) : null;
+  const selectedCheckIn = selected ? firstRelation(selected.check_in_sessions) : null;
+  const selectedPayment = selected?.payments[0];
   const rescheduleTimes =
     selected && draft?.date
       ? reservationTimeOptions(draft.date, businessHours).filter(
@@ -884,14 +886,13 @@ export function ReservationManager() {
                     )}
                   </div>
 
-                  {firstRelation(selected.check_in_sessions) && (
+                  {selectedCheckIn && (
                     <div className="mt-4 rounded-2xl border border-[#eee4d7] p-5">
                       <h3 className="font-semibold text-[#2d2520]">Visit activity</h3>
                       <p className="mt-2 text-sm text-[#6b5e52]">
-                        Checked in{" "}
-                        {formatDateTime(firstRelation(selected.check_in_sessions)!.checked_in_at)}
-                        {firstRelation(selected.check_in_sessions)!.checked_out_at
-                          ? ` · Checked out ${formatDateTime(firstRelation(selected.check_in_sessions)!.checked_out_at!)}`
+                        Checked in {formatDateTime(selectedCheckIn.checked_in_at)}
+                        {selectedCheckIn.checked_out_at
+                          ? ` · Checked out ${formatDateTime(selectedCheckIn.checked_out_at)}`
                           : ""}
                       </p>
                     </div>
@@ -901,11 +902,10 @@ export function ReservationManager() {
                     <div className="mt-4 rounded-2xl border border-[#eee4d7] p-5">
                       <h3 className="font-semibold text-[#2d2520]">Payment record</h3>
                       <p className="mt-2 text-sm text-[#6b5e52]">
-                        {selected.payments[0]?.paid_at
-                          ? `Paid ${formatDateTime(selected.payments[0].paid_at!)}`
+                        {selectedPayment?.paid_at
+                          ? `Paid ${formatDateTime(selectedPayment.paid_at)}`
                           : "Payment recorded"}{" "}
-                        via{" "}
-                        {selected.payments[0] ? titleCase(selected.payments[0].method) : "QR PH"}.
+                        via {selectedPayment ? titleCase(selectedPayment.method) : "QR PH"}.
                       </p>
                     </div>
                   )}

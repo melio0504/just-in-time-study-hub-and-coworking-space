@@ -62,6 +62,7 @@ export default async function OpenGraphImage() {
             display: "flex",
           }}
         >
+          {/* biome-ignore lint/performance/noImgElement: ImageResponse uses Satori rather than the browser DOM. */}
           <img
             alt="Just In Time Study Hub and Coworking Space"
             src={logoUrl}

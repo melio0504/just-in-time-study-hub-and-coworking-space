@@ -513,7 +513,7 @@ export default function Account() {
                     value={customTimerValue}
                     onChange={(e) => {
                       const nextValue =
-                        parseInt(e.target.value) || (timerUnit === "seconds" ? 5 : 1);
+                        parseInt(e.target.value, 10) || (timerUnit === "seconds" ? 5 : 1);
                       setCustomTimerValue(
                         timerUnit === "seconds" ? Math.max(nextValue, 5) : Math.max(nextValue, 1),
                       );

@@ -702,14 +702,12 @@ export function VirtualStreetView() {
               {isAvailabilityLoading ? (
                 <span>Checking seats…</span>
               ) : (
-                <>
-                  {Object.entries(STATUS_DETAILS).map(([status, details]) => (
-                    <span key={status} className="inline-flex items-center gap-1">
-                      <span className={`h-2 w-2 rounded-full ring-1 ${details.dotClass}`} />
-                      {details.label}
-                    </span>
-                  ))}
-                </>
+                Object.entries(STATUS_DETAILS).map(([status, details]) => (
+                  <span key={status} className="inline-flex items-center gap-1">
+                    <span className={`h-2 w-2 rounded-full ring-1 ${details.dotClass}`} />
+                    {details.label}
+                  </span>
+                ))
               )}
             </div>
           )}
