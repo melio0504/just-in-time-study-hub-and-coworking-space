@@ -541,7 +541,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "admin_cancel_booking":
+            "abandon_unpaid_booking":
+{ Args: { "p_booking_id": string,"p_user_id": string }; Returns: string
+                           },
+"admin_cancel_booking":
 { Args: { "p_booking_id": string,"p_reason"?: string }; Returns: undefined
                            },
 "cancel_booking":
@@ -733,6 +736,11 @@ isOneToOne: false
                            },
 "mark_booking_confirmation_email":
 { Args: { "p_booking_id": string,"p_error"?: string }; Returns: undefined
+                           },
+"prepare_booking_abandonment":
+{ Args: { "p_booking_id": string,"p_user_id": string }; Returns: {
+              "booking_id": string,"booking_payment_status": Database["public"]['Enums']["payment_status"],"booking_status": Database["public"]['Enums']["booking_status"],"payment_livemode": boolean,"payment_status": Database["public"]['Enums']["payment_status"],"provider_payment_intent_id": string,"reservation_code": string
+            }[]
                            },
 "prepare_booking_pass_resend":
 { Args: { "p_booking_id": string,"p_user_id": string }; Returns: {

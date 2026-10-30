@@ -54,6 +54,7 @@ npx supabase functions deploy confirm-booking --no-verify-jwt --use-api
 npx supabase functions deploy resend-booking-pass --use-api
 npx supabase functions deploy get-booking-pass --use-api
 npx supabase functions deploy cancel-customer-booking --use-api
+npx supabase functions deploy abandon-booking --use-api
 npx supabase functions deploy delete-account --use-api
 npx supabase functions deploy scan-booking-pass --no-verify-jwt --use-api
 npx supabase functions deploy send-end-time-reminders --no-verify-jwt --use-api
