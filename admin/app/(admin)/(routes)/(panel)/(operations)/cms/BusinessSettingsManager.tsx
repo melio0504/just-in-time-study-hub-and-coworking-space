@@ -446,16 +446,16 @@ export function BusinessSettingsManager() {
                     type="date"
                     required
                     value={closureForm.starts_on}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      const startsOn = event.target.value;
+                      let endsOn = closureForm.ends_on;
+                      if (startsOn > endsOn) endsOn = startsOn;
                       setClosureForm({
                         ...closureForm,
-                        starts_on: event.target.value,
-                        ends_on:
-                          event.target.value > closureForm.ends_on
-                            ? event.target.value
-                            : closureForm.ends_on,
-                      })
-                    }
+                        starts_on: startsOn,
+                        ends_on: endsOn,
+                      });
+                    }}
                     className="input"
                   />
                 </Field>

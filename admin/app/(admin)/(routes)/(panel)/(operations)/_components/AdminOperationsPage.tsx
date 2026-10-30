@@ -359,11 +359,15 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const seatSummary = useMemo(
     () =>
       seatPlan.reduce(
-        (result, seat) => ({ ...result, [seat.status]: (result[seat.status] || 0) + 1 }),
+        (result, seat) => {
+          result[seat.status] = (result[seat.status] ?? 0) + 1;
+          return result;
+        },
         {} as Record<string, number>,
       ),
     [seatPlan],
   );
+  const selectedOvertime = selectedBooking ? overtimeByBooking.get(selectedBooking.id) : undefined;
   const availableDurationOptions = availabilityDurations.filter(
     ([value]) => Number(value) <= getHoursUntilClosing(selectedTime),
   );
@@ -637,7 +641,13 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
                   value={selectedDate}
                   onChange={(event) => {
                     beginAvailabilityWindowChange();
-                    setSelectedDate(event.target.value < today() ? today() : event.target.value);
+                    const nextDate = event.target.value;
+                    const minimumDate = today();
+                    if (nextDate < minimumDate) {
+                      setSelectedDate(minimumDate);
+                    } else {
+                      setSelectedDate(nextDate);
+                    }
                   }}
                   className="w-full bg-transparent font-semibold text-[#2d2520] outline-none"
                 />
@@ -708,7 +718,8 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
                   </p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {overtimeBookings.map((booking) => {
-                      const overtime = overtimeByBooking.get(booking.id)!;
+                      const overtime = overtimeByBooking.get(booking.id);
+                      if (!overtime) return null;
                       const isResolving = resolvingOvertimeId === booking.id;
                       return (
                         <div
@@ -1229,16 +1240,13 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
                 <X className="h-5 w-5" />
               </button>
             </div>
-            {overtimeByBooking.has(selectedBooking.id) && (
+            {selectedOvertime && (
               <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-900">
                 <p className="font-semibold">Overtime payment due at front desk</p>
                 <p className="mt-1 text-sm">
-                  {overtimeByBooking.get(selectedBooking.id)!.overtime_minutes} minutes over ·{" "}
+                  {selectedOvertime.overtime_minutes} minutes over ·{" "}
                   <strong>
-                    ₱
-                    {(
-                      overtimeByBooking.get(selectedBooking.id)!.overtime_charge_cents / 100
-                    ).toLocaleString("en-PH")}
+                    ₱{(selectedOvertime.overtime_charge_cents / 100).toLocaleString("en-PH")}
                   </strong>
                 </p>
               </div>
@@ -1251,11 +1259,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
               <Detail label="Seats" value={selectedBooking.seat_ids.join(", ")} />
               <Detail
                 label="Status"
-                value={
-                  overtimeByBooking.has(selectedBooking.id)
-                    ? "Overstaying"
-                    : titleCase(selectedBooking.status)
-                }
+                value={selectedOvertime ? "Overstaying" : titleCase(selectedBooking.status)}
               />
               <Detail label="Payment" value={titleCase(selectedBooking.payment_status)} />
               <Detail
@@ -1263,16 +1267,12 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
                 value={`₱${(selectedBooking.subtotal_cents / 100).toLocaleString("en-PH")}`}
               />
             </dl>
-            {canResolveOvertime && overtimeByBooking.has(selectedBooking.id) ? (
+            {canResolveOvertime && selectedOvertime ? (
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={() =>
-                    requestOvertimeResolution(
-                      selectedBooking,
-                      overtimeByBooking.get(selectedBooking.id)!,
-                      "paid_manually",
-                    )
+                    requestOvertimeResolution(selectedBooking, selectedOvertime, "paid_manually")
                   }
                   disabled={Boolean(resolvingOvertimeId)}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1287,11 +1287,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
                 <button
                   type="button"
                   onClick={() =>
-                    requestOvertimeResolution(
-                      selectedBooking,
-                      overtimeByBooking.get(selectedBooking.id)!,
-                      "waived",
-                    )
+                    requestOvertimeResolution(selectedBooking, selectedOvertime, "waived")
                   }
                   disabled={Boolean(resolvingOvertimeId)}
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
