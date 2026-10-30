@@ -4,7 +4,7 @@
   "private": true,
   "description": "A full-stack platform for Just In Time Study Hub and Coworking Space, featuring online seat reservations, customer self-service, staff administration, and QR-based kiosk check-ins.",
   "author": {
-    "name": "Just in Time Study Hub Dev Team"
+    "name": "Just In Time Study Hub and Coworking Space Capstone Team – National Teachers College"
   },
   "contributors": [
     {
@@ -32,8 +32,29 @@
     "study hub",
     "coworking",
     "workspace",
+    "virtual-tour",
     "booking",
-    "kiosk"
+    "kiosk",
+    "seat-reservation",
+    "space-booking",
+    "seat-availability",
+    "customer-self-service",
+    "admin-dashboard",
+    "facility-management",
+    "walk-in-management",
+    "qr-code",
+    "qr-check-in",
+    "qr-check-out",
+    "payment-processing",
+    "qr-ph",
+    "paymongo",
+    "transactional-email",
+    "supabase",
+    "nextjs",
+    "electron",
+    "postgresql",
+    "row-level-security",
+    "capstone-project"
   ],
   "repository": {
     "type": "git",
