@@ -26,11 +26,16 @@ export async function GET(request: NextRequest) {
     request.nextUrl.searchParams.get("flow") === "recovery" || requestedNext === "/reset-password";
   const next = isPasswordRecovery ? "/reset-password" : requestedNext;
 
-  if (isSupabaseConfigured && (code || (tokenHash && type))) {
+  if (isSupabaseConfigured && code) {
     const supabase = await createClient();
-    const { error } = code
-      ? await supabase.auth.exchangeCodeForSession(code)
-      : await supabase.auth.verifyOtp({ token_hash: tokenHash!, type: type! });
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`);
+    }
+  } else if (isSupabaseConfigured && tokenHash && type) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
 
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);

@@ -31,7 +31,7 @@ export default function ChangeInitialPasswordPage() {
         .eq("id", data.user.id)
         .single();
 
-      if (!profile || profile.role !== "staff" || !profile.must_change_password) {
+      if (profile?.role !== "staff" || !profile.must_change_password) {
         router.replace("/dashboard");
         return;
       }
@@ -82,7 +82,7 @@ export default function ChangeInitialPasswordPage() {
           .single()
       : { data: null };
 
-    if (!profile || profile.role !== "staff" || profile.must_change_password) {
+    if (profile?.role !== "staff" || profile.must_change_password) {
       setError(
         "The password changed, but account access could not be finalized. Please sign in again.",
       );

@@ -20,8 +20,7 @@ export default async function LogsLayout({ children }: { children: React.ReactNo
     .single();
 
   if (
-    !profile ||
-    profile.role !== "admin" ||
+    profile?.role !== "admin" ||
     profile.email?.toLowerCase() !== "admin@jit-studyhub.com" ||
     !profile.is_active ||
     profile.must_change_password

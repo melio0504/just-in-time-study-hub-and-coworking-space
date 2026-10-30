@@ -121,7 +121,12 @@ export function AccountSettings({
       setSaveMessage("Username updated successfully.");
     }
     setName(updatedProfile.full_name);
-    onUsernameChanged(updatedProfile.full_name, updatedProfile.username_changed_at!);
+    if (updatedProfile.username_changed_at) {
+      onUsernameChanged(updatedProfile.full_name, updatedProfile.username_changed_at);
+    } else {
+      setSaveMessage("");
+      setSaveError("Your username was saved, but its change date could not be refreshed.");
+    }
   };
 
   const openDeleteModal = () => {

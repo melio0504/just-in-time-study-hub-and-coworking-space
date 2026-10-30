@@ -28,7 +28,7 @@ export default async function AdminPanelLayout({
     .eq("id", user.id)
     .single();
 
-  if (!profile || !profile.is_active || !["admin", "staff"].includes(profile.role)) {
+  if (!profile?.is_active || !["admin", "staff"].includes(profile.role)) {
     redirect("/");
   }
 
