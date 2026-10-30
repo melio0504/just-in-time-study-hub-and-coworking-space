@@ -84,6 +84,8 @@ function ReserveContent() {
   const searchParams = useSearchParams();
   const requestedSeatParam = searchParams.get("seats") ?? searchParams.get("seat");
   const requestedDateParam = searchParams.get("date");
+  const requestedTimeParam = searchParams.get("time");
+  const requestedDurationParam = searchParams.get("duration");
   const shouldFocusSchedule = searchParams.get("focus") === "schedule";
   const [formData, setFormData] = useState({
     name: "",
@@ -646,8 +648,17 @@ function ReserveContent() {
         ) {
           date = requestedDateParam as string;
         }
-        time = "";
-        duration = "";
+        time =
+          requestedTimeParam && /^([01]\d|2[0-3]):00$/.test(requestedTimeParam)
+            ? requestedTimeParam
+            : "";
+        duration =
+          requestedDurationParam &&
+          Number.isInteger(Number(requestedDurationParam)) &&
+          Number(requestedDurationParam) >= 1 &&
+          Number(requestedDurationParam) <= 24
+            ? requestedDurationParam
+            : "";
         seatIds = requestedSeats;
       }
 
@@ -701,7 +712,9 @@ function ReserveContent() {
     isIdentityLoading,
     memberIdentity,
     requestedDateParam,
+    requestedDurationParam,
     requestedSeatParam,
+    requestedTimeParam,
     shouldFocusSchedule,
   ]);
 
