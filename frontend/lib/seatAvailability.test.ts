@@ -115,6 +115,21 @@ describe("seat availability windows", () => {
     ).toBe(false);
   });
 
+  it("detects a reservation conflict for a specific selected seat", () => {
+    expect(
+      isReservationWindowFullyReserved(
+        {
+          SO04: [{ startsAt: "2026-11-11T13:00:00.000Z", endsAt: "2026-11-11T17:00:00.000Z" }],
+        },
+        ["SO04"],
+        {
+          startsAt: "2026-11-11T13:00:00.000Z",
+          endsAt: "2026-11-11T14:00:00.000Z",
+        },
+      ),
+    ).toBe(true);
+  });
+
   it("treats reservations ending at the requested start as non-overlapping", () => {
     expect(
       isReservationWindowFullyReserved(

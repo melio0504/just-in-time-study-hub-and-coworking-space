@@ -1064,7 +1064,8 @@ function ReserveContent() {
     );
   };
 
-  const selectedCount = seats.filter((s) => s.status === "selected").length;
+  const selectedSeatIds = seats.filter((seat) => seat.status === "selected").map((seat) => seat.id);
+  const selectedCount = selectedSeatIds.length;
   const hoursUntilClosing = hoursAvailableFrom(formData.date, formData.time, businessHours);
   const availableDurationOptions = Array.from(
     {
@@ -1095,13 +1096,14 @@ function ReserveContent() {
         time,
         reservationTimeAvailabilityDuration,
       );
-      const fullyReserved = isReservationWindowFullyReserved(
+      const seatsRequiredForTime = selectedSeatIds.length > 0 ? selectedSeatIds : allSeatIds;
+      const timeReserved = isReservationWindowFullyReserved(
         reservedSeatWindows,
-        allSeatIds,
+        seatsRequiredForTime,
         reservationWindow,
       );
 
-      return [time, fullyReserved ? `${label} (Reserved)` : label, fullyReserved] as const;
+      return [time, timeReserved ? `${label} (Reserved)` : label, timeReserved] as const;
     });
   const hasAvailableTimeOption = availableTimeOptions.some(([, , disabled]) => !disabled);
   const selectedTimeIsReserved = availableTimeOptions.some(
@@ -1397,7 +1399,7 @@ function ReserveContent() {
                   : selectedDayClosed
                     ? "Closed on this day based on the regular operating schedule."
                     : selectedDayHours
-                      ? `${formatHoursRange(selectedDayHours)} · Past times are unavailable. Fully booked times are marked Reserved.`
+                      ? `${formatHoursRange(selectedDayHours)} · Past times are unavailable. ${selectedCount > 0 ? "Times unavailable for your selected seats are marked Reserved." : "Fully booked times are marked Reserved."}`
                       : "Loading current operating hours…"}
               </p>
               {!configurationLoading &&
@@ -1410,7 +1412,9 @@ function ReserveContent() {
                   >
                     {formData.date === getManilaDateString(currentTime)
                       ? "No more booking times are available today. Please select another date."
-                      : "All booking times are reserved for this date. Please select another date."}
+                      : selectedCount > 0
+                        ? "No booking times are available for your selected seats. Please select different seats or another date."
+                        : "All booking times are reserved for this date. Please select another date."}
                   </p>
                 )}
             </div>
