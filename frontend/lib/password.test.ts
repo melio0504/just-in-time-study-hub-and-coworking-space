@@ -4,9 +4,7 @@ import { validateNewPassword } from "./password";
 
 describe("validateNewPassword", () => {
   it("requires at least eight characters", () => {
-    expect(validateNewPassword("Test12", "Test12")).toBe(
-      "Password must be at least 8 characters.",
-    );
+    expect(validateNewPassword("Test12", "Test12")).toBe("Password must be at least 8 characters.");
   });
 
   it("requires both a letter and a number", () => {
@@ -16,9 +14,7 @@ describe("validateNewPassword", () => {
   });
 
   it("requires matching confirmation", () => {
-    expect(validateNewPassword("Password1", "Password2")).toBe(
-      "Passwords do not match.",
-    );
+    expect(validateNewPassword("Password1", "Password2")).toBe("Passwords do not match.");
   });
 
   it("accepts a password that satisfies the configured policy", () => {

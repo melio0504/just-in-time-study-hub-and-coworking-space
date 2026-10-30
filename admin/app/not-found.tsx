@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { MonitorCog } from "lucide-react";
+import Link from "next/link";
 
 export default function NotFound() {
   return (
@@ -9,14 +9,11 @@ export default function NotFound() {
           Facility operations
         </p>
         <h1 className="mt-4 text-5xl font-semibold text-[#2d2520]">Page not found</h1>
-        <p className="mt-4 text-[#6b5e52]">
-          Return to the administrator sign-in page.
-        </p>
+        <p className="mt-4 text-[#6b5e52]">Return to the administrator sign-in page.</p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
             href="/"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white transition hover:shadow-lg"
-          >
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white transition hover:shadow-lg">
             <MonitorCog className="h-4 w-4" />
             Admin
           </Link>

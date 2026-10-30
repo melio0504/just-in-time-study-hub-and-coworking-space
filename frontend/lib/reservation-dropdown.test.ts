@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  getReservationDropdownLayout,
-  startsNextReservationDay,
-} from "./reservation-dropdown";
+import { getReservationDropdownLayout, startsNextReservationDay } from "./reservation-dropdown";
 
 describe("startsNextReservationDay", () => {
   it("separates the next day when the clock wraps after midnight", () => {
@@ -17,29 +14,35 @@ describe("startsNextReservationDay", () => {
 
 describe("getReservationDropdownLayout", () => {
   it("opens below when the available space fits the menu", () => {
-    expect(getReservationDropdownLayout({
-      optionCount: 8,
-      triggerBottom: 148,
-      triggerTop: 100,
-      viewportHeight: 800,
-    })).toEqual({ maxHeight: 240, opensAbove: false });
+    expect(
+      getReservationDropdownLayout({
+        optionCount: 8,
+        triggerBottom: 148,
+        triggerTop: 100,
+        viewportHeight: 800,
+      }),
+    ).toEqual({ maxHeight: 240, opensAbove: false });
   });
 
   it("opens above once when there is more room above the trigger", () => {
-    expect(getReservationDropdownLayout({
-      optionCount: 8,
-      triggerBottom: 548,
-      triggerTop: 500,
-      viewportHeight: 640,
-    })).toEqual({ maxHeight: 240, opensAbove: true });
+    expect(
+      getReservationDropdownLayout({
+        optionCount: 8,
+        triggerBottom: 548,
+        triggerTop: 500,
+        viewportHeight: 640,
+      }),
+    ).toEqual({ maxHeight: 240, opensAbove: true });
   });
 
   it("caps the menu to the chosen side instead of overflowing the viewport", () => {
-    expect(getReservationDropdownLayout({
-      optionCount: 8,
-      triggerBottom: 128,
-      triggerTop: 80,
-      viewportHeight: 200,
-    })).toEqual({ maxHeight: 64, opensAbove: true });
+    expect(
+      getReservationDropdownLayout({
+        optionCount: 8,
+        triggerBottom: 128,
+        triggerTop: 80,
+        viewportHeight: 200,
+      }),
+    ).toEqual({ maxHeight: 64, opensAbove: true });
   });
 });

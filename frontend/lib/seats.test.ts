@@ -1,19 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  TOTAL_SEATS,
-  allSeatIds,
-  getOccupancyRateForDate,
-  getReservedSeatsForDate,
-} from "./seats";
+import { allSeatIds, getOccupancyRateForDate, getReservedSeatsForDate, TOTAL_SEATS } from "./seats";
 
 describe("seat catalogue", () => {
   it("contains 50 unique, well-formed seat codes", () => {
     expect(TOTAL_SEATS).toBe(50);
     expect(new Set(allSeatIds).size).toBe(TOTAL_SEATS);
-    expect(allSeatIds).toEqual(
-      expect.arrayContaining(["SO01", "FD10", "GS12", "HC16"]),
-    );
+    expect(allSeatIds).toEqual(expect.arrayContaining(["SO01", "FD10", "GS12", "HC16"]));
     expect(allSeatIds.every((code) => /^[A-Z]{2}\d{2}$/.test(code))).toBe(true);
   });
 });

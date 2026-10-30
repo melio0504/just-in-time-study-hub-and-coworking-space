@@ -22,7 +22,9 @@
       {
         "from": "../out",
         "to": "out",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
@@ -30,7 +32,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
@@ -43,7 +47,9 @@
     "linux": {
       "icon": "icon.png",
       "syncDesktopName": true,
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "Utility"
     }
   }

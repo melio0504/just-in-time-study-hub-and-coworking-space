@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from 'react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { Mail, Lock, Shield, Check, Eye, EyeOff } from 'lucide-react';
-import { defaultAdminPath, type AdminAccess, type StaffPermission } from '@/lib/admin-access';
-import { createClient } from '@/lib/supabase/client';
-import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { Check, Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { type AdminAccess, defaultAdminPath, type StaffPermission } from "@/lib/admin-access";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default function AdminLogin() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -27,10 +27,10 @@ export default function AdminLogin() {
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setErrorMessage('');
+    setErrorMessage("");
 
     if (!isSupabaseConfigured) {
-      setErrorMessage('Supabase is not configured. Add your project values to .env.');
+      setErrorMessage("Supabase is not configured. Add your project values to .env.");
       return;
     }
 
@@ -40,32 +40,37 @@ export default function AdminLogin() {
 
     if (error || !data.user) {
       setIsSubmitting(false);
-      setErrorMessage(error?.message ?? 'Unable to sign in.');
+      setErrorMessage(error?.message ?? "Unable to sign in.");
       return;
     }
 
     const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role, is_active, must_change_password, staff_permissions')
-      .eq('id', data.user.id)
+      .from("profiles")
+      .select("role, is_active, must_change_password, staff_permissions")
+      .eq("id", data.user.id)
       .single();
 
-    if (profileError || !profile || !profile.is_active || !['admin', 'staff'].includes(profile.role)) {
-      await supabase.auth.signOut({ scope: 'local' });
+    if (
+      profileError ||
+      !profile ||
+      !profile.is_active ||
+      !["admin", "staff"].includes(profile.role)
+    ) {
+      await supabase.auth.signOut({ scope: "local" });
       setIsSubmitting(false);
-      setErrorMessage('This account does not have administrator access.');
+      setErrorMessage("This account does not have administrator access.");
       return;
     }
 
     if (profile.must_change_password) {
-      router.push('/change-password');
+      router.push("/change-password");
       router.refresh();
       return;
     }
 
-    await supabase.rpc('log_admin_access', { p_action: 'Signed in to admin dashboard' });
+    await supabase.rpc("log_admin_access", { p_action: "Signed in to admin dashboard" });
     const access: AdminAccess = {
-      role: profile.role as AdminAccess['role'],
+      role: profile.role as AdminAccess["role"],
       permissions: profile.staff_permissions as StaffPermission[],
     };
     router.push(defaultAdminPath(access));
@@ -73,10 +78,10 @@ export default function AdminLogin() {
   };
 
   const adminBenefits = [
-    'Manage all facility bookings',
-    'View real-time analytics and reports',
-    'Monitor user accounts and activity',
-    'Configure system settings and preferences',
+    "Manage all facility bookings",
+    "View real-time analytics and reports",
+    "Monitor user accounts and activity",
+    "Configure system settings and preferences",
   ];
 
   return (
@@ -92,9 +97,7 @@ export default function AdminLogin() {
               <span className="text-sm text-[#e5a930] uppercase tracking-wider">Admin Portal</span>
             </div>
 
-            <h1 className="text-5xl md:text-6xl mb-6 text-[#2d2520]">
-              Administrator Access
-            </h1>
+            <h1 className="text-5xl md:text-6xl mb-6 text-[#2d2520]">Administrator Access</h1>
             <p className="text-xl text-[#6b5e52] mb-8 leading-relaxed">
               Sign in to manage your facility and monitor operations.
             </p>
@@ -119,21 +122,33 @@ export default function AdminLogin() {
 
           {/* Admin Login Form */}
           <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-[#f3ede4]">
-            <Image src="/images/logo.png" alt="Just in Time" width={245} height={118} loading="eager" className="mb-4" style={{ width: '6rem', height: 'auto' }} />
+            <Image
+              src="/images/logo.png"
+              alt="Just in Time"
+              width={245}
+              height={118}
+              loading="eager"
+              className="mb-4"
+              style={{ width: "6rem", height: "auto" }}
+            />
             <h2 className="text-3xl text-[#2d2520] mb-6">Admin Sign In</h2>
 
             <div className="bg-[#fef3dc] rounded-xl p-4 mb-6 border border-[#e5a930]/30">
               <p className="text-sm text-[#6b5e52]">
-                <strong>Note:</strong> This portal is for authorized administrators only. All access attempts are logged.
+                <strong>Note:</strong> This portal is for authorized administrators only. All access
+                attempts are logged.
               </p>
               <p className="mt-2 text-sm text-[#6b5e52]">
-                Need an employee account? Contact your manager so they can create and authorize one for you.
+                Need an employee account? Contact your manager so they can create and authorize one
+                for you.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {errorMessage && (
-                <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <p
+                  role="alert"
+                  className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                   {errorMessage}
                 </p>
               )}
@@ -160,7 +175,7 @@ export default function AdminLogin() {
                 </label>
                 <div className="relative">
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
@@ -172,13 +187,14 @@ export default function AdminLogin() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((current) => !current)}
-                    aria-label={`${showPassword ? 'Hide' : 'Show'} admin password`}
+                    aria-label={`${showPassword ? "Hide" : "Show"} admin password`}
                     aria-pressed={showPassword}
-                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition hover:text-[#2d2520] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#b47b0d]"
-                  >
-                    {showPassword
-                      ? <EyeOff className="h-4.5 w-4.5" aria-hidden="true" />
-                      : <Eye className="h-4.5 w-4.5" aria-hidden="true" />}
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition hover:text-[#2d2520] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#b47b0d]">
+                    {showPassword ? (
+                      <EyeOff className="h-4.5 w-4.5" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-4.5 w-4.5" aria-hidden="true" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -186,9 +202,8 @@ export default function AdminLogin() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-              >
-                {isSubmitting ? 'Signing In…' : 'Sign In to Admin Portal'}
+                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
+                {isSubmitting ? "Signing In…" : "Sign In to Admin Portal"}
               </button>
             </form>
           </div>

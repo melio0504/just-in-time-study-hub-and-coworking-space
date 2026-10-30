@@ -17,9 +17,7 @@ beforeEach(() => {
 
 describe("frontend proxy", () => {
   it("recovers an OAuth code sent to the landing page", async () => {
-    const response = await proxy(
-      new NextRequest("https://www.jit-studyhub.com/?code=google-code"),
-    );
+    const response = await proxy(new NextRequest("https://www.jit-studyhub.com/?code=google-code"));
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe(

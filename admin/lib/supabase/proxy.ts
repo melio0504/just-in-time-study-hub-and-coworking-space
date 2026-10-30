@@ -1,8 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
-
-import type { Database } from "./database.types";
+import { type NextRequest, NextResponse } from "next/server";
 import { isSupabaseConfigured, SUPABASE_AUTH_COOKIE_NAME } from "./config";
+import type { Database } from "./database.types";
 
 export async function updateSession(request: NextRequest) {
   if (!isSupabaseConfigured) {
@@ -21,14 +20,16 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet, headers) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value);
+          });
           response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
-          Object.entries(headers).forEach(([name, value]) =>
-            response.headers.set(name, value),
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+          Object.entries(headers).forEach(([name, value]) => {
+            response.headers.set(name, value);
+          });
         },
       },
     },

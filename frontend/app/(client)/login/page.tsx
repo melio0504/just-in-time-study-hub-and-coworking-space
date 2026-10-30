@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Mail, Lock, Check, Eye, EyeOff } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
-import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { Check, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default function Login() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,10 +26,10 @@ export default function Login() {
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setErrorMessage('');
+    setErrorMessage("");
 
     if (!isSupabaseConfigured) {
-      setErrorMessage('Supabase is not configured. Add your project values to .env.');
+      setErrorMessage("Supabase is not configured. Add your project values to .env.");
       return;
     }
 
@@ -39,39 +39,39 @@ export default function Login() {
 
     if (error || !data.user) {
       setIsSubmitting(false);
-      setErrorMessage(error?.message ?? 'Unable to sign in.');
+      setErrorMessage(error?.message ?? "Unable to sign in.");
       return;
     }
 
     const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
       .single();
 
     if (profileError || !profile) {
-      await supabase.auth.signOut({ scope: 'local' });
+      await supabase.auth.signOut({ scope: "local" });
       setIsSubmitting(false);
-      setErrorMessage('Unable to verify account access. Please try again.');
+      setErrorMessage("Unable to verify account access. Please try again.");
       return;
     }
 
-    if (['admin', 'staff'].includes(profile.role)) {
-      await supabase.auth.signOut({ scope: 'local' });
+    if (["admin", "staff"].includes(profile.role)) {
+      await supabase.auth.signOut({ scope: "local" });
       setIsSubmitting(false);
-      setErrorMessage('Administrator accounts must sign in through the admin portal.');
+      setErrorMessage("Administrator accounts must sign in through the admin portal.");
       return;
     }
 
-    router.push('/account');
+    router.push("/account");
     router.refresh();
   };
 
   const benefits = [
-    'Access your booking history instantly',
-    'View your study analytics dashboard',
-    'Redeem your loyalty points',
-    'Manage your account preferences',
+    "Access your booking history instantly",
+    "View your study analytics dashboard",
+    "Redeem your loyalty points",
+    "Manage your account preferences",
   ];
 
   return (
@@ -80,9 +80,7 @@ export default function Login() {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Marketing Section */}
           <div className="md:sticky md:top-32">
-            <h1 className="text-5xl md:text-6xl mb-6 text-[#2d2520]">
-              Welcome Back
-            </h1>
+            <h1 className="text-5xl md:text-6xl mb-6 text-[#2d2520]">Welcome Back</h1>
             <p className="text-xl text-[#6b5e52] mb-8 leading-relaxed">
               Sign in to continue your productivity journey with us.
             </p>
@@ -99,9 +97,13 @@ export default function Login() {
             </div>
 
             <div className="bg-[#fef3dc] rounded-2xl p-6 border border-[#e5a930]">
-              <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-2">Your Stats Await</p>
+              <p className="text-sm text-[#6b5e52] uppercase tracking-wider mb-2">
+                Your Stats Await
+              </p>
               <p className="text-2xl text-[#2d2520] mb-2">Track Your Progress</p>
-              <p className="text-[#6b5e52]">See your study hours, loyalty points, and upcoming bookings</p>
+              <p className="text-[#6b5e52]">
+                See your study hours, loyalty points, and upcoming bookings
+              </p>
             </div>
           </div>
 
@@ -111,7 +113,9 @@ export default function Login() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {errorMessage && (
-                <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <p
+                  role="alert"
+                  className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                   {errorMessage}
                 </p>
               )}
@@ -138,7 +142,7 @@ export default function Login() {
                 </label>
                 <div className="relative">
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
@@ -149,10 +153,9 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((visible) => !visible)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     aria-pressed={showPassword}
-                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition-colors hover:text-[#e5a930] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e5a930] rounded-r-xl cursor-pointer"
-                  >
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#6b5e52] transition-colors hover:text-[#e5a930] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e5a930] rounded-r-xl cursor-pointer">
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
@@ -160,7 +163,10 @@ export default function Login() {
 
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="w-4 h-4 rounded border-[#f3ede4] text-[#e5a930] focus:ring-[#e5a930]" />
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-[#f3ede4] text-[#e5a930] focus:ring-[#e5a930]"
+                  />
                   <span className="text-[#6b5e52]">Remember me</span>
                 </label>
                 <Link href="/forgot-password" className="text-[#e5a930] hover:underline">
@@ -171,13 +177,12 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSubmitting ? 'Signing In…' : 'Sign In'}
+                className="w-full bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">
+                {isSubmitting ? "Signing In…" : "Sign In"}
               </button>
 
               <p className="text-sm text-[#6b5e52] text-center mt-4">
-                Don&apos;t have an account?{' '}
+                Don&apos;t have an account?{" "}
                 <Link href="/register" className="text-[#e5a930] hover:underline">
                   Create account
                 </Link>

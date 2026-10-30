@@ -88,9 +88,7 @@ describe("POST /api/reservation/confirm", () => {
   it("preserves an upstream error status and handles a non-JSON response", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("bad gateway", { status: 502 })));
 
-    const response = await POST(
-      request(JSON.stringify({ token: validToken, action: "preview" })),
-    );
+    const response = await POST(request(JSON.stringify({ token: validToken, action: "preview" })));
 
     expect(response.status).toBe(502);
     await expect(response.json()).resolves.toEqual({
@@ -102,13 +100,12 @@ describe("POST /api/reservation/confirm", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("connection refused")));
     vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    const response = await POST(
-      request(JSON.stringify({ token: validToken, action: "confirm" })),
-    );
+    const response = await POST(request(JSON.stringify({ token: validToken, action: "confirm" })));
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
-      error: "The local payment service is unavailable. Ask staff to check the Supabase Functions service.",
+      error:
+        "The local payment service is unavailable. Ask staff to check the Supabase Functions service.",
     });
   });
 });

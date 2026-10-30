@@ -7,7 +7,9 @@ export default async function AnalyticsLayout({ children }: { children: React.Re
   if (!isSupabaseConfigured) redirect("/");
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) redirect("/");
 

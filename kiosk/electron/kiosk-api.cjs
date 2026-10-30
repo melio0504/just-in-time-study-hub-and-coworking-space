@@ -27,19 +27,24 @@ function getKioskConfig(environment = process.env) {
 }
 
 async function requestKioskApi(config, { method = "GET", body } = {}, fetchImplementation = fetch) {
-  const response = await fetchImplementation(`${config.supabaseUrl}/functions/v1/scan-booking-pass`, {
-    method,
-    headers: {
-      apikey: config.publishableKey,
-      "x-kiosk-token": config.accessToken,
-      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+  const response = await fetchImplementation(
+    `${config.supabaseUrl}/functions/v1/scan-booking-pass`,
+    {
+      method,
+      headers: {
+        apikey: config.publishableKey,
+        "x-kiosk-token": config.accessToken,
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
+  );
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(typeof payload?.error === "string" ? payload.error : "The kiosk service is unavailable.");
+    throw new Error(
+      typeof payload?.error === "string" ? payload.error : "The kiosk service is unavailable.",
+    );
   }
   if (!payload || typeof payload !== "object") {
     throw new Error("The kiosk service returned an invalid response.");

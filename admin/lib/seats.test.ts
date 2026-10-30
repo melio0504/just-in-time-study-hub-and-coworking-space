@@ -1,16 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  TOTAL_SEATS as frontendTotal,
   allSeatIds as frontendSeatIds,
+  TOTAL_SEATS as frontendTotal,
   getReservedSeatsForDate as getFrontendReservedSeats,
 } from "../../frontend/lib/seats";
-import {
-  TOTAL_SEATS,
-  allSeatIds,
-  getOccupancyRateForDate,
-  getReservedSeatsForDate,
-} from "./seats";
+import { allSeatIds, getOccupancyRateForDate, getReservedSeatsForDate, TOTAL_SEATS } from "./seats";
 
 describe("admin seat catalogue contract", () => {
   it("stays in sync with the public application", () => {

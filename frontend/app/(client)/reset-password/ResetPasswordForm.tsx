@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LockKeyhole } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { validateNewPassword } from "@/lib/password";
 import { createClient } from "@/lib/supabase/client";
@@ -53,14 +53,16 @@ export function ResetPasswordForm() {
             </div>
             <h1 className="mb-3 text-3xl text-[#2d2520]">Create a new password</h1>
             <p className="leading-relaxed text-[#6b5e52]">
-              Use at least 8 characters with at least one letter and one number.
-              You will be signed in automatically after saving it.
+              Use at least 8 characters with at least one letter and one number. You will be signed
+              in automatically after saving it.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {errorMessage && (
-              <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <p
+                role="alert"
+                className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {errorMessage}
               </p>
             )}
@@ -89,8 +91,7 @@ export function ResetPasswordForm() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full cursor-pointer rounded-full bg-[#e5a930] px-8 py-4 text-white transition-shadow hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
-            >
+              className="w-full cursor-pointer rounded-full bg-[#e5a930] px-8 py-4 text-white transition-shadow hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60">
               {isSubmitting ? "Updating password…" : "Update password"}
             </button>
           </form>
@@ -143,8 +144,7 @@ function PasswordField({
           onClick={onToggle}
           aria-label={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
           aria-pressed={visible}
-          className="absolute inset-y-0 right-0 flex w-12 cursor-pointer items-center justify-center rounded-r-xl text-[#6b5e52] transition-colors hover:text-[#e5a930] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e5a930]"
-        >
+          className="absolute inset-y-0 right-0 flex w-12 cursor-pointer items-center justify-center rounded-r-xl text-[#6b5e52] transition-colors hover:text-[#e5a930] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e5a930]">
           {visible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
         </button>
       </div>

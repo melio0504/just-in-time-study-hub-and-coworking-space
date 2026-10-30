@@ -1,4 +1,4 @@
-const MANILA_UTC_OFFSET = '+08:00';
+const MANILA_UTC_OFFSET = "+08:00";
 
 export const SEAT_AVAILABILITY_REFRESH_MS = 30_000;
 
@@ -8,7 +8,7 @@ export type SeatAvailabilityWindow = {
 };
 
 const getNextDateString = (date: string) => {
-  const [year, month, day] = date.split('-').map(Number);
+  const [year, month, day] = date.split("-").map(Number);
   const nextDate = new Date(Date.UTC(year, month - 1, day + 1));
   return nextDate.toISOString().slice(0, 10);
 };
@@ -29,7 +29,7 @@ export const getReservationAvailabilityWindow = (
     return getOperatingDayAvailabilityWindow(date);
   }
 
-  const start = new Date(`${date}T${time.padStart(5, '0')}:00${MANILA_UTC_OFFSET}`);
+  const start = new Date(`${date}T${time.padStart(5, "0")}:00${MANILA_UTC_OFFSET}`);
   const end = new Date(start.getTime() + parsedDuration * 60 * 60 * 1000);
 
   return {

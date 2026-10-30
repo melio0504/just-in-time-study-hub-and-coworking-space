@@ -1,4 +1,4 @@
-import { VirtualStreetView } from './_components/VirtualStreetView';
+import { VirtualStreetView } from "./_components/VirtualStreetView";
 
 export default function VirtualTour() {
   return (
@@ -6,9 +6,7 @@ export default function VirtualTour() {
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="mb-12">
           <p className="text-sm text-[#e5a930] uppercase tracking-wider mb-4">Virtual Tour</p>
-          <h1 className="text-5xl md:text-6xl mb-6 text-[#2d2520]">
-            Explore Our Space
-          </h1>
+          <h1 className="text-5xl md:text-6xl mb-6 text-[#2d2520]">Explore Our Space</h1>
           <p className="text-lg text-[#6b5e52] max-w-2xl leading-relaxed">
             Take a look around our study hub and discover the perfect spot for your needs.
           </p>

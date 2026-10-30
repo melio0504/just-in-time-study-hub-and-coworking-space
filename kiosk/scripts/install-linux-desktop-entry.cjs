@@ -37,7 +37,10 @@ function installLinuxDesktopEntry({
   const desktopEntry = createDesktopEntry({ electronPath, kioskDirectory, iconPath });
 
   fs.mkdirSync(applicationsDirectory, { recursive: true });
-  if (!fs.existsSync(desktopEntryPath) || fs.readFileSync(desktopEntryPath, "utf8") !== desktopEntry) {
+  if (
+    !fs.existsSync(desktopEntryPath) ||
+    fs.readFileSync(desktopEntryPath, "utf8") !== desktopEntry
+  ) {
     fs.writeFileSync(desktopEntryPath, desktopEntry, { encoding: "utf8", mode: 0o644 });
   }
 

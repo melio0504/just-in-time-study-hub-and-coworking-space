@@ -4,8 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Just In Time Study Hub and Coworking Space",
     short_name: "JIT Study Hub",
-    description:
-      "Reserve a focused study or coworking space in Mendiola, Manila.",
+    description: "Reserve a focused study or coworking space in Mendiola, Manila.",
     start_url: "/",
     display: "standalone",
     background_color: "#fffcf7",

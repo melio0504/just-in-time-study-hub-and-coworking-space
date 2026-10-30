@@ -7,10 +7,6 @@ export const metadata = createPageMetadata({
   noIndex: true,
 });
 
-export default function ConfirmationLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ConfirmationLayout({ children }: { children: React.ReactNode }) {
   return children;
 }

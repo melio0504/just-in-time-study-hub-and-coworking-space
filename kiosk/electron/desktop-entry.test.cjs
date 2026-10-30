@@ -35,5 +35,8 @@ test("installs the desktop entry in the selected XDG data directory", (context) 
   });
 
   assert.equal(installedPath, path.join(dataHome, "applications", "com.jitstudyhub.kiosk.desktop"));
-  assert.match(fs.readFileSync(installedPath, "utf8"), /^Icon=\/srv\/jit\/kiosk\/electron\/icon\.png$/m);
+  assert.match(
+    fs.readFileSync(installedPath, "utf8"),
+    /^Icon=\/srv\/jit\/kiosk\/electron\/icon\.png$/m,
+  );
 });

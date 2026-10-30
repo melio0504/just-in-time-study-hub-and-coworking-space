@@ -3,10 +3,7 @@
 import { ChevronDown } from "lucide-react";
 import { Fragment, type RefObject, useEffect, useRef, useState } from "react";
 
-import {
-  getReservationDropdownLayout,
-  startsNextReservationDay,
-} from "@/lib/reservation-dropdown";
+import { getReservationDropdownLayout, startsNextReservationDay } from "@/lib/reservation-dropdown";
 
 type ReservationOption = readonly [value: string, label: string];
 
@@ -131,8 +128,7 @@ export function ReservationSelect({
             setIsOpen(false);
           }
         }}
-        className="flex w-full items-center justify-between rounded-xl border border-[#f3ede4] bg-white px-4 py-3 text-left text-[#2d2520] transition-all focus:outline-none focus:ring-2 focus:ring-[#e5a930] disabled:cursor-not-allowed disabled:bg-[#eee9e2] disabled:opacity-70"
-      >
+        className="flex w-full items-center justify-between rounded-xl border border-[#f3ede4] bg-white px-4 py-3 text-left text-[#2d2520] transition-all focus:outline-none focus:ring-2 focus:ring-[#e5a930] disabled:cursor-not-allowed disabled:bg-[#eee9e2] disabled:opacity-70">
         <span className={selectedLabel ? "text-[#2d2520]" : "text-[#6b5e52]"}>
           {selectedLabel ?? placeholder}
         </span>
@@ -148,58 +144,62 @@ export function ReservationSelect({
           role="listbox"
           aria-label={listboxLabel}
           className={`absolute inset-x-0 z-50 overflow-y-auto overscroll-contain rounded-xl border border-[#e8e0d4] bg-white p-1.5 shadow-2xl [scrollbar-color:#c4b5a3_transparent] [scrollbar-width:thin] ${opensAbove ? "bottom-full mb-2" : "top-full mt-2"}`}
-          style={{ maxHeight: menuHeight }}
-        >
-          {options.length > 0 ? options.map(([optionValue, label], index) => {
-            const previousValue = options[index - 1]?.[0];
-            const showNextDay = Boolean(separateNextDay
-              && previousValue
-              && startsNextReservationDay(previousValue, optionValue));
+          style={{ maxHeight: menuHeight }}>
+          {options.length > 0 ? (
+            options.map(([optionValue, label], index) => {
+              const previousValue = options[index - 1]?.[0];
+              const showNextDay = Boolean(
+                separateNextDay &&
+                  previousValue &&
+                  startsNextReservationDay(previousValue, optionValue),
+              );
 
-            return (
-              <Fragment key={optionValue}>
-                {showNextDay && (
-                  <div aria-hidden="true" className="flex items-center gap-2 px-3 py-2">
-                    <span className="h-px flex-1 bg-[#d8cfc2]" />
-                    <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#8b7355]">
-                      Next Day
-                    </span>
-                    <span className="h-px flex-1 bg-[#d8cfc2]" />
-                  </div>
-                )}
-                <button
-                  ref={(element) => { optionRefs.current[index] = element; }}
-                  type="button"
-                  role="option"
-                  aria-selected={optionValue === value}
-                  tabIndex={-1}
-                  onClick={() => selectOption(optionValue)}
-                  onKeyDown={(event) => {
-                    if (event.key === "ArrowDown") {
-                      event.preventDefault();
-                      focusOption(index + 1);
-                    } else if (event.key === "ArrowUp") {
-                      event.preventDefault();
-                      focusOption(index - 1);
-                    } else if (event.key === "Home") {
-                      event.preventDefault();
-                      focusOption(0);
-                    } else if (event.key === "End") {
-                      event.preventDefault();
-                      focusOption(options.length - 1);
-                    } else if (event.key === "Escape") {
-                      event.preventDefault();
-                      setIsOpen(false);
-                      triggerRef.current?.focus({ preventScroll: true });
-                    }
-                  }}
-                  className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#e5a930] ${optionValue === value ? "bg-[#fef3dc] font-medium text-[#8b6518]" : "text-[#2d2520] hover:bg-[#fff8ed]"}`}
-                >
-                  {label}
-                </button>
-              </Fragment>
-            );
-          }) : (
+              return (
+                <Fragment key={optionValue}>
+                  {showNextDay && (
+                    <div aria-hidden="true" className="flex items-center gap-2 px-3 py-2">
+                      <span className="h-px flex-1 bg-[#d8cfc2]" />
+                      <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#8b7355]">
+                        Next Day
+                      </span>
+                      <span className="h-px flex-1 bg-[#d8cfc2]" />
+                    </div>
+                  )}
+                  <button
+                    ref={(element) => {
+                      optionRefs.current[index] = element;
+                    }}
+                    type="button"
+                    role="option"
+                    aria-selected={optionValue === value}
+                    tabIndex={-1}
+                    onClick={() => selectOption(optionValue)}
+                    onKeyDown={(event) => {
+                      if (event.key === "ArrowDown") {
+                        event.preventDefault();
+                        focusOption(index + 1);
+                      } else if (event.key === "ArrowUp") {
+                        event.preventDefault();
+                        focusOption(index - 1);
+                      } else if (event.key === "Home") {
+                        event.preventDefault();
+                        focusOption(0);
+                      } else if (event.key === "End") {
+                        event.preventDefault();
+                        focusOption(options.length - 1);
+                      } else if (event.key === "Escape") {
+                        event.preventDefault();
+                        setIsOpen(false);
+                        triggerRef.current?.focus({ preventScroll: true });
+                      }
+                    }}
+                    className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#e5a930] ${optionValue === value ? "bg-[#fef3dc] font-medium text-[#8b6518]" : "text-[#2d2520] hover:bg-[#fff8ed]"}`}>
+                    {label}
+                  </button>
+                </Fragment>
+              );
+            })
+          ) : (
             <p className="px-3 py-3 text-sm text-[#6b5e52]">{emptyMessage}</p>
           )}
         </div>

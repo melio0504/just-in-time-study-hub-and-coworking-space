@@ -16,9 +16,7 @@ export const siteConfig = {
   },
 } as const;
 
-export function getSiteUrl(
-  configuredUrl = process.env.NEXT_PUBLIC_SITE_URL,
-) {
+export function getSiteUrl(configuredUrl = process.env.NEXT_PUBLIC_SITE_URL) {
   try {
     const url = new URL(configuredUrl || siteConfig.url);
 

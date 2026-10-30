@@ -42,7 +42,8 @@ test("surfaces API errors", async () => {
     requestKioskApi(
       getKioskConfig(validEnvironment),
       {},
-      async () => new Response(JSON.stringify({ error: "Invalid kiosk credential." }), { status: 401 }),
+      async () =>
+        new Response(JSON.stringify({ error: "Invalid kiosk credential." }), { status: 401 }),
     ),
     /Invalid kiosk credential/,
   );

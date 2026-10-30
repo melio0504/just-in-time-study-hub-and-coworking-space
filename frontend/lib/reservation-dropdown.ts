@@ -21,9 +21,7 @@ export function startsNextReservationDay(previousValue: string, currentValue: st
   const previousMinutes = timeValueInMinutes(previousValue);
   const currentMinutes = timeValueInMinutes(currentValue);
 
-  return previousMinutes !== null
-    && currentMinutes !== null
-    && currentMinutes < previousMinutes;
+  return previousMinutes !== null && currentMinutes !== null && currentMinutes < previousMinutes;
 }
 
 export function getReservationDropdownLayout({

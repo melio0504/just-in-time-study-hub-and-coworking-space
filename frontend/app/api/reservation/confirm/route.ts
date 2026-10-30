@@ -44,7 +44,10 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Reservation payment service request failed", error);
     return NextResponse.json(
-      { error: "The local payment service is unavailable. Ask staff to check the Supabase Functions service." },
+      {
+        error:
+          "The local payment service is unavailable. Ask staff to check the Supabase Functions service.",
+      },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }

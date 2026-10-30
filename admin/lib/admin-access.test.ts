@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { defaultAdminPath, hasAdminAccess, type AdminAccess } from "./admin-access";
+import { type AdminAccess, defaultAdminPath, hasAdminAccess } from "./admin-access";
 
 describe("admin access", () => {
   it("grants every permission to the owner", () => {
@@ -22,11 +22,7 @@ describe("admin access", () => {
   });
 
   it("routes content-only and empty staff access to the CMS", () => {
-    expect(defaultAdminPath({ role: "staff", permissions: ["announcements"] })).toBe(
-      "/cms",
-    );
-    expect(defaultAdminPath({ role: "staff", permissions: [] })).toBe(
-      "/cms",
-    );
+    expect(defaultAdminPath({ role: "staff", permissions: ["announcements"] })).toBe("/cms");
+    expect(defaultAdminPath({ role: "staff", permissions: [] })).toBe("/cms");
   });
 });

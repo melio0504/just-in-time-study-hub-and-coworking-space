@@ -28,12 +28,16 @@ function senderIsTrusted(event) {
 }
 
 function configurePermissions(electronSession) {
-  electronSession.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
-    return permission === "media" &&
-      webContents === kioskWindow?.webContents &&
-      requestingOrigin === rendererOrigin &&
-      details.mediaType !== "audio";
-  });
+  electronSession.setPermissionCheckHandler(
+    (webContents, permission, requestingOrigin, details) => {
+      return (
+        permission === "media" &&
+        webContents === kioskWindow?.webContents &&
+        requestingOrigin === rendererOrigin &&
+        details.mediaType !== "audio"
+      );
+    },
+  );
 
   electronSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
     let isTrusted = false;
@@ -48,10 +52,10 @@ function configurePermissions(electronSession) {
     const requestsVideo = mediaTypes.length === 0 || mediaTypes.includes("video");
     callback(
       permission === "media" &&
-      webContents === kioskWindow?.webContents &&
-      isTrusted &&
-      requestsVideo &&
-      !requestsAudio,
+        webContents === kioskWindow?.webContents &&
+        isTrusted &&
+        requestsVideo &&
+        !requestsAudio,
     );
   });
 }

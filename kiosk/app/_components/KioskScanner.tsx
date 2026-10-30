@@ -1,26 +1,26 @@
 "use client";
 
-import Image from "next/image";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
-  QrCode,
-  Clock,
-  Users,
+  Activity,
+  AlertCircle,
+  AlertTriangle,
   Armchair,
   CheckCircle2,
-  XCircle,
+  Clock,
+  Coffee,
   LogIn,
   LogOut,
-  Wifi,
-  Coffee,
   MapPin,
-  AlertCircle,
+  QrCode,
   Timer,
   UserCheck,
-  Activity,
-  AlertTriangle,
+  Users,
+  Wifi,
+  XCircle,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CameraQrScanner } from "./CameraQrScanner";
 
 type KioskAction = "check-in" | "check-out";
@@ -79,15 +79,18 @@ const ERROR_MESSAGES: Record<ValidationError, { title: string; description: stri
   },
   invalid: {
     title: "Invalid QR Code",
-    description: "This code is not recognized. Please use the QR from your booking confirmation email.",
+    description:
+      "This code is not recognized. Please use the QR from your booking confirmation email.",
   },
   expired: {
     title: "Booking Expired",
-    description: "Your reservation window has ended. Please book a new session at the front desk or online.",
+    description:
+      "Your reservation window has ended. Please book a new session at the front desk or online.",
   },
   not_yet_scheduled: {
     title: "Check-in Not Open Yet",
-    description: "Check-in opens 15 minutes before your reservation and remains available until it ends.",
+    description:
+      "Check-in opens 15 minutes before your reservation and remains available until it ends.",
   },
   confirmation_pending: {
     title: "Reservation Not Confirmed",
@@ -131,10 +134,7 @@ function getRemainingMinutes(endIso: string) {
 
 function getGuestErrorMessage(error: unknown, fallback: string) {
   const message = error instanceof Error ? error.message : fallback;
-  return message.replace(
-    /^Error invoking remote method '[^']+': Error:\s*/i,
-    "",
-  );
+  return message.replace(/^Error invoking remote method '[^']+': Error:\s*/i, "");
 }
 
 export function KioskScanner() {
@@ -149,9 +149,10 @@ export function KioskScanner() {
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [overtimeNotice, setOvertimeNotice] = useState<OvertimeNotice | null>(null);
-  const [serverError, setServerError] = useState('');
+  const [serverError, setServerError] = useState("");
   const [errorSecondsRemaining, setErrorSecondsRemaining] = useState(ERROR_DISPLAY_SECONDS);
-  const [overtimeSecondsRemaining, setOvertimeSecondsRemaining] = useState(OVERTIME_DISPLAY_SECONDS);
+  const [overtimeSecondsRemaining, setOvertimeSecondsRemaining] =
+    useState(OVERTIME_DISPLAY_SECONDS);
   const successSoundRef = useRef<HTMLAudioElement>(null);
   const errorSoundRef = useRef<HTMLAudioElement>(null);
 
@@ -186,20 +187,19 @@ export function KioskScanner() {
       }
     };
     void loadActiveSessions();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const addActivity = useCallback(
-    (entry: Omit<ActivityEntry, "id" | "timestamp">) => {
-      const item: ActivityEntry = {
-        ...entry,
-        id: `${Date.now()}`,
-        timestamp: new Date().toISOString(),
-      };
-      setActivity((current) => [item, ...current].slice(0, 12));
-    },
-    []
-  );
+  const addActivity = useCallback((entry: Omit<ActivityEntry, "id" | "timestamp">) => {
+    const item: ActivityEntry = {
+      ...entry,
+      id: `${Date.now()}`,
+      timestamp: new Date().toISOString(),
+    };
+    setActivity((current) => [item, ...current].slice(0, 12));
+  }, []);
 
   const resetToIdle = useCallback(() => {
     setScanState("idle");
@@ -237,11 +237,12 @@ export function KioskScanner() {
   }, [resetToIdle, scanState]);
 
   useEffect(() => {
-    const sound = scanState === "success"
-      ? successSoundRef.current
-      : scanState === "error" || scanState === "overtime"
-        ? errorSoundRef.current
-        : null;
+    const sound =
+      scanState === "success"
+        ? successSoundRef.current
+        : scanState === "error" || scanState === "overtime"
+          ? errorSoundRef.current
+          : null;
     if (!sound) return;
 
     sound.currentTime = 0;
@@ -254,14 +255,14 @@ export function KioskScanner() {
       if (!code) return;
 
       setScanState("scanning");
-      setServerError('');
+      setServerError("");
 
       const desktop = window.kioskDesktop;
       if (!desktop) {
-        setErrorType('access');
-        setServerError('QR scanning is available in the installed desktop kiosk.');
+        setErrorType("access");
+        setServerError("QR scanning is available in the installed desktop kiosk.");
         setErrorSecondsRemaining(ERROR_DISPLAY_SECONDS);
-        setScanState('error');
+        setScanState("error");
         return;
       }
 
@@ -269,13 +270,28 @@ export function KioskScanner() {
       try {
         data = await desktop.scanBookingPass(code);
       } catch (error) {
-        const message = getGuestErrorMessage(error, 'The QR pass could not be processed.');
+        const message = getGuestErrorMessage(error, "The QR pass could not be processed.");
         const lower = message.toLowerCase();
-        const accessError = lower.includes('kiosk service') || lower.includes('credential') || lower.includes('configured');
-        setErrorType(accessError ? 'access' : lower.includes('not been confirmed') ? 'confirmation_pending' : lower.includes('expired') ? 'expired' : lower.includes('not ready') || lower.includes('check-in opens') ? 'not_yet_scheduled' : lower.includes('invalid') || lower.includes('used') ? 'invalid' : 'server');
+        const accessError =
+          lower.includes("kiosk service") ||
+          lower.includes("credential") ||
+          lower.includes("configured");
+        setErrorType(
+          accessError
+            ? "access"
+            : lower.includes("not been confirmed")
+              ? "confirmation_pending"
+              : lower.includes("expired")
+                ? "expired"
+                : lower.includes("not ready") || lower.includes("check-in opens")
+                  ? "not_yet_scheduled"
+                  : lower.includes("invalid") || lower.includes("used")
+                    ? "invalid"
+                    : "server",
+        );
         setServerError(message);
         setErrorSecondsRemaining(ERROR_DISPLAY_SECONDS);
-        setScanState('error');
+        setScanState("error");
         return;
       }
 
@@ -297,26 +313,36 @@ export function KioskScanner() {
         seats: result.seat_ids,
         date: result.scheduled_start.slice(0, 10),
         timeIn: formatTime(new Date(result.scheduled_start)),
-        durationHours: Math.max(1, Math.round((new Date(result.scheduled_end).getTime() - new Date(result.scheduled_start).getTime()) / 3_600_000)),
+        durationHours: Math.max(
+          1,
+          Math.round(
+            (new Date(result.scheduled_end).getTime() -
+              new Date(result.scheduled_start).getTime()) /
+              3_600_000,
+          ),
+        ),
         paymentConfirmed: true,
         scheduledStart: new Date(result.scheduled_start),
         scheduledEnd: new Date(result.scheduled_end),
       };
 
-      if (result.action === 'check-in') {
-        setSessions((current) => [...current.filter((session) => session.bookingId !== booking.id), {
-          bookingId: booking.id,
-          guestName: booking.guestName,
-          seats: booking.seats,
-          checkedInAt: result.scanned_at,
-          scheduledEnd: result.scheduled_end,
-        }]);
+      if (result.action === "check-in") {
+        setSessions((current) => [
+          ...current.filter((session) => session.bookingId !== booking.id),
+          {
+            bookingId: booking.id,
+            guestName: booking.guestName,
+            seats: booking.seats,
+            checkedInAt: result.scanned_at,
+            scheduledEnd: result.scheduled_end,
+          },
+        ]);
       } else {
         setSessions((current) => current.filter((session) => session.bookingId !== booking.id));
       }
       addActivity({ type: result.action, guestName: booking.guestName, seats: booking.seats });
       setLastAction(result.action);
-      if (result.action === 'check-out' && result.overtime_charge_cents > 0) {
+      if (result.action === "check-out" && result.overtime_charge_cents > 0) {
         setOvertimeNotice({
           guestName: booking.guestName,
           seats: booking.seats,
@@ -325,14 +351,14 @@ export function KioskScanner() {
           chargeCents: result.overtime_charge_cents,
         });
         setOvertimeSecondsRemaining(OVERTIME_DISPLAY_SECONDS);
-        setScanState('overtime');
+        setScanState("overtime");
         return;
       }
       setSuccessBooking(booking);
-      setScanState('success');
-      window.setTimeout(resetToIdle, result.action === 'check-in' ? 8000 : 6000);
+      setScanState("success");
+      window.setTimeout(resetToIdle, result.action === "check-in" ? 8000 : 6000);
     },
-    [addActivity, resetToIdle]
+    [addActivity, resetToIdle],
   );
 
   const todayLabel = useMemo(
@@ -343,7 +369,7 @@ export function KioskScanner() {
         day: "numeric",
         year: "numeric",
       }) ?? "",
-    [now]
+    [now],
   );
 
   const features = [
@@ -377,7 +403,9 @@ export function KioskScanner() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b47b0d] sm:text-sm">
               Facility Kiosk
             </p>
-            <h1 className="hidden truncate text-lg text-[#2d2520] sm:block xl:text-xl">QR check-in &amp; check-out</h1>
+            <h1 className="hidden truncate text-lg text-[#2d2520] sm:block xl:text-xl">
+              QR check-in &amp; check-out
+            </h1>
           </div>
         </div>
 
@@ -429,13 +457,13 @@ export function KioskScanner() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col items-center justify-center"
-              >
+                className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col items-center justify-center">
                 <h2 className="mb-1 shrink-0 text-center text-2xl leading-tight text-[#2d2520] sm:text-3xl">
                   Scan your <span className="text-[#e5a930]">QR pass</span>
                 </h2>
                 <p className="mb-3 max-w-xl shrink-0 text-center text-base text-[#6b5e52] sm:text-lg">
-                  Hold your booking QR in front of the camera. The kiosk automatically checks you in or out.
+                  Hold your booking QR in front of the camera. The kiosk automatically checks you in
+                  or out.
                 </p>
 
                 <CameraQrScanner onScan={processScan} />
@@ -448,15 +476,16 @@ export function KioskScanner() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex-1 flex flex-col items-center justify-center min-h-0"
-              >
+                className="flex-1 flex flex-col items-center justify-center min-h-0">
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
                   className="w-20 h-20 border-4 border-[#f3ede4] border-t-[#e5a930] rounded-full mb-6"
                 />
                 <p className="text-2xl sm:text-3xl text-[#2d2520]">Validating your pass…</p>
-                <p className="text-lg sm:text-xl text-[#6b5e52] mt-2">Checking booking, payment, and schedule</p>
+                <p className="text-lg sm:text-xl text-[#6b5e52] mt-2">
+                  Checking booking, payment, and schedule
+                </p>
               </motion.div>
             )}
 
@@ -466,8 +495,7 @@ export function KioskScanner() {
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col items-center justify-center overflow-y-auto px-2 py-3 text-center"
-              >
+                className="mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col items-center justify-center overflow-y-auto px-2 py-3 text-center">
                 <div className="w-20 h-20 bg-[#dcfce7] rounded-full flex items-center justify-center mb-4 shrink-0">
                   <CheckCircle2 className="w-12 h-12 text-[#16a34a]" />
                 </div>
@@ -531,7 +559,9 @@ export function KioskScanner() {
                   </div>
                 )}
 
-                <p className="mt-3 shrink-0 text-base text-[#6b5e52] sm:text-lg">Returning to scanner…</p>
+                <p className="mt-3 shrink-0 text-base text-[#6b5e52] sm:text-lg">
+                  Returning to scanner…
+                </p>
               </motion.div>
             )}
 
@@ -544,19 +574,21 @@ export function KioskScanner() {
                 className="mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col items-center justify-center px-4 text-center"
                 role="alertdialog"
                 aria-modal="true"
-                aria-labelledby="overtime-alert-title"
-              >
+                aria-labelledby="overtime-alert-title">
                 <div className="mb-5 flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-amber-100">
                   <AlertTriangle className="h-12 w-12 text-amber-700" />
                 </div>
                 <p className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-amber-700">
                   Check-out recorded · {overtimeNotice.seats.join(", ")}
                 </p>
-                <h2 id="overtime-alert-title" className="mb-3 text-3xl font-semibold text-[#2d2520] sm:text-4xl">
+                <h2
+                  id="overtime-alert-title"
+                  className="mb-3 text-3xl font-semibold text-[#2d2520] sm:text-4xl">
                   Additional payment required
                 </h2>
                 <p className="text-lg leading-relaxed text-[#6b5e52] sm:text-xl">
-                  {overtimeNotice.guestName}, your stay was {overtimeNotice.overtimeMinutes} minutes over time.
+                  {overtimeNotice.guestName}, your stay was {overtimeNotice.overtimeMinutes} minutes
+                  over time.
                 </p>
                 <div className="my-5 w-full rounded-2xl border-2 border-amber-300 bg-amber-50 p-5">
                   <p className="text-sm font-semibold uppercase tracking-wider text-amber-800">
@@ -566,11 +598,13 @@ export function KioskScanner() {
                     {formatPeso(overtimeNotice.chargeCents)}
                   </p>
                   <p className="mt-2 text-base text-amber-900">
-                    {overtimeNotice.billableHours} additional {overtimeNotice.billableHours === 1 ? "hour" : "hours"}, rounded up
+                    {overtimeNotice.billableHours} additional{" "}
+                    {overtimeNotice.billableHours === 1 ? "hour" : "hours"}, rounded up
                   </p>
                 </div>
                 <p className="text-base font-medium text-[#2d2520]" aria-live="polite">
-                  Scanner resuming in {overtimeSecondsRemaining} {overtimeSecondsRemaining === 1 ? "second" : "seconds"}…
+                  Scanner resuming in {overtimeSecondsRemaining}{" "}
+                  {overtimeSecondsRemaining === 1 ? "second" : "seconds"}…
                 </p>
               </motion.div>
             )}
@@ -581,16 +615,19 @@ export function KioskScanner() {
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex-1 flex flex-col items-center justify-center min-h-0 max-w-lg mx-auto w-full text-center px-4"
-              >
+                className="flex-1 flex flex-col items-center justify-center min-h-0 max-w-lg mx-auto w-full text-center px-4">
                 <div className="w-20 h-20 bg-[#fee2e2] rounded-full flex items-center justify-center mb-5 shrink-0">
                   <XCircle className="w-12 h-12 text-[#dc2626]" />
                 </div>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl text-[#2d2520] mb-3 shrink-0">{ERROR_MESSAGES[errorType].title}</h2>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl text-[#2d2520] mb-3 shrink-0">
+                  {ERROR_MESSAGES[errorType].title}
+                </h2>
                 <p className="mb-6 max-w-lg shrink-0 text-lg leading-relaxed text-[#6b5e52] sm:text-xl">
                   {serverError || ERROR_MESSAGES[errorType].description}
                 </p>
-                <p className="shrink-0 text-base font-medium text-[#2d2520] sm:text-lg" aria-live="polite">
+                <p
+                  className="shrink-0 text-base font-medium text-[#2d2520] sm:text-lg"
+                  aria-live="polite">
                   Scanner resuming in {errorSecondsRemaining}{" "}
                   {errorSecondsRemaining === 1 ? "second" : "seconds"}…
                 </p>
@@ -602,7 +639,9 @@ export function KioskScanner() {
         {/* Side panel — live monitoring */}
         <aside className="hidden min-h-0 flex-col gap-3 overflow-y-auto border-l border-[#f3ede4] bg-white/50 p-4 text-base backdrop-blur-sm lg:flex xl:p-5 2xl:p-6">
           <div className="shrink-0">
-            <p className="mb-2 text-sm font-medium uppercase tracking-wider text-[#6b5e52]">Live occupancy</p>
+            <p className="mb-2 text-sm font-medium uppercase tracking-wider text-[#6b5e52]">
+              Live occupancy
+            </p>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white rounded-xl border border-[#f3ede4] p-3">
                 <Users className="w-5 h-5 text-[#e5a930] mb-1.5" />
@@ -644,8 +683,7 @@ export function KioskScanner() {
                 {visibleSessions.map((s) => (
                   <li
                     key={s.bookingId}
-                    className="rounded-lg border border-[#f3ede4] bg-white p-3 text-base"
-                  >
+                    className="rounded-lg border border-[#f3ede4] bg-white p-3 text-base">
                     <p className="truncate text-lg font-medium text-[#2d2520]">{s.guestName}</p>
                     <p className="text-sm text-[#6b5e52]">
                       {s.seats.join(", ")} · {getRemainingMinutes(s.scheduledEnd)} min left
@@ -660,7 +698,9 @@ export function KioskScanner() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-hidden">
-            <p className="mb-2 text-sm font-medium uppercase tracking-wider text-[#6b5e52]">Recent activity</p>
+            <p className="mb-2 text-sm font-medium uppercase tracking-wider text-[#6b5e52]">
+              Recent activity
+            </p>
             {activity.length === 0 ? (
               <p className="text-base text-[#6b5e52]">Activity appears after scans.</p>
             ) : (
@@ -668,8 +708,7 @@ export function KioskScanner() {
                 {recentActivity.map((a) => (
                   <li
                     key={a.id}
-                    className="flex items-start gap-2 border-b border-[#f3ede4]/80 pb-2 text-base last:border-0"
-                  >
+                    className="flex items-start gap-2 border-b border-[#f3ede4]/80 pb-2 text-base last:border-0">
                     {a.type === "check-in" ? (
                       <LogIn className="w-4 h-4 text-[#16a34a] shrink-0 mt-0.5" />
                     ) : (

@@ -31,19 +31,19 @@ export const DEFAULT_BOOKING_SETTINGS: BookingSettings = {
 };
 
 export const DAY_NAMES = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
 ] as const;
 
 const normalizedTime = (value: string) => value.slice(0, 5);
 
 const minutesForTime = (value: string) => {
-  const [hour, minute] = normalizedTime(value).split(':').map(Number);
+  const [hour, minute] = normalizedTime(value).split(":").map(Number);
   return hour * 60 + minute;
 };
 
@@ -54,9 +54,9 @@ const previousDateString = (value: string) => {
   date.setDate(date.getDate() - 1);
   return [
     date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0'),
-  ].join('-');
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
 };
 
 const nextDateString = (value: string) => {
@@ -64,29 +64,25 @@ const nextDateString = (value: string) => {
   date.setDate(date.getDate() + 1);
   return [
     date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0'),
-  ].join('-');
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
 };
 
 export function formatTime(value: string) {
-  const [hour, minute] = normalizedTime(value).split(':').map(Number);
-  const suffix = hour >= 12 ? 'PM' : 'AM';
+  const [hour, minute] = normalizedTime(value).split(":").map(Number);
+  const suffix = hour >= 12 ? "PM" : "AM";
   const displayHour = hour % 12 || 12;
-  return `${displayHour}:${String(minute).padStart(2, '0')} ${suffix}`;
+  return `${displayHour}:${String(minute).padStart(2, "0")} ${suffix}`;
 }
 
 export function formatHoursRange(hours: BusinessHours) {
   return hours.is_open
     ? `${formatTime(hours.opens_at)} – ${formatTime(hours.closes_at)}`
-    : 'Closed';
+    : "Closed";
 }
 
-export function hoursAvailableFrom(
-  date: string,
-  time: string,
-  weeklyHours: BusinessHours[],
-) {
+export function hoursAvailableFrom(date: string, time: string, weeklyHours: BusinessHours[]) {
   const startMinutes = minutesForTime(time);
   const currentDay = dateFromString(date).getDay();
   const currentHours = weeklyHours.find((hours) => hours.day_of_week === currentDay);
@@ -115,7 +111,7 @@ export function reservationTimeOptions(date: string, weeklyHours: BusinessHours[
 
   const opens = minutesForTime(currentHours.opens_at);
 
-  return Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`)
+  return Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`)
     .filter((time) => hoursAvailableFrom(date, time, weeklyHours) > 0)
     .sort((left, right) => {
       const leftMinutes = minutesForTime(left);
@@ -140,9 +136,7 @@ export function reservationDateForTime(
   const opens = minutesForTime(hours.opens_at);
   const closes = minutesForTime(hours.closes_at);
   const start = minutesForTime(time);
-  return opens > closes && start < closes
-    ? nextDateString(operatingDate)
-    : operatingDate;
+  return opens > closes && start < closes ? nextDateString(operatingDate) : operatingDate;
 }
 
 export function operatingDateForBooking(
@@ -163,22 +157,20 @@ export function operatingDateForBooking(
 }
 
 export function isRegularlyClosedDate(date: string, weeklyHours: BusinessHours[]) {
-  const hours = weeklyHours.find(
-    (item) => item.day_of_week === dateFromString(date).getDay(),
-  );
+  const hours = weeklyHours.find((item) => item.day_of_week === dateFromString(date).getDay());
   return hours?.is_open === false;
 }
 
 export function isClosureDate(date: string, closures: BusinessClosure[]) {
-  return closures.some((closure) => (
-    closure.is_active && date >= closure.starts_on && date <= closure.ends_on
-  ));
+  return closures.some(
+    (closure) => closure.is_active && date >= closure.starts_on && date <= closure.ends_on,
+  );
 }
 
 export function closureForDate(date: string, closures: BusinessClosure[]) {
-  return closures.find((closure) => (
-    closure.is_active && date >= closure.starts_on && date <= closure.ends_on
-  ));
+  return closures.find(
+    (closure) => closure.is_active && date >= closure.starts_on && date <= closure.ends_on,
+  );
 }
 
 export function maximumBookingDate(today: string, advanceDays: number) {
@@ -186,9 +178,9 @@ export function maximumBookingDate(today: string, advanceDays: number) {
   date.setDate(date.getDate() + advanceDays);
   return [
     date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0'),
-  ].join('-');
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
 }
 
 export function meetsMinimumNotice(

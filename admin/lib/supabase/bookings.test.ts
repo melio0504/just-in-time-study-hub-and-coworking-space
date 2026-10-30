@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
+import { type CreateBookingInput, createBooking, listMyBookings } from "./bookings";
 import { createClient } from "./client";
-import { createBooking, listMyBookings, type CreateBookingInput } from "./bookings";
 
 vi.mock("./client", () => ({ createClient: vi.fn() }));
 
@@ -38,7 +37,9 @@ describe("admin createBooking", () => {
     const booking = { id: "booking-admin-1", reservation_code: "JIT-ADMIN" };
     const rpc = vi.fn().mockResolvedValue({ data: booking, error: null });
     createClientMock.mockReturnValue({
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "staff-1" } }, error: null }) },
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "staff-1" } }, error: null }),
+      },
       rpc,
     } as never);
 
@@ -56,7 +57,9 @@ describe("admin createBooking", () => {
 
   it("surfaces an RPC failure", async () => {
     createClientMock.mockReturnValue({
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "staff-1" } }, error: null }) },
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "staff-1" } }, error: null }),
+      },
       rpc: vi.fn().mockResolvedValue({ data: null, error: { message: "Seat unavailable" } }),
     } as never);
 
@@ -80,7 +83,9 @@ describe("admin listMyBookings", () => {
   });
 
   it("surfaces a query failure", async () => {
-    const secondOrder = vi.fn().mockResolvedValue({ data: null, error: { message: "Query failed" } });
+    const secondOrder = vi
+      .fn()
+      .mockResolvedValue({ data: null, error: { message: "Query failed" } });
     const firstOrder = vi.fn().mockReturnValue({ order: secondOrder });
     const select = vi.fn().mockReturnValue({ order: firstOrder });
     createClientMock.mockReturnValue({ from: vi.fn().mockReturnValue({ select }) } as never);

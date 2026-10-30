@@ -28,9 +28,7 @@ export function DashboardDataProvider({
   initialData: DashboardInitialData;
 }) {
   return (
-    <DashboardDataContext.Provider value={initialData}>
-      {children}
-    </DashboardDataContext.Provider>
+    <DashboardDataContext.Provider value={initialData}>{children}</DashboardDataContext.Provider>
   );
 }
 

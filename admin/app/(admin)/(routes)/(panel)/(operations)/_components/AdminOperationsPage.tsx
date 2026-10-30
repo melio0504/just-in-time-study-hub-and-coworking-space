@@ -1,82 +1,151 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AlertTriangle, Armchair, BadgeCheck, CalendarDays, CircleOff, Eye, Loader2, Pencil, Plus, Radio, Search, ShieldCheck, Trash2, X } from 'lucide-react';
-import { SeatingPlanMini } from '../../../_components/SeatingPlanMini';
-import { useAdminAccess } from '../../../_components/AdminShell';
-import { useDashboardInitialData, type DashboardAuditLog } from './DashboardDataProvider';
-import { hasAdminAccess } from '@/lib/admin-access';
+import {
+  AlertTriangle,
+  Armchair,
+  BadgeCheck,
+  CalendarDays,
+  CircleOff,
+  Eye,
+  Loader2,
+  Pencil,
+  Plus,
+  Radio,
+  Search,
+  ShieldCheck,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { hasAdminAccess } from "@/lib/admin-access";
 import {
   getReservationAvailabilityWindow,
   SEAT_AVAILABILITY_REFRESH_MS,
-} from '@/lib/seatAvailability';
-import { allSeatIds } from '@/lib/seats';
-import { createClient } from '@/lib/supabase/client';
-import type { Tables } from '@/lib/supabase/database.types';
+} from "@/lib/seatAvailability";
+import { allSeatIds } from "@/lib/seats";
+import { createClient } from "@/lib/supabase/client";
+import type { Tables } from "@/lib/supabase/database.types";
+import { useAdminAccess } from "../../../_components/AdminShell";
+import { SeatingPlanMini } from "../../../_components/SeatingPlanMini";
+import { type DashboardAuditLog, useDashboardInitialData } from "./DashboardDataProvider";
 
-type Booking = Tables<'bookings'>;
-type CheckIn = Tables<'check_in_sessions'>;
-type Seat = Tables<'seats'>;
-type WalkIn = Tables<'walk_in_occupancies'>;
-type Announcement = Tables<'announcements'>;
-export type OperationsSection = 'dashboard' | 'reservations' | 'announcements' | 'logs';
-type NoticeForm = { id?: string; date: string; title: string; description: string; status: 'draft' | 'published' | 'archived' };
-type AnnouncementFilter = 'all' | 'published' | 'draft' | 'archived';
+type Booking = Tables<"bookings">;
+type CheckIn = Tables<"check_in_sessions">;
+type Seat = Tables<"seats">;
+type WalkIn = Tables<"walk_in_occupancies">;
+type Announcement = Tables<"announcements">;
+export type OperationsSection = "dashboard" | "reservations" | "announcements" | "logs";
+type NoticeForm = {
+  id?: string;
+  date: string;
+  title: string;
+  description: string;
+  status: "draft" | "published" | "archived";
+};
+type AnnouncementFilter = "all" | "published" | "draft" | "archived";
 type WalkInTarget = { seatCode: string; isOccupied: boolean };
-type OvertimeResolution = 'paid_manually' | 'waived';
+type OvertimeResolution = "paid_manually" | "waived";
 type OvertimeResolutionTarget = {
   booking: Booking;
   overtime: CheckIn;
   resolution: OvertimeResolution;
 };
 
-const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-const cleanForm: NoticeForm = { date: today(), title: '', description: '', status: 'published' };
+const today = () =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+const cleanForm: NoticeForm = { date: today(), title: "", description: "", status: "published" };
 const announcementsPerPage = 6;
-const terminalStatuses = new Set(['cancelled', 'completed', 'declined', 'no_show']);
+const terminalStatuses = new Set(["cancelled", "completed", "declined", "no_show"]);
 const availabilityTimes = [
-  ['00:00', '12:00 AM'], ['01:00', '1:00 AM'], ['02:00', '2:00 AM'], ['03:00', '3:00 AM'], ['04:00', '4:00 AM'],
-  ['08:00', '8:00 AM'], ['09:00', '9:00 AM'], ['10:00', '10:00 AM'], ['11:00', '11:00 AM'],
-  ['12:00', '12:00 PM'], ['13:00', '1:00 PM'], ['14:00', '2:00 PM'], ['15:00', '3:00 PM'], ['16:00', '4:00 PM'], ['17:00', '5:00 PM'],
-  ['18:00', '6:00 PM'], ['19:00', '7:00 PM'], ['20:00', '8:00 PM'], ['21:00', '9:00 PM'], ['22:00', '10:00 PM'], ['23:00', '11:00 PM'],
+  ["00:00", "12:00 AM"],
+  ["01:00", "1:00 AM"],
+  ["02:00", "2:00 AM"],
+  ["03:00", "3:00 AM"],
+  ["04:00", "4:00 AM"],
+  ["08:00", "8:00 AM"],
+  ["09:00", "9:00 AM"],
+  ["10:00", "10:00 AM"],
+  ["11:00", "11:00 AM"],
+  ["12:00", "12:00 PM"],
+  ["13:00", "1:00 PM"],
+  ["14:00", "2:00 PM"],
+  ["15:00", "3:00 PM"],
+  ["16:00", "4:00 PM"],
+  ["17:00", "5:00 PM"],
+  ["18:00", "6:00 PM"],
+  ["19:00", "7:00 PM"],
+  ["20:00", "8:00 PM"],
+  ["21:00", "9:00 PM"],
+  ["22:00", "10:00 PM"],
+  ["23:00", "11:00 PM"],
 ] as const;
-const availabilityDurations = [['1', '1 hour'], ['2', '2 hours'], ['3', '3 hours'], ['4', '4 hours'], ['6', '6 hours'], ['8', '8 hours']] as const;
+const availabilityDurations = [
+  ["1", "1 hour"],
+  ["2", "2 hours"],
+  ["3", "3 hours"],
+  ["4", "4 hours"],
+  ["6", "6 hours"],
+  ["8", "8 hours"],
+] as const;
 
 function getHoursUntilClosing(time: string) {
-  const hour = Number(time.split(':')[0]);
+  const hour = Number(time.split(":")[0]);
   if (!Number.isInteger(hour)) return 0;
   if (hour >= 8 && hour <= 23) return 29 - hour;
   if (hour >= 0 && hour < 5) return 5 - hour;
   return 0;
 }
 
-function titleCase(value: string) { return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
-function formatDateTime(value: string) { return new Date(value).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' }); }
+function titleCase(value: string) {
+  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString("en-PH", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Manila",
+  });
+}
 function statusStyle(status: string) {
-  if (status === 'confirmed' || status === 'checked_in' || status === 'published') return 'bg-emerald-100 text-emerald-700';
-  if (status === 'cancelled' || status === 'declined' || status === 'no_show' || status === 'archived') return 'bg-red-100 text-red-700';
-  return 'bg-amber-100 text-amber-800';
+  if (status === "confirmed" || status === "checked_in" || status === "published")
+    return "bg-emerald-100 text-emerald-700";
+  if (
+    status === "cancelled" ||
+    status === "declined" ||
+    status === "no_show" ||
+    status === "archived"
+  )
+    return "bg-red-100 text-red-700";
+  return "bg-amber-100 text-amber-800";
 }
 
 function isAutomationLog(log: DashboardAuditLog) {
-  return log.actor_id === null
-    && typeof log.details === 'object'
-    && log.details !== null
-    && !Array.isArray(log.details)
-    && log.details.source === 'automation';
+  return (
+    log.actor_id === null &&
+    typeof log.details === "object" &&
+    log.details !== null &&
+    !Array.isArray(log.details) &&
+    log.details.source === "automation"
+  );
 }
 
 export function AdminOperationsPage({ section }: { section: OperationsSection }) {
   const access = useAdminAccess();
   const initialData = useDashboardInitialData();
   const router = useRouter();
-  const canManageReservations = hasAdminAccess(access, 'reservations');
-  const canResolveOvertime = hasAdminAccess(access, 'seating') || canManageReservations;
-  const canViewSection = access.role === 'admin'
-    || (section === 'dashboard' && hasAdminAccess(access, 'seating'))
-    || (section === 'reservations' && canManageReservations)
-    || (section === 'announcements' && hasAdminAccess(access, 'announcements'));
+  const canManageReservations = hasAdminAccess(access, "reservations");
+  const canResolveOvertime = hasAdminAccess(access, "seating") || canManageReservations;
+  const canViewSection =
+    access.role === "admin" ||
+    (section === "dashboard" && hasAdminAccess(access, "seating")) ||
+    (section === "reservations" && canManageReservations) ||
+    (section === "announcements" && hasAdminAccess(access, "announcements"));
   const [bookings, setBookings] = useState<Booking[]>(initialData.bookings);
   const [checkIns, setCheckIns] = useState<CheckIn[]>(initialData.checkIns);
   const [seats, setSeats] = useState<Seat[]>(initialData.seats);
@@ -84,28 +153,29 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const [announcements, setAnnouncements] = useState<Announcement[]>(initialData.announcements);
   const [logs, setLogs] = useState<DashboardAuditLog[]>(initialData.logs);
   const [selectedDate, setSelectedDate] = useState(today());
-  const [selectedTime, setSelectedTime] = useState('');
-  const [selectedDuration, setSelectedDuration] = useState('');
+  const [selectedTime, setSelectedTime] = useState("");
+  const [selectedDuration, setSelectedDuration] = useState("");
   const [availableSeatCodes, setAvailableSeatCodes] = useState<Set<string> | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(true);
-  const [availabilityError, setAvailabilityError] = useState('');
+  const [availabilityError, setAvailabilityError] = useState("");
   const availabilityRequestRef = useRef(0);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [announcementFilter, setAnnouncementFilter] = useState<AnnouncementFilter>('all');
-  const [announcementSearch, setAnnouncementSearch] = useState('');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [announcementFilter, setAnnouncementFilter] = useState<AnnouncementFilter>("all");
+  const [announcementSearch, setAnnouncementSearch] = useState("");
   const [announcementPage, setAnnouncementPage] = useState(1);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
-  const [cancelReason, setCancelReason] = useState('Cancelled by staff');
-  const [cancelError, setCancelError] = useState('');
+  const [cancelReason, setCancelReason] = useState("Cancelled by staff");
+  const [cancelError, setCancelError] = useState("");
   const [cancelling, setCancelling] = useState(false);
-  const [overtimeResolutionTarget, setOvertimeResolutionTarget] = useState<OvertimeResolutionTarget | null>(null);
-  const [overtimeResolutionError, setOvertimeResolutionError] = useState('');
+  const [overtimeResolutionTarget, setOvertimeResolutionTarget] =
+    useState<OvertimeResolutionTarget | null>(null);
+  const [overtimeResolutionError, setOvertimeResolutionError] = useState("");
   const [resolvingOvertimeId, setResolvingOvertimeId] = useState<string | null>(null);
   const [walkInTarget, setWalkInTarget] = useState<WalkInTarget | null>(null);
-  const [walkInGuestName, setWalkInGuestName] = useState('');
-  const [walkInError, setWalkInError] = useState('');
+  const [walkInGuestName, setWalkInGuestName] = useState("");
+  const [walkInError, setWalkInError] = useState("");
   const [busySeat, setBusySeat] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(initialData.error);
@@ -114,13 +184,13 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const loadSeatAvailability = useCallback(async () => {
     const requestId = ++availabilityRequestRef.current;
     setAvailabilityLoading(true);
-    setAvailabilityError('');
+    setAvailabilityError("");
     const { startsAt, endsAt } = getReservationAvailabilityWindow(
       selectedDate,
       selectedTime,
       selectedDuration,
     );
-    const { data, error } = await createClient().rpc('get_available_seats', {
+    const { data, error } = await createClient().rpc("get_available_seats", {
       p_starts_at: startsAt,
       p_ends_at: endsAt,
     });
@@ -137,15 +207,38 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
-    const [bookingResult, checkInResult, seatResult, walkInResult, announcementResult, logResult] = await Promise.all([
-      supabase.from('bookings').select().order('created_at', { ascending: false }).limit(250),
-      supabase.from('check_in_sessions').select().in('status', ['checked_in', 'overtime']).is('checked_out_at', null),
-      supabase.from('seats').select().order('code'),
-      supabase.from('walk_in_occupancies').select().is('ended_at', null).order('started_at', { ascending: false }),
-      supabase.from('announcements').select().order('starts_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }),
-      supabase.from('audit_logs').select('*, profile:profiles(full_name, email)').order('created_at', { ascending: false }).limit(200),
-    ]);
-    const firstError = bookingResult.error || checkInResult.error || seatResult.error || walkInResult.error || announcementResult.error || logResult.error;
+    const [bookingResult, checkInResult, seatResult, walkInResult, announcementResult, logResult] =
+      await Promise.all([
+        supabase.from("bookings").select().order("created_at", { ascending: false }).limit(250),
+        supabase
+          .from("check_in_sessions")
+          .select()
+          .in("status", ["checked_in", "overtime"])
+          .is("checked_out_at", null),
+        supabase.from("seats").select().order("code"),
+        supabase
+          .from("walk_in_occupancies")
+          .select()
+          .is("ended_at", null)
+          .order("started_at", { ascending: false }),
+        supabase
+          .from("announcements")
+          .select()
+          .order("starts_at", { ascending: false, nullsFirst: false })
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("audit_logs")
+          .select("*, profile:profiles(full_name, email)")
+          .order("created_at", { ascending: false })
+          .limit(200),
+      ]);
+    const firstError =
+      bookingResult.error ||
+      checkInResult.error ||
+      seatResult.error ||
+      walkInResult.error ||
+      announcementResult.error ||
+      logResult.error;
     if (firstError) setMessage(firstError.message);
     setBookings(bookingResult.data ?? []);
     setCheckIns(checkInResult.data ?? []);
@@ -161,65 +254,147 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
       void loadData();
       void loadSeatAvailability();
     };
-    const channel = supabase.channel('admin-operations')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, reloadOperations)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'check_in_sessions' }, reloadOperations)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'booking_seats' }, reloadOperations)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'seats' }, reloadOperations)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'walk_in_occupancies' }, reloadOperations)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => void loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'audit_logs' }, () => void loadData())
+    const channel = supabase
+      .channel("admin-operations")
+      .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, reloadOperations)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "check_in_sessions" },
+        reloadOperations,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "booking_seats" },
+        reloadOperations,
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "seats" }, reloadOperations)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "walk_in_occupancies" },
+        reloadOperations,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "announcements" },
+        () => void loadData(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "audit_logs" },
+        () => void loadData(),
+      )
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') reloadOperations();
+        if (status === "SUBSCRIBED") reloadOperations();
       });
-    return () => { void supabase.removeChannel(channel); };
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [loadData, loadSeatAvailability]);
 
   useEffect(() => {
     const refreshAvailability = () => void loadSeatAvailability();
     const refreshInterval = window.setInterval(refreshAvailability, SEAT_AVAILABILITY_REFRESH_MS);
     const initialRefresh = window.setTimeout(refreshAvailability, 0);
-    window.addEventListener('focus', refreshAvailability);
+    window.addEventListener("focus", refreshAvailability);
     return () => {
       window.clearTimeout(initialRefresh);
       window.clearInterval(refreshInterval);
-      window.removeEventListener('focus', refreshAvailability);
+      window.removeEventListener("focus", refreshAvailability);
     };
   }, [loadSeatAvailability]);
 
   const seatCodeById = useMemo(() => new Map(seats.map((seat) => [seat.id, seat.code])), [seats]);
-  const activeWalkInByCode = useMemo(() => new Map(walkIns.map((walkIn) => [seatCodeById.get(walkIn.seat_id), walkIn]).filter((entry): entry is [string, WalkIn] => Boolean(entry[0]))), [walkIns, seatCodeById]);
-  const activeWalkInCodes = useMemo(() => new Set(walkIns.map((walkIn) => seatCodeById.get(walkIn.seat_id)).filter(Boolean)), [walkIns, seatCodeById]);
-  const checkedInCodes = useMemo(() => new Set(bookings.filter((booking) => booking.status === 'checked_in').flatMap((booking) => booking.seat_ids)), [bookings]);
-  const overtimeByBooking = useMemo(() => new Map(
-    checkIns
-      .filter((session) => session.status === 'overtime' && session.checked_out_at === null)
-      .map((session) => [session.booking_id, session]),
-  ), [checkIns]);
-  const overtimeBookings = useMemo(() => bookings.filter((booking) => overtimeByBooking.has(booking.id)), [bookings, overtimeByBooking]);
-  const seatPlan = useMemo(() => allSeatIds.map((id) => {
-    const databaseSeat = seats.find((seat) => seat.code === id);
-    const status = databaseSeat?.status === 'maintenance' ? 'maintenance' as const
-      : selectedDate === today() && (activeWalkInCodes.has(id) || checkedInCodes.has(id)) ? 'occupied' as const
-      : availableSeatCodes?.has(id) ? 'available' as const : 'reserved' as const;
-    return { id, status };
-  }), [activeWalkInCodes, availableSeatCodes, checkedInCodes, seats, selectedDate]);
+  const activeWalkInByCode = useMemo(
+    () =>
+      new Map(
+        walkIns
+          .map((walkIn) => [seatCodeById.get(walkIn.seat_id), walkIn])
+          .filter((entry): entry is [string, WalkIn] => Boolean(entry[0])),
+      ),
+    [walkIns, seatCodeById],
+  );
+  const activeWalkInCodes = useMemo(
+    () => new Set(walkIns.map((walkIn) => seatCodeById.get(walkIn.seat_id)).filter(Boolean)),
+    [walkIns, seatCodeById],
+  );
+  const checkedInCodes = useMemo(
+    () =>
+      new Set(
+        bookings
+          .filter((booking) => booking.status === "checked_in")
+          .flatMap((booking) => booking.seat_ids),
+      ),
+    [bookings],
+  );
+  const overtimeByBooking = useMemo(
+    () =>
+      new Map(
+        checkIns
+          .filter((session) => session.status === "overtime" && session.checked_out_at === null)
+          .map((session) => [session.booking_id, session]),
+      ),
+    [checkIns],
+  );
+  const overtimeBookings = useMemo(
+    () => bookings.filter((booking) => overtimeByBooking.has(booking.id)),
+    [bookings, overtimeByBooking],
+  );
+  const seatPlan = useMemo(
+    () =>
+      allSeatIds.map((id) => {
+        const databaseSeat = seats.find((seat) => seat.code === id);
+        const status =
+          databaseSeat?.status === "maintenance"
+            ? ("maintenance" as const)
+            : selectedDate === today() && (activeWalkInCodes.has(id) || checkedInCodes.has(id))
+              ? ("occupied" as const)
+              : availableSeatCodes?.has(id)
+                ? ("available" as const)
+                : ("reserved" as const);
+        return { id, status };
+      }),
+    [activeWalkInCodes, availableSeatCodes, checkedInCodes, seats, selectedDate],
+  );
 
-  const seatSummary = useMemo(() => seatPlan.reduce((result, seat) => ({ ...result, [seat.status]: (result[seat.status] || 0) + 1 }), {} as Record<string, number>), [seatPlan]);
-  const availableDurationOptions = availabilityDurations.filter(([value]) => Number(value) <= getHoursUntilClosing(selectedTime));
-  const filteredBookings = useMemo(() => bookings.filter((booking) => {
-    const needle = search.toLowerCase();
-    return (statusFilter === 'all' || booking.status === statusFilter) && (!needle || `${booking.guest_name} ${booking.guest_email} ${booking.reservation_code} ${booking.seat_ids.join(' ')}`.toLowerCase().includes(needle));
-  }), [bookings, search, statusFilter]);
+  const seatSummary = useMemo(
+    () =>
+      seatPlan.reduce(
+        (result, seat) => ({ ...result, [seat.status]: (result[seat.status] || 0) + 1 }),
+        {} as Record<string, number>,
+      ),
+    [seatPlan],
+  );
+  const availableDurationOptions = availabilityDurations.filter(
+    ([value]) => Number(value) <= getHoursUntilClosing(selectedTime),
+  );
+  const filteredBookings = useMemo(
+    () =>
+      bookings.filter((booking) => {
+        const needle = search.toLowerCase();
+        return (
+          (statusFilter === "all" || booking.status === statusFilter) &&
+          (!needle ||
+            `${booking.guest_name} ${booking.guest_email} ${booking.reservation_code} ${booking.seat_ids.join(" ")}`
+              .toLowerCase()
+              .includes(needle))
+        );
+      }),
+    [bookings, search, statusFilter],
+  );
   const filteredAnnouncements = useMemo(() => {
     const needle = announcementSearch.trim().toLowerCase();
     return announcements.filter((announcement) => {
-      const matchesStatus = announcementFilter === 'all' || announcement.status === announcementFilter;
-      const matchesSearch = !needle || `${announcement.title} ${announcement.body}`.toLowerCase().includes(needle);
+      const matchesStatus =
+        announcementFilter === "all" || announcement.status === announcementFilter;
+      const matchesSearch =
+        !needle || `${announcement.title} ${announcement.body}`.toLowerCase().includes(needle);
       return matchesStatus && matchesSearch;
     });
   }, [announcementFilter, announcementSearch, announcements]);
-  const announcementPageCount = Math.max(1, Math.ceil(filteredAnnouncements.length / announcementsPerPage));
+  const announcementPageCount = Math.max(
+    1,
+    Math.ceil(filteredAnnouncements.length / announcementsPerPage),
+  );
   const currentAnnouncementPage = Math.min(announcementPage, announcementPageCount);
   const paginatedAnnouncements = filteredAnnouncements.slice(
     (currentAnnouncementPage - 1) * announcementsPerPage,
@@ -229,26 +404,28 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const beginAvailabilityWindowChange = () => {
     availabilityRequestRef.current += 1;
     setAvailableSeatCodes(null);
-    setAvailabilityError('');
+    setAvailabilityError("");
     setAvailabilityLoading(true);
   };
 
   const requestWalkInChange = (seatCode: string) => {
     const hasActiveWalkIn = activeWalkInCodes.has(seatCode);
     if (checkedInCodes.has(seatCode) && !hasActiveWalkIn) {
-      setMessage(`Seat ${seatCode} is occupied by a checked-in reservation and cannot be changed from the floor plan.`);
+      setMessage(
+        `Seat ${seatCode} is occupied by a checked-in reservation and cannot be changed from the floor plan.`,
+      );
       return;
     }
     setWalkInTarget({ seatCode, isOccupied: hasActiveWalkIn });
-    setWalkInGuestName('');
-    setWalkInError('');
+    setWalkInGuestName("");
+    setWalkInError("");
   };
 
   const closeWalkInModal = () => {
     if (busySeat) return;
     setWalkInTarget(null);
-    setWalkInGuestName('');
-    setWalkInError('');
+    setWalkInGuestName("");
+    setWalkInError("");
   };
 
   const confirmWalkInChange = async (event: React.SubmitEvent<HTMLFormElement>) => {
@@ -258,14 +435,17 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     if (isOccupied) {
       const walkIn = activeWalkInByCode.get(seatCode);
       setWalkInTarget(null);
-      router.push(walkIn ? `/walk-ins?checkout=${walkIn.id}` : '/walk-ins');
+      router.push(walkIn ? `/walk-ins?checkout=${walkIn.id}` : "/walk-ins");
       return;
     }
     setBusySeat(seatCode);
-    setMessage('');
-    setWalkInError('');
+    setMessage("");
+    setWalkInError("");
     const guestName = walkInGuestName.trim() || undefined;
-    const { error } = await createClient().rpc('start_walk_in', { p_seat_code: seatCode, p_guest_name: guestName });
+    const { error } = await createClient().rpc("start_walk_in", {
+      p_seat_code: seatCode,
+      p_guest_name: guestName,
+    });
     if (error) {
       setWalkInError(error.message);
       setBusySeat(null);
@@ -273,7 +453,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     }
     setMessage(`Seat ${seatCode} is now marked as occupied.`);
     setWalkInTarget(null);
-    setWalkInGuestName('');
+    setWalkInGuestName("");
     setBusySeat(null);
     await loadData();
   };
@@ -281,24 +461,30 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const requestCancellation = (booking: Booking) => {
     setSelectedBooking(null);
     setCancelTarget(booking);
-    setCancelReason('Cancelled by staff');
-    setCancelError('');
+    setCancelReason("Cancelled by staff");
+    setCancelError("");
   };
 
   const closeCancellation = () => {
     if (cancelling) return;
     setCancelTarget(null);
-    setCancelError('');
+    setCancelError("");
   };
 
   const confirmCancellation = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!cancelTarget) return;
     const reason = cancelReason.trim();
-    if (!reason) { setCancelError('Please provide a cancellation reason.'); return; }
+    if (!reason) {
+      setCancelError("Please provide a cancellation reason.");
+      return;
+    }
     setCancelling(true);
-    setCancelError('');
-    const { error } = await createClient().rpc('admin_cancel_booking', { p_booking_id: cancelTarget.id, p_reason: reason });
+    setCancelError("");
+    const { error } = await createClient().rpc("admin_cancel_booking", {
+      p_booking_id: cancelTarget.id,
+      p_reason: reason,
+    });
     if (error) {
       setCancelError(error.message);
       setCancelling(false);
@@ -316,13 +502,13 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     resolution: OvertimeResolution,
   ) => {
     setOvertimeResolutionTarget({ booking, overtime, resolution });
-    setOvertimeResolutionError('');
+    setOvertimeResolutionError("");
   };
 
   const closeOvertimeResolution = () => {
     if (resolvingOvertimeId) return;
     setOvertimeResolutionTarget(null);
-    setOvertimeResolutionError('');
+    setOvertimeResolutionError("");
   };
 
   const resolveOvertime = async (event: React.SubmitEvent<HTMLFormElement>) => {
@@ -332,8 +518,8 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     const { booking, resolution } = overtimeResolutionTarget;
 
     setResolvingOvertimeId(booking.id);
-    setOvertimeResolutionError('');
-    const { error } = await createClient().rpc('resolve_overtime_session', {
+    setOvertimeResolutionError("");
+    const { error } = await createClient().rpc("resolve_overtime_session", {
       p_booking_id: booking.id,
       p_resolution: resolution,
     });
@@ -347,7 +533,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     setOvertimeResolutionTarget(null);
     setSelectedBooking(null);
     setMessage(
-      resolution === 'paid_manually'
+      resolution === "paid_manually"
         ? `Manual overtime payment recorded for ${booking.reservation_code}.`
         : `${booking.reservation_code} was removed from the overdue list without payment.`,
     );
@@ -355,277 +541,940 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     setResolvingOvertimeId(null);
   };
 
-  const editAnnouncement = (announcement: Announcement) => setNoticeForm({ id: announcement.id, date: (announcement.starts_at || announcement.created_at).slice(0, 10), title: announcement.title, description: announcement.body, status: announcement.status });
+  const editAnnouncement = (announcement: Announcement) =>
+    setNoticeForm({
+      id: announcement.id,
+      date: (announcement.starts_at || announcement.created_at).slice(0, 10),
+      title: announcement.title,
+      description: announcement.body,
+      status: announcement.status,
+    });
   const saveAnnouncement = async (event: React.SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault(); setSaving(true); setMessage('');
+    event.preventDefault();
+    setSaving(true);
+    setMessage("");
     const supabase = createClient();
     const { data: auth } = await supabase.auth.getUser();
-    const payload = { title: noticeForm.title.trim(), body: noticeForm.description.trim(), status: noticeForm.status, starts_at: `${noticeForm.date}T00:00:00+08:00`, created_by: auth.user?.id ?? null };
-    const result = noticeForm.id ? await supabase.from('announcements').update(payload).eq('id', noticeForm.id) : await supabase.from('announcements').insert(payload);
-    setMessage(result.error ? result.error.message : noticeForm.id ? 'Announcement updated.' : 'Announcement created.');
-    if (!result.error) { setNoticeForm(cleanForm); await loadData(); }
+    const payload = {
+      title: noticeForm.title.trim(),
+      body: noticeForm.description.trim(),
+      status: noticeForm.status,
+      starts_at: `${noticeForm.date}T00:00:00+08:00`,
+      created_by: auth.user?.id ?? null,
+    };
+    const result = noticeForm.id
+      ? await supabase.from("announcements").update(payload).eq("id", noticeForm.id)
+      : await supabase.from("announcements").insert(payload);
+    setMessage(
+      result.error
+        ? result.error.message
+        : noticeForm.id
+          ? "Announcement updated."
+          : "Announcement created.",
+    );
+    if (!result.error) {
+      setNoticeForm(cleanForm);
+      await loadData();
+    }
     setSaving(false);
   };
   const archiveAnnouncement = async (announcement: Announcement) => {
     if (!window.confirm(`Archive “${announcement.title}”?`)) return;
-    const { error } = await createClient().from('announcements').update({ status: 'archived' }).eq('id', announcement.id);
-    setMessage(error ? error.message : 'Announcement archived.'); if (!error) await loadData();
+    const { error } = await createClient()
+      .from("announcements")
+      .update({ status: "archived" })
+      .eq("id", announcement.id);
+    setMessage(error ? error.message : "Announcement archived.");
+    if (!error) await loadData();
   };
 
   if (!canViewSection) {
-    return <div className="mx-auto max-w-xl rounded-3xl border border-[#e8dfd4] bg-white p-8 text-center shadow-sm"><ShieldCheck className="mx-auto h-10 w-10 text-[#b47b0d]" /><h1 className="mt-4 text-2xl font-semibold text-[#2d2520]">Access not assigned</h1><p className="mt-2 text-[#5f5248]">The owner has not granted your employee account permission to view this section.</p></div>;
+    return (
+      <div className="mx-auto max-w-xl rounded-3xl border border-[#e8dfd4] bg-white p-8 text-center shadow-sm">
+        <ShieldCheck className="mx-auto h-10 w-10 text-[#b47b0d]" />
+        <h1 className="mt-4 text-2xl font-semibold text-[#2d2520]">Access not assigned</h1>
+        <p className="mt-2 text-[#5f5248]">
+          The owner has not granted your employee account permission to view this section.
+        </p>
+      </div>
+    );
   }
 
-  return <div className="mx-auto max-w-[1500px]">
-    {message && <div className="mb-5 flex items-center justify-between rounded-2xl border border-[#ecd8ad] bg-[#fff8e8] px-4 py-3 text-sm text-[#775919]"><span>{message}</span><button onClick={() => setMessage('')}><X className="h-4 w-4" /></button></div>}
-
-    {section === 'dashboard' && <>
-      <div className="mb-7 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between"><div><p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-emerald-700"><Radio className="h-3.5 w-3.5" />Live operations</p><h1 className="text-3xl font-semibold tracking-tight text-[#2d2520] sm:text-4xl">Seating overview</h1><p className="mt-2 text-[#5f5248]">Reservations and walk-ins update automatically from the shared database.</p></div><div className="grid gap-3 sm:grid-cols-3"><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]"><span className="mb-1 block text-xs font-semibold uppercase tracking-wider">Viewing date</span><input type="date" min={today()} value={selectedDate} onChange={(event) => { beginAvailabilityWindowChange(); setSelectedDate(event.target.value < today() ? today() : event.target.value); }} className="w-full bg-transparent font-semibold text-[#2d2520] outline-none" /></label><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]"><span className="mb-1 block text-xs font-semibold uppercase tracking-wider">Start time</span><select value={selectedTime} onChange={(event) => { beginAvailabilityWindowChange(); const value = event.target.value; setSelectedTime(value); setSelectedDuration(value ? '1' : ''); }} className="w-full bg-transparent font-semibold text-[#2d2520] outline-none"><option value="">All operating day</option>{availabilityTimes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]"><span className="mb-1 block text-xs font-semibold uppercase tracking-wider">Duration</span><select value={selectedDuration} disabled={!selectedTime} onChange={(event) => { beginAvailabilityWindowChange(); setSelectedDuration(event.target.value); }} className="w-full bg-transparent font-semibold text-[#2d2520] outline-none disabled:text-[#9b9188]"><option value="">{selectedTime ? 'Select duration' : 'All day'}</option>{availableDurationOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div></div>
-      {overtimeBookings.length > 0 && (
-        <div className="mb-6 rounded-3xl border-2 border-red-300 bg-red-50 p-5 shadow-sm" role="alert">
-          <div className="flex items-start gap-3">
-            <span className="rounded-2xl bg-red-100 p-3 text-red-700">
-              <AlertTriangle className="h-6 w-6" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-xl font-semibold text-red-900">
-                {overtimeBookings.length} {overtimeBookings.length === 1 ? 'reservation is' : 'reservations are'} overstaying
-              </h2>
-              <p className="mt-1 text-sm text-red-800">
-                These guests passed the 20-minute grace period. Collect the shown overtime fee at the front desk.
-              </p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {overtimeBookings.map((booking) => {
-                  const overtime = overtimeByBooking.get(booking.id)!;
-                  const isResolving = resolvingOvertimeId === booking.id;
-                  return (
-                    <div key={booking.id} className="overflow-hidden rounded-2xl border border-red-200 bg-white">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedBooking(booking)}
-                        className="w-full px-4 py-3 text-left hover:bg-red-50"
-                      >
-                        <span className="block font-semibold text-red-900">
-                          {booking.seat_ids.join(', ')} · {booking.guest_name}
-                        </span>
-                        <span className="mt-1 block text-sm text-red-700">
-                          {overtime.overtime_minutes} min over · ₱{(overtime.overtime_charge_cents / 100).toLocaleString('en-PH')} due
-                        </span>
-                      </button>
-                      {canResolveOvertime && (
-                        <div className="grid grid-cols-2 border-t border-red-100">
-                          <button
-                            type="button"
-                            onClick={() => requestOvertimeResolution(booking, overtime, 'paid_manually')}
-                            disabled={Boolean(resolvingOvertimeId)}
-                            className="inline-flex items-center justify-center gap-1.5 border-r border-red-100 px-3 py-2.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {isResolving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BadgeCheck className="h-3.5 w-3.5" />}
-                            Paid manually
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => requestOvertimeResolution(booking, overtime, 'waived')}
-                            disabled={Boolean(resolvingOvertimeId)}
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <CircleOff className="h-3.5 w-3.5" />
-                            Remove
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+  return (
+    <div className="mx-auto max-w-[1500px]">
+      {message && (
+        <div className="mb-5 flex items-center justify-between rounded-2xl border border-[#ecd8ad] bg-[#fff8e8] px-4 py-3 text-sm text-[#775919]">
+          <span>{message}</span>
+          <button onClick={() => setMessage("")}>
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{[
-        ['Available', seatSummary.available || 0, 'bg-emerald-50 text-emerald-700'], ['Reserved', seatSummary.reserved || 0, 'bg-slate-100 text-slate-700'], ['Occupied now', seatSummary.occupied || 0, 'bg-amber-50 text-amber-700'], ['Total active seats', seats.filter((seat) => seat.is_active).length, 'bg-white text-[#2d2520]'],
-        ['Overstaying', overtimeBookings.length, overtimeBookings.length ? 'bg-red-50 text-red-700 border-red-200' : 'bg-white text-[#2d2520]'],
-      ].map(([label, value, color]) => <div key={String(label)} className={`rounded-3xl border border-[#e8dfd4] p-5 shadow-sm ${color}`}><p className="text-xs font-semibold uppercase tracking-[.14em] opacity-70">{label}</p><p className="mt-2 text-4xl font-semibold">{value}</p></div>)}</div>
-      <div className="rounded-3xl border border-[#e8dfd4] bg-white p-4 shadow-sm sm:p-6"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold text-[#2d2520]">Live floor plan</h2><p className="mt-1 text-sm text-[#5f5248]">{selectedTime ? `Availability for ${selectedTime}, ${selectedDuration || '—'} hour${selectedDuration === '1' ? '' : 's'}. This matches the customer seat plan for the same schedule.` : 'Showing seats reserved at any time during the operating day. Choose a start time to compare a customer schedule.'}</p>{availabilityLoading && <p className="mt-1 text-xs font-medium text-[#8a671a]">Refreshing availability…</p>}{availabilityError && <p className="mt-2 text-sm font-medium text-red-700" role="alert">{availabilityError}</p>}</div><div className="flex flex-wrap gap-3 text-xs text-[#6b5e52]"><span>● <b className="text-emerald-600">Available</b></span><span>● Reserved</span><span className="text-amber-600">● Occupied</span></div></div><SeatingPlanMini seats={seatPlan} onSeatClick={selectedDate === today() && !availabilityLoading && !availabilityError ? requestWalkInChange : undefined} busySeatId={busySeat} /></div>
-      <div className="mt-6 rounded-3xl border border-[#e8dfd4] bg-white p-5 shadow-sm"><h2 className="mb-4 text-xl font-semibold text-[#2d2520]">Recent reservations</h2><BookingTable bookings={bookings.slice(0, 8)} overtimeByBooking={overtimeByBooking} onView={setSelectedBooking} onCancel={canManageReservations ? requestCancellation : undefined} /></div>
-    </>}
 
-    {section === 'reservations' && <><PageHeading eyebrow="Booking operations" title="Reservations" detail="Search, inspect, and cancel customer reservations. Changes sync to seat availability immediately." /><div className="rounded-3xl border border-[#e8dfd4] bg-white p-4 shadow-sm sm:p-6"><div className="mb-5 flex flex-col gap-3 sm:flex-row"><label className="flex flex-1 items-center gap-2 rounded-xl border border-[#e8dfd4] px-4"><Search className="h-4 w-4 text-[#6b5e52]" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search customer, code, email, or seat" className="w-full py-3 text-[#2d2520] outline-none placeholder:text-[#6b5e52]" /></label><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl border border-[#e8dfd4] bg-white px-4 py-3 text-[#2d2520]"><option value="all">All statuses</option>{['pending','confirmed','checked_in','completed','cancelled','declined','no_show'].map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}</select></div><BookingTable bookings={filteredBookings} overtimeByBooking={overtimeByBooking} onView={setSelectedBooking} onCancel={requestCancellation} /></div></>}
-
-    {section === 'announcements' && <><PageHeading eyebrow="Content management" title="Announcements" detail="Create, edit, publish, and archive updates shown on the customer landing page." /><div className="grid gap-6 xl:grid-cols-[minmax(320px,0.8fr)_1.5fr]"><form onSubmit={saveAnnouncement} className="h-fit self-start rounded-3xl border border-[#e8dfd4] bg-white p-6 shadow-sm xl:sticky xl:top-8"><div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-semibold text-[#2d2520]">{noticeForm.id ? 'Edit announcement' : 'New announcement'}</h2>{noticeForm.id && <button type="button" onClick={() => setNoticeForm(cleanForm)} className="text-sm text-[#9b6810]">Cancel edit</button>}</div><div className="space-y-4"><Field label="Date"><input type="date" required value={noticeForm.date} onChange={(e) => setNoticeForm({ ...noticeForm, date: e.target.value })} className="input" /></Field><Field label="Title"><input required maxLength={160} value={noticeForm.title} onChange={(e) => setNoticeForm({ ...noticeForm, title: e.target.value })} placeholder="Important update" className="input" /></Field><Field label="Description"><textarea required maxLength={5000} rows={6} value={noticeForm.description} onChange={(e) => setNoticeForm({ ...noticeForm, description: e.target.value })} placeholder="What should customers know?" className="input resize-y" /></Field><Field label="Publishing status"><select value={noticeForm.status} onChange={(e) => setNoticeForm({ ...noticeForm, status: e.target.value as NoticeForm['status'] })} className="input"><option value="published">Published</option><option value="draft">Draft</option><option value="archived">Archived</option></select></Field><button disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#e5a930] px-4 py-3 font-semibold text-white disabled:opacity-60">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}{noticeForm.id ? 'Save changes' : 'Publish announcement'}</button></div></form><div className="space-y-3"><AnnouncementFilters search={announcementSearch} onSearch={(value) => { setAnnouncementSearch(value); setAnnouncementPage(1); }} filter={announcementFilter} onFilter={(value) => { setAnnouncementFilter(value); setAnnouncementPage(1); }} announcements={announcements} resultCount={filteredAnnouncements.length} />{paginatedAnnouncements.map((item) => <article key={item.id} className="rounded-3xl border border-[#e8dfd4] bg-white p-5 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="mb-2 flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle(item.status)}`}>{titleCase(item.status)}</span><span className="text-xs text-[#5f5248]">{new Date(item.starts_at || item.created_at).toLocaleDateString('en-PH', { dateStyle: 'medium', timeZone: 'Asia/Manila' })}</span></div><h3 className="text-lg font-semibold text-[#2d2520]">{item.title}</h3><p className="mt-2 text-sm leading-6 text-[#6b5e52]">{item.body}</p></div><div className="flex shrink-0 gap-2"><button onClick={() => editAnnouncement(item)} className="rounded-xl border border-[#e8dfd4] p-2.5 text-[#8a671a] hover:bg-[#fff8e8]" title="Edit"><Pencil className="h-4 w-4" /></button>{item.status !== 'archived' && <button onClick={() => archiveAnnouncement(item)} className="rounded-xl border border-red-100 p-2.5 text-red-600 hover:bg-red-50" title="Archive"><Trash2 className="h-4 w-4" /></button>}</div></div></article>)}<AnnouncementPagination currentPage={currentAnnouncementPage} pageCount={announcementPageCount} resultCount={filteredAnnouncements.length} onPageChange={setAnnouncementPage} /></div></div></>}
-
-    {section === 'logs' && <><PageHeading eyebrow="Security & accountability" title="Access logs" detail="A realtime history of staff activity and automated operational changes." /><div className="overflow-hidden rounded-3xl border border-[#e8dfd4] bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left"><thead className="bg-[#faf7f2] text-xs uppercase tracking-wider text-[#5f5248]"><tr><th className="px-5 py-4">Name</th><th className="px-5 py-4">Email</th><th className="px-5 py-4">Action</th><th className="px-5 py-4">Resource</th><th className="px-5 py-4">Date & time</th></tr></thead><tbody>{logs.map((log) => { const automated = isAutomationLog(log); return <tr key={log.id} className="border-t border-[#eee6dc]"><td className="px-5 py-4 font-medium text-[#2d2520]">{automated ? 'System automation' : log.profile?.full_name || 'Former staff account'}</td><td className="px-5 py-4 text-sm text-[#6b5e52]">{automated ? 'Scheduled database job' : log.profile?.email || '—'}</td><td className="px-5 py-4"><span className="rounded-full bg-[#fef3dc] px-3 py-1 text-sm text-[#8a671a]">{log.action}</span></td><td className="px-5 py-4 text-sm text-[#6b5e52]">{titleCase(log.entity_type)}</td><td className="px-5 py-4 text-sm text-[#6b5e52]">{formatDateTime(log.created_at)}</td></tr>; })}</tbody></table></div>{logs.length === 0 && <EmptyState icon={ShieldCheck} text="No staff access has been logged yet." />}</div></>}
-
-    {walkInTarget && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm" onMouseDown={closeWalkInModal}><form onSubmit={confirmWalkInChange} className="w-full max-w-md rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="walk-in-title" aria-describedby="walk-in-description"><div className="mb-5 flex items-start justify-between gap-4"><div className="flex items-start gap-3"><span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${walkInTarget.isOccupied ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}><Armchair className="h-5 w-5" /></span><div><p className="text-xs font-semibold uppercase tracking-wider text-[#8a671a]">Seat {walkInTarget.seatCode}</p><h2 id="walk-in-title" className="mt-1 text-2xl font-semibold">{walkInTarget.isOccupied ? 'Checkout this walk-in?' : 'Is someone using this seat?'}</h2></div></div><button type="button" onClick={closeWalkInModal} disabled={Boolean(busySeat)} className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:opacity-50" aria-label="Close occupancy dialog"><X className="h-5 w-5" /></button></div><p id="walk-in-description" className="text-sm leading-6 text-[#574b42]">{walkInTarget.isOccupied ? `Continue to Walk-in Services to review the stay, calculated price, and payment for seat ${walkInTarget.seatCode}.` : `Confirm that someone is currently using seat ${walkInTarget.seatCode}. It will be shown as occupied on the live floor plan.`}</p>{!walkInTarget.isOccupied && <label className="mt-5 block"><span className="mb-2 block text-sm font-semibold text-[#3f3630]">Guest name <span className="font-normal text-[#6b5e52]">(optional)</span></span><input autoFocus maxLength={160} value={walkInGuestName} onChange={(event) => setWalkInGuestName(event.target.value)} className="w-full rounded-xl border border-[#b9aa9b] bg-white px-4 py-3 text-[#2d2520] outline-none placeholder:text-[#6b5e52] focus:border-[#c4841a] focus:ring-2 focus:ring-amber-100" placeholder="Enter the walk-in guest's name" /></label>}{walkInError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{walkInError}</p>}<div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={closeWalkInModal} disabled={Boolean(busySeat)} className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50">Cancel</button><button type="submit" autoFocus={walkInTarget.isOccupied} disabled={Boolean(busySeat)} className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${walkInTarget.isOccupied ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-[#c4841a] hover:bg-[#a86f12]'}`}>{busySeat && <Loader2 className="h-4 w-4 animate-spin" />}{busySeat ? 'Updating…' : walkInTarget.isOccupied ? 'Review checkout' : 'Mark as occupied'}</button></div></form></div>}
-
-    {selectedBooking && (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-[#2d2520]/45 p-4 backdrop-blur-sm"
-        onMouseDown={() => !resolvingOvertimeId && setSelectedBooking(null)}
-      >
-        <div className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
-          <div className="mb-5 flex items-start justify-between">
+      {section === "dashboard" && (
+        <>
+          <div className="mb-7 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#9b6810]">{selectedBooking.reservation_code}</p>
-              <h2 className="mt-1 text-2xl font-semibold">Reservation details</h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSelectedBooking(null)}
-              disabled={Boolean(resolvingOvertimeId)}
-              className="rounded-xl p-2 hover:bg-[#f7f1e8] disabled:opacity-50"
-              aria-label="Close reservation details"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          {overtimeByBooking.has(selectedBooking.id) && (
-            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-900">
-              <p className="font-semibold">Overtime payment due at front desk</p>
-              <p className="mt-1 text-sm">
-                {overtimeByBooking.get(selectedBooking.id)!.overtime_minutes} minutes over ·{' '}
-                <strong>₱{(overtimeByBooking.get(selectedBooking.id)!.overtime_charge_cents / 100).toLocaleString('en-PH')}</strong>
+              <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-emerald-700">
+                <Radio className="h-3.5 w-3.5" />
+                Live operations
+              </p>
+              <h1 className="text-3xl font-semibold tracking-tight text-[#2d2520] sm:text-4xl">
+                Seating overview
+              </h1>
+              <p className="mt-2 text-[#5f5248]">
+                Reservations and walk-ins update automatically from the shared database.
               </p>
             </div>
-          )}
-          <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-[#faf7f2] p-4 text-sm">
-            <Detail label="Guest" value={selectedBooking.guest_name} />
-            <Detail label="Email" value={selectedBooking.guest_email} />
-            <Detail label="Schedule" value={formatDateTime(selectedBooking.starts_at)} />
-            <Detail label="Duration" value={`${selectedBooking.duration_hours} hour(s)`} />
-            <Detail label="Seats" value={selectedBooking.seat_ids.join(', ')} />
-            <Detail label="Status" value={overtimeByBooking.has(selectedBooking.id) ? 'Overstaying' : titleCase(selectedBooking.status)} />
-            <Detail label="Payment" value={titleCase(selectedBooking.payment_status)} />
-            <Detail label="Amount" value={`₱${(selectedBooking.subtotal_cents / 100).toLocaleString('en-PH')}`} />
-          </dl>
-          {canResolveOvertime && overtimeByBooking.has(selectedBooking.id) ? (
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => requestOvertimeResolution(selectedBooking, overtimeByBooking.get(selectedBooking.id)!, 'paid_manually')}
-                disabled={Boolean(resolvingOvertimeId)}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {resolvingOvertimeId ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgeCheck className="h-4 w-4" />}
-                Paid manually
-              </button>
-              <button
-                type="button"
-                onClick={() => requestOvertimeResolution(selectedBooking, overtimeByBooking.get(selectedBooking.id)!, 'waived')}
-                disabled={Boolean(resolvingOvertimeId)}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <CircleOff className="h-4 w-4" />
-                Remove without payment
-              </button>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wider">
+                  Viewing date
+                </span>
+                <input
+                  type="date"
+                  min={today()}
+                  value={selectedDate}
+                  onChange={(event) => {
+                    beginAvailabilityWindowChange();
+                    setSelectedDate(event.target.value < today() ? today() : event.target.value);
+                  }}
+                  className="w-full bg-transparent font-semibold text-[#2d2520] outline-none"
+                />
+              </label>
+              <label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wider">
+                  Start time
+                </span>
+                <select
+                  value={selectedTime}
+                  onChange={(event) => {
+                    beginAvailabilityWindowChange();
+                    const value = event.target.value;
+                    setSelectedTime(value);
+                    setSelectedDuration(value ? "1" : "");
+                  }}
+                  className="w-full bg-transparent font-semibold text-[#2d2520] outline-none">
+                  <option value="">All operating day</option>
+                  {availabilityTimes.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wider">
+                  Duration
+                </span>
+                <select
+                  value={selectedDuration}
+                  disabled={!selectedTime}
+                  onChange={(event) => {
+                    beginAvailabilityWindowChange();
+                    setSelectedDuration(event.target.value);
+                  }}
+                  className="w-full bg-transparent font-semibold text-[#2d2520] outline-none disabled:text-[#9b9188]">
+                  <option value="">{selectedTime ? "Select duration" : "All day"}</option>
+                  {availableDurationOptions.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
-          ) : canManageReservations && !terminalStatuses.has(selectedBooking.status) ? (
-            <button onClick={() => requestCancellation(selectedBooking)} className="mt-5 w-full rounded-xl bg-red-700 px-4 py-3 font-semibold text-white hover:bg-red-800">
-              Cancel reservation
-            </button>
-          ) : null}
-        </div>
-      </div>
-    )}
+          </div>
+          {overtimeBookings.length > 0 && (
+            <div
+              className="mb-6 rounded-3xl border-2 border-red-300 bg-red-50 p-5 shadow-sm"
+              role="alert">
+              <div className="flex items-start gap-3">
+                <span className="rounded-2xl bg-red-100 p-3 text-red-700">
+                  <AlertTriangle className="h-6 w-6" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl font-semibold text-red-900">
+                    {overtimeBookings.length}{" "}
+                    {overtimeBookings.length === 1 ? "reservation is" : "reservations are"}{" "}
+                    overstaying
+                  </h2>
+                  <p className="mt-1 text-sm text-red-800">
+                    These guests passed the 20-minute grace period. Collect the shown overtime fee
+                    at the front desk.
+                  </p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {overtimeBookings.map((booking) => {
+                      const overtime = overtimeByBooking.get(booking.id)!;
+                      const isResolving = resolvingOvertimeId === booking.id;
+                      return (
+                        <div
+                          key={booking.id}
+                          className="overflow-hidden rounded-2xl border border-red-200 bg-white">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedBooking(booking)}
+                            className="w-full px-4 py-3 text-left hover:bg-red-50">
+                            <span className="block font-semibold text-red-900">
+                              {booking.seat_ids.join(", ")} · {booking.guest_name}
+                            </span>
+                            <span className="mt-1 block text-sm text-red-700">
+                              {overtime.overtime_minutes} min over · ₱
+                              {(overtime.overtime_charge_cents / 100).toLocaleString("en-PH")} due
+                            </span>
+                          </button>
+                          {canResolveOvertime && (
+                            <div className="grid grid-cols-2 border-t border-red-100">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  requestOvertimeResolution(booking, overtime, "paid_manually")
+                                }
+                                disabled={Boolean(resolvingOvertimeId)}
+                                className="inline-flex items-center justify-center gap-1.5 border-r border-red-100 px-3 py-2.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50">
+                                {isResolving ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <BadgeCheck className="h-3.5 w-3.5" />
+                                )}
+                                Paid manually
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  requestOvertimeResolution(booking, overtime, "waived")
+                                }
+                                disabled={Boolean(resolvingOvertimeId)}
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+                                <CircleOff className="h-3.5 w-3.5" />
+                                Remove
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            {[
+              ["Available", seatSummary.available || 0, "bg-emerald-50 text-emerald-700"],
+              ["Reserved", seatSummary.reserved || 0, "bg-slate-100 text-slate-700"],
+              ["Occupied now", seatSummary.occupied || 0, "bg-amber-50 text-amber-700"],
+              [
+                "Total active seats",
+                seats.filter((seat) => seat.is_active).length,
+                "bg-white text-[#2d2520]",
+              ],
+              [
+                "Overstaying",
+                overtimeBookings.length,
+                overtimeBookings.length
+                  ? "bg-red-50 text-red-700 border-red-200"
+                  : "bg-white text-[#2d2520]",
+              ],
+            ].map(([label, value, color]) => (
+              <div
+                key={String(label)}
+                className={`rounded-3xl border border-[#e8dfd4] p-5 shadow-sm ${color}`}>
+                <p className="text-xs font-semibold uppercase tracking-[.14em] opacity-70">
+                  {label}
+                </p>
+                <p className="mt-2 text-4xl font-semibold">{value}</p>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-3xl border border-[#e8dfd4] bg-white p-4 shadow-sm sm:p-6">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-semibold text-[#2d2520]">Live floor plan</h2>
+                <p className="mt-1 text-sm text-[#5f5248]">
+                  {selectedTime
+                    ? `Availability for ${selectedTime}, ${selectedDuration || "—"} hour${selectedDuration === "1" ? "" : "s"}. This matches the customer seat plan for the same schedule.`
+                    : "Showing seats reserved at any time during the operating day. Choose a start time to compare a customer schedule."}
+                </p>
+                {availabilityLoading && (
+                  <p className="mt-1 text-xs font-medium text-[#8a671a]">
+                    Refreshing availability…
+                  </p>
+                )}
+                {availabilityError && (
+                  <p className="mt-2 text-sm font-medium text-red-700" role="alert">
+                    {availabilityError}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-3 text-xs text-[#6b5e52]">
+                <span>
+                  ● <b className="text-emerald-600">Available</b>
+                </span>
+                <span>● Reserved</span>
+                <span className="text-amber-600">● Occupied</span>
+              </div>
+            </div>
+            <SeatingPlanMini
+              seats={seatPlan}
+              onSeatClick={
+                selectedDate === today() && !availabilityLoading && !availabilityError
+                  ? requestWalkInChange
+                  : undefined
+              }
+              busySeatId={busySeat}
+            />
+          </div>
+          <div className="mt-6 rounded-3xl border border-[#e8dfd4] bg-white p-5 shadow-sm">
+            <h2 className="mb-4 text-xl font-semibold text-[#2d2520]">Recent reservations</h2>
+            <BookingTable
+              bookings={bookings.slice(0, 8)}
+              overtimeByBooking={overtimeByBooking}
+              onView={setSelectedBooking}
+              onCancel={canManageReservations ? requestCancellation : undefined}
+            />
+          </div>
+        </>
+      )}
 
-    {overtimeResolutionTarget && (() => {
-      const { booking, overtime, resolution } = overtimeResolutionTarget;
-      const isManualPayment = resolution === 'paid_manually';
-      const amount = `₱${(overtime.overtime_charge_cents / 100).toLocaleString('en-PH')}`;
-      return (
+      {section === "reservations" && (
+        <>
+          <PageHeading
+            eyebrow="Booking operations"
+            title="Reservations"
+            detail="Search, inspect, and cancel customer reservations. Changes sync to seat availability immediately."
+          />
+          <div className="rounded-3xl border border-[#e8dfd4] bg-white p-4 shadow-sm sm:p-6">
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row">
+              <label className="flex flex-1 items-center gap-2 rounded-xl border border-[#e8dfd4] px-4">
+                <Search className="h-4 w-4 text-[#6b5e52]" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search customer, code, email, or seat"
+                  className="w-full py-3 text-[#2d2520] outline-none placeholder:text-[#6b5e52]"
+                />
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="rounded-xl border border-[#e8dfd4] bg-white px-4 py-3 text-[#2d2520]">
+                <option value="all">All statuses</option>
+                {[
+                  "pending",
+                  "confirmed",
+                  "checked_in",
+                  "completed",
+                  "cancelled",
+                  "declined",
+                  "no_show",
+                ].map((value) => (
+                  <option key={value} value={value}>
+                    {titleCase(value)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <BookingTable
+              bookings={filteredBookings}
+              overtimeByBooking={overtimeByBooking}
+              onView={setSelectedBooking}
+              onCancel={requestCancellation}
+            />
+          </div>
+        </>
+      )}
+
+      {section === "announcements" && (
+        <>
+          <PageHeading
+            eyebrow="Content management"
+            title="Announcements"
+            detail="Create, edit, publish, and archive updates shown on the customer landing page."
+          />
+          <div className="grid gap-6 xl:grid-cols-[minmax(320px,0.8fr)_1.5fr]">
+            <form
+              onSubmit={saveAnnouncement}
+              className="h-fit self-start rounded-3xl border border-[#e8dfd4] bg-white p-6 shadow-sm xl:sticky xl:top-8">
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-[#2d2520]">
+                  {noticeForm.id ? "Edit announcement" : "New announcement"}
+                </h2>
+                {noticeForm.id && (
+                  <button
+                    type="button"
+                    onClick={() => setNoticeForm(cleanForm)}
+                    className="text-sm text-[#9b6810]">
+                    Cancel edit
+                  </button>
+                )}
+              </div>
+              <div className="space-y-4">
+                <Field label="Date">
+                  <input
+                    type="date"
+                    required
+                    value={noticeForm.date}
+                    onChange={(e) => setNoticeForm({ ...noticeForm, date: e.target.value })}
+                    className="input"
+                  />
+                </Field>
+                <Field label="Title">
+                  <input
+                    required
+                    maxLength={160}
+                    value={noticeForm.title}
+                    onChange={(e) => setNoticeForm({ ...noticeForm, title: e.target.value })}
+                    placeholder="Important update"
+                    className="input"
+                  />
+                </Field>
+                <Field label="Description">
+                  <textarea
+                    required
+                    maxLength={5000}
+                    rows={6}
+                    value={noticeForm.description}
+                    onChange={(e) => setNoticeForm({ ...noticeForm, description: e.target.value })}
+                    placeholder="What should customers know?"
+                    className="input resize-y"
+                  />
+                </Field>
+                <Field label="Publishing status">
+                  <select
+                    value={noticeForm.status}
+                    onChange={(e) =>
+                      setNoticeForm({
+                        ...noticeForm,
+                        status: e.target.value as NoticeForm["status"],
+                      })
+                    }
+                    className="input">
+                    <option value="published">Published</option>
+                    <option value="draft">Draft</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </Field>
+                <button
+                  disabled={saving}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#e5a930] px-4 py-3 font-semibold text-white disabled:opacity-60">
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  {noticeForm.id ? "Save changes" : "Publish announcement"}
+                </button>
+              </div>
+            </form>
+            <div className="space-y-3">
+              <AnnouncementFilters
+                search={announcementSearch}
+                onSearch={(value) => {
+                  setAnnouncementSearch(value);
+                  setAnnouncementPage(1);
+                }}
+                filter={announcementFilter}
+                onFilter={(value) => {
+                  setAnnouncementFilter(value);
+                  setAnnouncementPage(1);
+                }}
+                announcements={announcements}
+                resultCount={filteredAnnouncements.length}
+              />
+              {paginatedAnnouncements.map((item) => (
+                <article
+                  key={item.id}
+                  className="rounded-3xl border border-[#e8dfd4] bg-white p-5 shadow-sm">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle(item.status)}`}>
+                          {titleCase(item.status)}
+                        </span>
+                        <span className="text-xs text-[#5f5248]">
+                          {new Date(item.starts_at || item.created_at).toLocaleDateString("en-PH", {
+                            dateStyle: "medium",
+                            timeZone: "Asia/Manila",
+                          })}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-semibold text-[#2d2520]">{item.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-[#6b5e52]">{item.body}</p>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        onClick={() => editAnnouncement(item)}
+                        className="rounded-xl border border-[#e8dfd4] p-2.5 text-[#8a671a] hover:bg-[#fff8e8]"
+                        title="Edit">
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      {item.status !== "archived" && (
+                        <button
+                          onClick={() => archiveAnnouncement(item)}
+                          className="rounded-xl border border-red-100 p-2.5 text-red-600 hover:bg-red-50"
+                          title="Archive">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
+              <AnnouncementPagination
+                currentPage={currentAnnouncementPage}
+                pageCount={announcementPageCount}
+                resultCount={filteredAnnouncements.length}
+                onPageChange={setAnnouncementPage}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {section === "logs" && (
+        <>
+          <PageHeading
+            eyebrow="Security & accountability"
+            title="Access logs"
+            detail="A realtime history of staff activity and automated operational changes."
+          />
+          <div className="overflow-hidden rounded-3xl border border-[#e8dfd4] bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left">
+                <thead className="bg-[#faf7f2] text-xs uppercase tracking-wider text-[#5f5248]">
+                  <tr>
+                    <th className="px-5 py-4">Name</th>
+                    <th className="px-5 py-4">Email</th>
+                    <th className="px-5 py-4">Action</th>
+                    <th className="px-5 py-4">Resource</th>
+                    <th className="px-5 py-4">Date & time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map((log) => {
+                    const automated = isAutomationLog(log);
+                    return (
+                      <tr key={log.id} className="border-t border-[#eee6dc]">
+                        <td className="px-5 py-4 font-medium text-[#2d2520]">
+                          {automated
+                            ? "System automation"
+                            : log.profile?.full_name || "Former staff account"}
+                        </td>
+                        <td className="px-5 py-4 text-sm text-[#6b5e52]">
+                          {automated ? "Scheduled database job" : log.profile?.email || "—"}
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="rounded-full bg-[#fef3dc] px-3 py-1 text-sm text-[#8a671a]">
+                            {log.action}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-sm text-[#6b5e52]">
+                          {titleCase(log.entity_type)}
+                        </td>
+                        <td className="px-5 py-4 text-sm text-[#6b5e52]">
+                          {formatDateTime(log.created_at)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {logs.length === 0 && (
+              <EmptyState icon={ShieldCheck} text="No staff access has been logged yet." />
+            )}
+          </div>
+        </>
+      )}
+
+      {walkInTarget && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm"
-          onMouseDown={closeOvertimeResolution}
-        >
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm"
+          onMouseDown={closeWalkInModal}>
           <form
-            onSubmit={resolveOvertime}
-            className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7"
+            onSubmit={confirmWalkInChange}
+            className="w-full max-w-md rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7"
             onMouseDown={(event) => event.stopPropagation()}
             role="dialog"
             aria-modal="true"
-            aria-labelledby="resolve-overtime-title"
-            aria-describedby="resolve-overtime-description"
-          >
+            aria-labelledby="walk-in-title"
+            aria-describedby="walk-in-description">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${isManualPayment ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
-                  {isManualPayment ? <BadgeCheck className="h-5 w-5" /> : <CircleOff className="h-5 w-5" />}
+                <span
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${walkInTarget.isOccupied ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                  <Armchair className="h-5 w-5" />
                 </span>
                 <div>
-                  <p className={`text-xs font-semibold uppercase tracking-wider ${isManualPayment ? 'text-emerald-700' : 'text-slate-600'}`}>
-                    {isManualPayment ? 'Overtime payment' : 'Waive overtime fee'}
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[#8a671a]">
+                    Seat {walkInTarget.seatCode}
                   </p>
-                  <h2 id="resolve-overtime-title" className="mt-1 text-2xl font-semibold">
-                    {isManualPayment ? 'Confirm manual payment?' : 'Remove without payment?'}
+                  <h2 id="walk-in-title" className="mt-1 text-2xl font-semibold">
+                    {walkInTarget.isOccupied
+                      ? "Checkout this walk-in?"
+                      : "Is someone using this seat?"}
                   </h2>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={closeOvertimeResolution}
-                disabled={Boolean(resolvingOvertimeId)}
+                onClick={closeWalkInModal}
+                disabled={Boolean(busySeat)}
                 className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:opacity-50"
-                aria-label="Close overtime resolution dialog"
-              >
+                aria-label="Close occupancy dialog">
                 <X className="h-5 w-5" />
               </button>
             </div>
-
-            <p id="resolve-overtime-description" className="text-sm leading-6 text-[#574b42]">
-              {isManualPayment
-                ? `Confirm that ${amount} was collected manually for ${booking.reservation_code}.`
-                : `Remove ${booking.reservation_code} from the overdue list and waive the ${amount} overtime fee.`}
+            <p id="walk-in-description" className="text-sm leading-6 text-[#574b42]">
+              {walkInTarget.isOccupied
+                ? `Continue to Walk-in Services to review the stay, calculated price, and payment for seat ${walkInTarget.seatCode}.`
+                : `Confirm that someone is currently using seat ${walkInTarget.seatCode}. It will be shown as occupied on the live floor plan.`}
             </p>
-
-            <div className="mt-5 rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-semibold">{booking.guest_name}</p>
-                  <p className="mt-1 text-sm text-[#574b42]">{booking.reservation_code} · Seats {booking.seat_ids.join(', ')}</p>
-                </div>
-                <p className="shrink-0 font-semibold text-red-700">{amount}</p>
-              </div>
-              <p className="mt-3 border-t border-[#e8dfd4] pt-3 text-sm text-[#574b42]">
-                This will check the guest out, release the seats, and keep the reservation in the activity history.
-              </p>
-            </div>
-
-            {overtimeResolutionError && (
-              <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
-                {overtimeResolutionError}
+            {!walkInTarget.isOccupied && (
+              <label className="mt-5 block">
+                <span className="mb-2 block text-sm font-semibold text-[#3f3630]">
+                  Guest name <span className="font-normal text-[#6b5e52]">(optional)</span>
+                </span>
+                <input
+                  autoFocus
+                  maxLength={160}
+                  value={walkInGuestName}
+                  onChange={(event) => setWalkInGuestName(event.target.value)}
+                  className="w-full rounded-xl border border-[#b9aa9b] bg-white px-4 py-3 text-[#2d2520] outline-none placeholder:text-[#6b5e52] focus:border-[#c4841a] focus:ring-2 focus:ring-amber-100"
+                  placeholder="Enter the walk-in guest's name"
+                />
+              </label>
+            )}
+            {walkInError && (
+              <p
+                role="alert"
+                className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+                {walkInError}
               </p>
             )}
-
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 type="button"
-                autoFocus
-                onClick={closeOvertimeResolution}
-                disabled={Boolean(resolvingOvertimeId)}
-                className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50"
-              >
+                onClick={closeWalkInModal}
+                disabled={Boolean(busySeat)}
+                className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50">
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={Boolean(resolvingOvertimeId)}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${isManualPayment ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-slate-700 hover:bg-slate-800'}`}
-              >
-                {resolvingOvertimeId && <Loader2 className="h-4 w-4 animate-spin" />}
-                {resolvingOvertimeId
-                  ? 'Updating…'
-                  : isManualPayment
-                    ? 'Confirm payment'
-                    : 'Remove without payment'}
+                autoFocus={walkInTarget.isOccupied}
+                disabled={Boolean(busySeat)}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${walkInTarget.isOccupied ? "bg-emerald-700 hover:bg-emerald-800" : "bg-[#c4841a] hover:bg-[#a86f12]"}`}>
+                {busySeat && <Loader2 className="h-4 w-4 animate-spin" />}
+                {busySeat
+                  ? "Updating…"
+                  : walkInTarget.isOccupied
+                    ? "Review checkout"
+                    : "Mark as occupied"}
               </button>
             </div>
           </form>
         </div>
-      );
-    })()}
+      )}
 
-    {cancelTarget && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm" onMouseDown={closeCancellation}><form onSubmit={confirmCancellation} className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="cancel-reservation-title"><div className="mb-5 flex items-start justify-between gap-4"><div className="flex items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700"><AlertTriangle className="h-5 w-5" /></span><div><p className="text-xs font-semibold uppercase tracking-wider text-red-700">Permanent status change</p><h2 id="cancel-reservation-title" className="mt-1 text-2xl font-semibold">Cancel reservation?</h2></div></div><button type="button" onClick={closeCancellation} disabled={cancelling} className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:opacity-50" aria-label="Close cancellation dialog"><X className="h-5 w-5" /></button></div><div className="mb-5 rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-4"><p className="font-semibold">{cancelTarget.guest_name}</p><p className="mt-1 text-sm text-[#574b42]">{cancelTarget.reservation_code} · {formatDateTime(cancelTarget.starts_at)}</p><p className="mt-1 text-sm text-[#574b42]">Seats: {cancelTarget.seat_ids.join(', ')}</p></div><label className="block"><span className="mb-2 block text-sm font-semibold text-[#3f3630]">Cancellation reason</span><textarea autoFocus required maxLength={500} rows={4} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} className="w-full resize-y rounded-xl border border-[#b9aa9b] bg-white px-4 py-3 text-[#2d2520] outline-none placeholder:text-[#6b5e52] focus:border-red-600 focus:ring-2 focus:ring-red-100" placeholder="Explain why this reservation is being cancelled" /></label><p className="mt-2 text-sm text-[#574b42]">The seat will become available immediately and the action will be recorded in access logs.</p>{cancelError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{cancelError}</p>}<div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={closeCancellation} disabled={cancelling} className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50">Keep reservation</button><button type="submit" disabled={cancelling || !cancelReason.trim()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50">{cancelling && <Loader2 className="h-4 w-4 animate-spin" />}{cancelling ? 'Cancelling…' : 'Confirm cancellation'}</button></div></form></div>}
-  </div>;
+      {selectedBooking && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#2d2520]/45 p-4 backdrop-blur-sm"
+          onMouseDown={() => !resolvingOvertimeId && setSelectedBooking(null)}>
+          <div
+            className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl"
+            onMouseDown={(event) => event.stopPropagation()}>
+            <div className="mb-5 flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#9b6810]">
+                  {selectedBooking.reservation_code}
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold">Reservation details</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedBooking(null)}
+                disabled={Boolean(resolvingOvertimeId)}
+                className="rounded-xl p-2 hover:bg-[#f7f1e8] disabled:opacity-50"
+                aria-label="Close reservation details">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {overtimeByBooking.has(selectedBooking.id) && (
+              <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-900">
+                <p className="font-semibold">Overtime payment due at front desk</p>
+                <p className="mt-1 text-sm">
+                  {overtimeByBooking.get(selectedBooking.id)!.overtime_minutes} minutes over ·{" "}
+                  <strong>
+                    ₱
+                    {(
+                      overtimeByBooking.get(selectedBooking.id)!.overtime_charge_cents / 100
+                    ).toLocaleString("en-PH")}
+                  </strong>
+                </p>
+              </div>
+            )}
+            <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-[#faf7f2] p-4 text-sm">
+              <Detail label="Guest" value={selectedBooking.guest_name} />
+              <Detail label="Email" value={selectedBooking.guest_email} />
+              <Detail label="Schedule" value={formatDateTime(selectedBooking.starts_at)} />
+              <Detail label="Duration" value={`${selectedBooking.duration_hours} hour(s)`} />
+              <Detail label="Seats" value={selectedBooking.seat_ids.join(", ")} />
+              <Detail
+                label="Status"
+                value={
+                  overtimeByBooking.has(selectedBooking.id)
+                    ? "Overstaying"
+                    : titleCase(selectedBooking.status)
+                }
+              />
+              <Detail label="Payment" value={titleCase(selectedBooking.payment_status)} />
+              <Detail
+                label="Amount"
+                value={`₱${(selectedBooking.subtotal_cents / 100).toLocaleString("en-PH")}`}
+              />
+            </dl>
+            {canResolveOvertime && overtimeByBooking.has(selectedBooking.id) ? (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    requestOvertimeResolution(
+                      selectedBooking,
+                      overtimeByBooking.get(selectedBooking.id)!,
+                      "paid_manually",
+                    )
+                  }
+                  disabled={Boolean(resolvingOvertimeId)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
+                  {resolvingOvertimeId ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <BadgeCheck className="h-4 w-4" />
+                  )}
+                  Paid manually
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    requestOvertimeResolution(
+                      selectedBooking,
+                      overtimeByBooking.get(selectedBooking.id)!,
+                      "waived",
+                    )
+                  }
+                  disabled={Boolean(resolvingOvertimeId)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+                  <CircleOff className="h-4 w-4" />
+                  Remove without payment
+                </button>
+              </div>
+            ) : canManageReservations && !terminalStatuses.has(selectedBooking.status) ? (
+              <button
+                onClick={() => requestCancellation(selectedBooking)}
+                className="mt-5 w-full rounded-xl bg-red-700 px-4 py-3 font-semibold text-white hover:bg-red-800">
+                Cancel reservation
+              </button>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {overtimeResolutionTarget &&
+        (() => {
+          const { booking, overtime, resolution } = overtimeResolutionTarget;
+          const isManualPayment = resolution === "paid_manually";
+          const amount = `₱${(overtime.overtime_charge_cents / 100).toLocaleString("en-PH")}`;
+          return (
+            <div
+              className="fixed inset-0 z-[70] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm"
+              onMouseDown={closeOvertimeResolution}>
+              <form
+                onSubmit={resolveOvertime}
+                className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7"
+                onMouseDown={(event) => event.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="resolve-overtime-title"
+                aria-describedby="resolve-overtime-description">
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${isManualPayment ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
+                      {isManualPayment ? (
+                        <BadgeCheck className="h-5 w-5" />
+                      ) : (
+                        <CircleOff className="h-5 w-5" />
+                      )}
+                    </span>
+                    <div>
+                      <p
+                        className={`text-xs font-semibold uppercase tracking-wider ${isManualPayment ? "text-emerald-700" : "text-slate-600"}`}>
+                        {isManualPayment ? "Overtime payment" : "Waive overtime fee"}
+                      </p>
+                      <h2 id="resolve-overtime-title" className="mt-1 text-2xl font-semibold">
+                        {isManualPayment ? "Confirm manual payment?" : "Remove without payment?"}
+                      </h2>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeOvertimeResolution}
+                    disabled={Boolean(resolvingOvertimeId)}
+                    className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:opacity-50"
+                    aria-label="Close overtime resolution dialog">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <p id="resolve-overtime-description" className="text-sm leading-6 text-[#574b42]">
+                  {isManualPayment
+                    ? `Confirm that ${amount} was collected manually for ${booking.reservation_code}.`
+                    : `Remove ${booking.reservation_code} from the overdue list and waive the ${amount} overtime fee.`}
+                </p>
+
+                <div className="mt-5 rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-semibold">{booking.guest_name}</p>
+                      <p className="mt-1 text-sm text-[#574b42]">
+                        {booking.reservation_code} · Seats {booking.seat_ids.join(", ")}
+                      </p>
+                    </div>
+                    <p className="shrink-0 font-semibold text-red-700">{amount}</p>
+                  </div>
+                  <p className="mt-3 border-t border-[#e8dfd4] pt-3 text-sm text-[#574b42]">
+                    This will check the guest out, release the seats, and keep the reservation in
+                    the activity history.
+                  </p>
+                </div>
+
+                {overtimeResolutionError && (
+                  <p
+                    role="alert"
+                    className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+                    {overtimeResolutionError}
+                  </p>
+                )}
+
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    autoFocus
+                    onClick={closeOvertimeResolution}
+                    disabled={Boolean(resolvingOvertimeId)}
+                    className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50">
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={Boolean(resolvingOvertimeId)}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${isManualPayment ? "bg-emerald-700 hover:bg-emerald-800" : "bg-slate-700 hover:bg-slate-800"}`}>
+                    {resolvingOvertimeId && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {resolvingOvertimeId
+                      ? "Updating…"
+                      : isManualPayment
+                        ? "Confirm payment"
+                        : "Remove without payment"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          );
+        })()}
+
+      {cancelTarget && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm"
+          onMouseDown={closeCancellation}>
+          <form
+            onSubmit={confirmCancellation}
+            className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7"
+            onMouseDown={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-reservation-title">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700">
+                  <AlertTriangle className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-red-700">
+                    Permanent status change
+                  </p>
+                  <h2 id="cancel-reservation-title" className="mt-1 text-2xl font-semibold">
+                    Cancel reservation?
+                  </h2>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeCancellation}
+                disabled={cancelling}
+                className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:opacity-50"
+                aria-label="Close cancellation dialog">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mb-5 rounded-2xl border border-[#e8dfd4] bg-[#faf7f2] p-4">
+              <p className="font-semibold">{cancelTarget.guest_name}</p>
+              <p className="mt-1 text-sm text-[#574b42]">
+                {cancelTarget.reservation_code} · {formatDateTime(cancelTarget.starts_at)}
+              </p>
+              <p className="mt-1 text-sm text-[#574b42]">
+                Seats: {cancelTarget.seat_ids.join(", ")}
+              </p>
+            </div>
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-[#3f3630]">
+                Cancellation reason
+              </span>
+              <textarea
+                autoFocus
+                required
+                maxLength={500}
+                rows={4}
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+                className="w-full resize-y rounded-xl border border-[#b9aa9b] bg-white px-4 py-3 text-[#2d2520] outline-none placeholder:text-[#6b5e52] focus:border-red-600 focus:ring-2 focus:ring-red-100"
+                placeholder="Explain why this reservation is being cancelled"
+              />
+            </label>
+            <p className="mt-2 text-sm text-[#574b42]">
+              The seat will become available immediately and the action will be recorded in access
+              logs.
+            </p>
+            {cancelError && (
+              <p
+                role="alert"
+                className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+                {cancelError}
+              </p>
+            )}
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={closeCancellation}
+                disabled={cancelling}
+                className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:opacity-50">
+                Keep reservation
+              </button>
+              <button
+                type="submit"
+                disabled={cancelling || !cancelReason.trim()}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50">
+                {cancelling && <Loader2 className="h-4 w-4 animate-spin" />}
+                {cancelling ? "Cancelling…" : "Confirm cancellation"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function AnnouncementPagination({
@@ -645,7 +1494,9 @@ function AnnouncementPagination({
   const lastResult = Math.min(currentPage * announcementsPerPage, resultCount);
 
   return (
-    <nav aria-label="Announcement pagination" className="rounded-2xl border border-[#e8dfd4] bg-white p-4 shadow-sm">
+    <nav
+      aria-label="Announcement pagination"
+      className="rounded-2xl border border-[#e8dfd4] bg-white p-4 shadow-sm">
       <p className="mb-3 text-center text-sm font-medium text-[#5f5248] sm:text-left">
         Showing {firstResult}–{lastResult} of {resultCount}
       </p>
@@ -654,8 +1505,7 @@ function AnnouncementPagination({
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="rounded-xl border border-[#cfc3b6] px-4 py-2 text-sm font-semibold text-[#4f443c] hover:bg-[#f7f1e8] disabled:cursor-not-allowed disabled:opacity-45"
-        >
+          className="rounded-xl border border-[#cfc3b6] px-4 py-2 text-sm font-semibold text-[#4f443c] hover:bg-[#f7f1e8] disabled:cursor-not-allowed disabled:opacity-45">
           Previous
         </button>
         {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
@@ -664,12 +1514,12 @@ function AnnouncementPagination({
             type="button"
             onClick={() => onPageChange(page)}
             aria-label={`Go to announcement page ${page}`}
-            aria-current={page === currentPage ? 'page' : undefined}
-            className={`min-w-10 rounded-xl border px-3 py-2 text-sm font-semibold ${page === currentPage
-              ? 'border-[#2d2520] bg-[#2d2520] text-white'
-              : 'border-[#cfc3b6] bg-white text-[#4f443c] hover:bg-[#f7f1e8]'
-            }`}
-          >
+            aria-current={page === currentPage ? "page" : undefined}
+            className={`min-w-10 rounded-xl border px-3 py-2 text-sm font-semibold ${
+              page === currentPage
+                ? "border-[#2d2520] bg-[#2d2520] text-white"
+                : "border-[#cfc3b6] bg-white text-[#4f443c] hover:bg-[#f7f1e8]"
+            }`}>
             {page}
           </button>
         ))}
@@ -677,8 +1527,7 @@ function AnnouncementPagination({
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === pageCount}
-          className="rounded-xl border border-[#cfc3b6] px-4 py-2 text-sm font-semibold text-[#4f443c] hover:bg-[#f7f1e8] disabled:cursor-not-allowed disabled:opacity-45"
-        >
+          className="rounded-xl border border-[#cfc3b6] px-4 py-2 text-sm font-semibold text-[#4f443c] hover:bg-[#f7f1e8] disabled:cursor-not-allowed disabled:opacity-45">
           Next
         </button>
       </div>
@@ -701,7 +1550,7 @@ function AnnouncementFilters({
   announcements: Announcement[];
   resultCount: number;
 }) {
-  const statuses: AnnouncementFilter[] = ['all', 'published', 'draft', 'archived'];
+  const statuses: AnnouncementFilter[] = ["all", "published", "draft", "archived"];
   return (
     <div className="rounded-2xl border border-[#e8dfd4] bg-white p-4 shadow-sm">
       <label className="flex items-center gap-2 rounded-xl border border-[#cfc3b6] px-4">
@@ -716,27 +1565,29 @@ function AnnouncementFilters({
       </label>
       <div className="mt-3 flex flex-wrap gap-2">
         {statuses.map((status) => {
-          const count = status === 'all'
-            ? announcements.length
-            : announcements.filter((announcement) => announcement.status === status).length;
+          const count =
+            status === "all"
+              ? announcements.length
+              : announcements.filter((announcement) => announcement.status === status).length;
           return (
             <button
               key={status}
               type="button"
               onClick={() => onFilter(status)}
               aria-pressed={filter === status}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${filter === status
-                ? 'border-[#2d2520] bg-[#2d2520] text-white'
-                : 'border-[#cfc3b6] bg-white text-[#4f443c] hover:bg-[#f7f1e8]'
-              }`}
-            >
-              {status === 'all' ? 'All' : titleCase(status)} <span className="opacity-75">({count})</span>
+              className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                filter === status
+                  ? "border-[#2d2520] bg-[#2d2520] text-white"
+                  : "border-[#cfc3b6] bg-white text-[#4f443c] hover:bg-[#f7f1e8]"
+              }`}>
+              {status === "all" ? "All" : titleCase(status)}{" "}
+              <span className="opacity-75">({count})</span>
             </button>
           );
         })}
       </div>
       <p className="mt-3 text-sm font-medium text-[#5f5248]">
-        {resultCount} {resultCount === 1 ? 'announcement' : 'announcements'} found
+        {resultCount} {resultCount === 1 ? "announcement" : "announcements"} found
       </p>
       {resultCount === 0 && (
         <p className="mt-3 rounded-xl bg-[#faf7f2] px-4 py-5 text-center text-sm text-[#4f443c]">
@@ -747,9 +1598,140 @@ function AnnouncementFilters({
   );
 }
 
-function PageHeading({ eyebrow, title, detail }: { eyebrow: string; title: string; detail: string }) { return <div className="mb-7"><p className="mb-2 text-xs font-semibold uppercase tracking-[.18em] text-[#b47b0d]">{eyebrow}</p><h1 className="text-3xl font-semibold tracking-tight text-[#2d2520] sm:text-4xl">{title}</h1><p className="mt-2 max-w-3xl text-[#5f5248]">{detail}</p></div>; }
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#5f5248]">{label}</span>{children}</label>; }
-function Detail({ label, value }: { label: string; value: string }) { return <div><dt className="text-xs uppercase tracking-wider text-[#5f5248]">{label}</dt><dd className="mt-1 break-words font-medium text-[#2d2520]">{value}</dd></div>; }
-function EmptyState({ icon: Icon, text }: { icon: React.ComponentType<{ className?: string }>; text: string }) { return <div className="flex flex-col items-center px-5 py-14 text-center text-[#5f5248]"><Icon className="mb-3 h-8 w-8" /><p>{text}</p></div>; }
-function BookingTable({ bookings, overtimeByBooking, onView, onCancel }: { bookings: Booking[]; overtimeByBooking: Map<string, CheckIn>; onView: (booking: Booking) => void; onCancel?: (booking: Booking) => void }) { return <div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left"><thead className="text-xs uppercase tracking-wider text-[#5f5248]"><tr><th className="px-3 py-3">Reservation</th><th className="px-3 py-3">Customer</th><th className="px-3 py-3">Schedule</th><th className="px-3 py-3">Seats</th><th className="px-3 py-3">Status</th><th className="px-3 py-3 text-right">Actions</th></tr></thead><tbody>{bookings.map((booking) => { const overtime = overtimeByBooking.get(booking.id); return <tr key={booking.id} className={`border-t border-[#eee6dc] hover:bg-[#fffcf8] ${overtime ? 'bg-red-50/60' : ''}`}><td className="px-3 py-4 font-mono text-sm text-[#8a671a]">{booking.reservation_code}</td><td className="px-3 py-4"><p className="font-medium text-[#2d2520]">{booking.guest_name}</p><p className="text-xs text-[#5f5248]">{booking.guest_email}</p></td><td className="px-3 py-4 text-sm text-[#6b5e52]">{formatDateTime(booking.starts_at)}</td><td className="px-3 py-4 text-sm text-[#2d2520]">{booking.seat_ids.join(', ')}</td><td className="px-3 py-4">{overtime ? <span className="inline-flex flex-col rounded-xl bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-800"><span>Overstaying · {overtime.overtime_minutes} min</span><span>₱{(overtime.overtime_charge_cents / 100).toLocaleString('en-PH')} due</span></span> : <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle(booking.status)}`}>{titleCase(booking.status)}</span>}</td><td className="px-3 py-4"><div className="flex justify-end gap-2"><button onClick={() => onView(booking)} className="rounded-lg border border-[#e8dfd4] p-2 text-[#6b5e52] hover:bg-[#f7f1e8]" title="View"><Eye className="h-4 w-4" /></button>{onCancel && !overtime && !terminalStatuses.has(booking.status) && <button onClick={() => onCancel(booking)} className="rounded-lg border border-red-100 p-2 text-red-600 hover:bg-red-50" title="Cancel"><Trash2 className="h-4 w-4" /></button>}</div></td></tr>; })}</tbody></table>{bookings.length === 0 && <EmptyState icon={CalendarDays} text="No reservations match the current filters." />}</div>; }
-
+function PageHeading({
+  eyebrow,
+  title,
+  detail,
+}: {
+  eyebrow: string;
+  title: string;
+  detail: string;
+}) {
+  return (
+    <div className="mb-7">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[.18em] text-[#b47b0d]">
+        {eyebrow}
+      </p>
+      <h1 className="text-3xl font-semibold tracking-tight text-[#2d2520] sm:text-4xl">{title}</h1>
+      <p className="mt-2 max-w-3xl text-[#5f5248]">{detail}</p>
+    </div>
+  );
+}
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#5f5248]">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-wider text-[#5f5248]">{label}</dt>
+      <dd className="mt-1 break-words font-medium text-[#2d2520]">{value}</dd>
+    </div>
+  );
+}
+function EmptyState({
+  icon: Icon,
+  text,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  text: string;
+}) {
+  return (
+    <div className="flex flex-col items-center px-5 py-14 text-center text-[#5f5248]">
+      <Icon className="mb-3 h-8 w-8" />
+      <p>{text}</p>
+    </div>
+  );
+}
+function BookingTable({
+  bookings,
+  overtimeByBooking,
+  onView,
+  onCancel,
+}: {
+  bookings: Booking[];
+  overtimeByBooking: Map<string, CheckIn>;
+  onView: (booking: Booking) => void;
+  onCancel?: (booking: Booking) => void;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[900px] text-left">
+        <thead className="text-xs uppercase tracking-wider text-[#5f5248]">
+          <tr>
+            <th className="px-3 py-3">Reservation</th>
+            <th className="px-3 py-3">Customer</th>
+            <th className="px-3 py-3">Schedule</th>
+            <th className="px-3 py-3">Seats</th>
+            <th className="px-3 py-3">Status</th>
+            <th className="px-3 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bookings.map((booking) => {
+            const overtime = overtimeByBooking.get(booking.id);
+            return (
+              <tr
+                key={booking.id}
+                className={`border-t border-[#eee6dc] hover:bg-[#fffcf8] ${overtime ? "bg-red-50/60" : ""}`}>
+                <td className="px-3 py-4 font-mono text-sm text-[#8a671a]">
+                  {booking.reservation_code}
+                </td>
+                <td className="px-3 py-4">
+                  <p className="font-medium text-[#2d2520]">{booking.guest_name}</p>
+                  <p className="text-xs text-[#5f5248]">{booking.guest_email}</p>
+                </td>
+                <td className="px-3 py-4 text-sm text-[#6b5e52]">
+                  {formatDateTime(booking.starts_at)}
+                </td>
+                <td className="px-3 py-4 text-sm text-[#2d2520]">{booking.seat_ids.join(", ")}</td>
+                <td className="px-3 py-4">
+                  {overtime ? (
+                    <span className="inline-flex flex-col rounded-xl bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-800">
+                      <span>Overstaying · {overtime.overtime_minutes} min</span>
+                      <span>
+                        ₱{(overtime.overtime_charge_cents / 100).toLocaleString("en-PH")} due
+                      </span>
+                    </span>
+                  ) : (
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle(booking.status)}`}>
+                      {titleCase(booking.status)}
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 py-4">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => onView(booking)}
+                      className="rounded-lg border border-[#e8dfd4] p-2 text-[#6b5e52] hover:bg-[#f7f1e8]"
+                      title="View">
+                      <Eye className="h-4 w-4" />
+                    </button>
+                    {onCancel && !overtime && !terminalStatuses.has(booking.status) && (
+                      <button
+                        onClick={() => onCancel(booking)}
+                        className="rounded-lg border border-red-100 p-2 text-red-600 hover:bg-red-50"
+                        title="Cancel">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {bookings.length === 0 && (
+        <EmptyState icon={CalendarDays} text="No reservations match the current filters." />
+      )}
+    </div>
+  );
+}

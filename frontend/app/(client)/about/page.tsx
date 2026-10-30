@@ -1,30 +1,30 @@
 "use client";
 
-import { motion } from 'motion/react';
-import { Target, Eye, Heart, Users, Lightbulb, Award } from 'lucide-react';
-import Image from 'next/image';
+import { Award, Eye, Heart, Lightbulb, Target, Users } from "lucide-react";
+import { motion } from "motion/react";
+import Image from "next/image";
 
 export default function About() {
   const values = [
     {
       icon: Lightbulb,
-      title: 'Focus First',
-      description: 'We create environments engineered for deep work and concentration.',
+      title: "Focus First",
+      description: "We create environments engineered for deep work and concentration.",
     },
     {
       icon: Users,
-      title: 'Community',
-      description: 'Building a network of ambitious learners and professionals.',
+      title: "Community",
+      description: "Building a network of ambitious learners and professionals.",
     },
     {
       icon: Heart,
-      title: 'Excellence',
-      description: 'Premium amenities and service that elevate your productivity.',
+      title: "Excellence",
+      description: "Premium amenities and service that elevate your productivity.",
     },
     {
       icon: Award,
-      title: 'Accessibility',
-      description: 'Quality study spaces that are welcoming and affordable for all.',
+      title: "Accessibility",
+      description: "Quality study spaces that are welcoming and affordable for all.",
     },
   ];
 
@@ -33,11 +33,7 @@ export default function About() {
       {/* Hero Section */}
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
+          <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <div className="inline-block bg-[#fef3dc] px-4 py-2 rounded-full mb-6">
               <p className="text-sm text-[#e5a930] uppercase tracking-wider">About Us</p>
             </div>
@@ -60,8 +56,7 @@ export default function About() {
               initial={false}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-            >
+              transition={{ duration: 0.8 }}>
               <h2 className="text-5xl md:text-4xl mb-6 text-[#2d2520]">Our Story</h2>
               <div className="space-y-4 text-lg md:text-lg text-[#6b5e52] leading-relaxed">
                 <p>
@@ -70,9 +65,9 @@ export default function About() {
                   environment designed for success.
                 </p>
                 <p>
-                  Located in the heart of Manila&apos;s academic district, we&apos;ve created a sanctuary
-                  where focus is engineered into every detail. From our acoustically optimized
-                  quiet zones to our ergonomic workstations, everything is designed with
+                  Located in the heart of Manila&apos;s academic district, we&apos;ve created a
+                  sanctuary where focus is engineered into every detail. From our acoustically
+                  optimized quiet zones to our ergonomic workstations, everything is designed with
                   productivity in mind.
                 </p>
                 <p>
@@ -87,8 +82,7 @@ export default function About() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="relative"
-            >
+              className="relative">
               <div className="aspect-square rounded-3xl overflow-hidden shadow-2xl">
                 <Image
                   src="/images/desk-help.jpg"
@@ -114,8 +108,7 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="bg-white/70 backdrop-blur-sm p-10 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-colors"
-            >
+              className="bg-white/70 backdrop-blur-sm p-10 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-colors">
               <div className="w-16 h-16 bg-[#fef3dc] rounded-2xl flex items-center justify-center mb-6">
                 <Target className="w-8 h-8 text-[#e5a930]" />
               </div>
@@ -132,16 +125,15 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="bg-white/70 backdrop-blur-sm p-10 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-colors"
-            >
+              className="bg-white/70 backdrop-blur-sm p-10 rounded-3xl border border-[#f3ede4] hover:border-[#e5a930] transition-colors">
               <div className="w-16 h-16 bg-[#fef3dc] rounded-2xl flex items-center justify-center mb-6">
                 <Eye className="w-8 h-8 text-[#e5a930]" />
               </div>
               <h3 className="text-3xl mb-4 text-[#2d2520]">Our Vision</h3>
               <p className="text-[#6b5e52] leading-relaxed">
-                To become Metro Manila&apos;s premier destination for focused learning and professional
-                growth, where every member discovers their optimal productivity environment and
-                reaches their full potential.
+                To become Metro Manila&apos;s premier destination for focused learning and
+                professional growth, where every member discovers their optimal productivity
+                environment and reaches their full potential.
               </p>
             </motion.div>
           </div>
@@ -166,8 +158,7 @@ export default function About() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="bg-white/70 backdrop-blur-sm p-8 rounded-2xl border border-[#f3ede4] hover:border-[#e5a930] transition-all hover:shadow-lg group"
-              >
+                className="bg-white/70 backdrop-blur-sm p-8 rounded-2xl border border-[#f3ede4] hover:border-[#e5a930] transition-all hover:shadow-lg group">
                 <div className="w-14 h-14 bg-[#fef3dc] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <value.icon className="w-7 h-7 text-[#e5a930]" />
                 </div>
@@ -183,9 +174,7 @@ export default function About() {
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl mb-6 text-[#2d2520]">
-              Why Choose Just In Time?
-            </h2>
+            <h2 className="text-4xl md:text-5xl mb-6 text-[#2d2520]">Why Choose Just In Time?</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -194,8 +183,7 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center"
-            >
+              className="text-center">
               <div className="text-5xl mb-4 text-[#e5a930]">98%</div>
               <h4 className="text-xl mb-2 text-[#2d2520]">Quiet Score</h4>
               <p className="text-[#6b5e52]">
@@ -208,8 +196,7 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-center"
-            >
+              className="text-center">
               <div className="text-5xl mb-4 text-[#e5a930]">16hrs</div>
               <h4 className="text-xl mb-2 text-[#2d2520]">Daily Operations</h4>
               <p className="text-[#6b5e52]">Extended hours to match your schedule, not ours</p>
@@ -220,8 +207,7 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-center"
-            >
+              className="text-center">
               <div className="text-5xl mb-4 text-[#e5a930]">5min</div>
               <h4 className="text-xl mb-2 text-[#2d2520]">From Campus</h4>
               <p className="text-[#6b5e52]">
@@ -248,8 +234,7 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="group relative overflow-hidden rounded-3xl shadow-lg"
-            >
+              className="group relative overflow-hidden rounded-3xl shadow-lg">
               <Image
                 src="/images/individual.jpg"
                 alt="Individual Study Pods"
@@ -271,8 +256,7 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="group relative overflow-hidden rounded-3xl shadow-lg"
-            >
+              className="group relative overflow-hidden rounded-3xl shadow-lg">
               <Image
                 src="/images/public.jpg"
                 alt="Public Workspace"
@@ -294,8 +278,7 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="group relative overflow-hidden rounded-3xl shadow-lg"
-            >
+              className="group relative overflow-hidden rounded-3xl shadow-lg">
               <Image
                 src="/images/sitting-down.jpg"
                 alt="Quiet Zone"
@@ -317,8 +300,7 @@ export default function About() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="group relative overflow-hidden rounded-3xl shadow-lg"
-            >
+              className="group relative overflow-hidden rounded-3xl shadow-lg">
               <div className="w-full h-80 bg-gradient-to-br from-[#fef3dc] to-[#fff8ed] flex items-center justify-center border-4 border-[#e5a930]">
                 <div className="text-center p-8">
                   <h3 className="text-2xl text-[#2d2520] mb-2">More Spaces</h3>
@@ -337,11 +319,8 @@ export default function About() {
             initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <h2 className="text-4xl md:text-5xl mb-6 text-[#2d2520]">
-              Ready to Find Your Focus?
-            </h2>
+            transition={{ duration: 0.8 }}>
+            <h2 className="text-4xl md:text-5xl mb-6 text-[#2d2520]">Ready to Find Your Focus?</h2>
             <p className="text-xl text-[#6b5e52] mb-8">
               Join hundreds of students and professionals who&apos;ve made Just In Time their
               productivity home.
@@ -349,14 +328,12 @@ export default function About() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
                 href="/reserve"
-                className="inline-flex items-center justify-center gap-2 bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl transition-all duration-300 hover:scale-105"
-              >
+                className="inline-flex items-center justify-center gap-2 bg-[#e5a930] text-white px-8 py-4 rounded-full hover:shadow-xl transition-all duration-300 hover:scale-105">
                 Reserve Your Seat
               </a>
               <a
                 href="/virtual-tour"
-                className="inline-flex items-center justify-center gap-2 bg-white text-[#2d2520] px-8 py-4 rounded-full border border-[#f3ede4] hover:shadow-lg transition-all duration-300 hover:scale-105"
-              >
+                className="inline-flex items-center justify-center gap-2 bg-white text-[#2d2520] px-8 py-4 rounded-full border border-[#f3ede4] hover:shadow-lg transition-all duration-300 hover:scale-105">
                 Take a Tour
               </a>
             </div>

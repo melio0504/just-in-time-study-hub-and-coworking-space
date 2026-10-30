@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Mail } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -56,8 +56,7 @@ export default function ForgotPasswordPage() {
         <section className="w-full rounded-3xl border border-[#f3ede4] bg-white/80 p-8 shadow-lg backdrop-blur-sm sm:p-10">
           <Link
             href="/login"
-            className="mb-8 inline-flex items-center gap-2 text-sm text-[#6b5e52] transition-colors hover:text-[#e5a930]"
-          >
+            className="mb-8 inline-flex items-center gap-2 text-sm text-[#6b5e52] transition-colors hover:text-[#e5a930]">
             <ArrowLeft className="h-4 w-4" />
             Back to sign in
           </Link>
@@ -69,11 +68,13 @@ export default function ForgotPasswordPage() {
               </div>
               <h1 className="mb-3 text-3xl text-[#2d2520]">Check your email</h1>
               <p className="mb-3 leading-relaxed text-[#6b5e52]">
-                If an account exists for <span className="font-medium text-[#2d2520]">{sentTo}</span>,
-                we sent a password reset link.
+                If an account exists for{" "}
+                <span className="font-medium text-[#2d2520]">{sentTo}</span>, we sent a password
+                reset link.
               </p>
               <p className="mb-8 text-sm text-[#6b5e52]">
-                Open the link to choose a new password. Check your spam folder if it does not arrive.
+                Open the link to choose a new password. Check your spam folder if it does not
+                arrive.
               </p>
               <button
                 type="button"
@@ -81,8 +82,7 @@ export default function ForgotPasswordPage() {
                   setSentTo("");
                   setErrorMessage("");
                 }}
-                className="w-full cursor-pointer rounded-full border border-[#e5a930] px-8 py-3 text-[#b57b08] transition-colors hover:bg-[#fef3dc]"
-              >
+                className="w-full cursor-pointer rounded-full border border-[#e5a930] px-8 py-3 text-[#b57b08] transition-colors hover:bg-[#fef3dc]">
                 Use another email
               </button>
             </div>
@@ -100,13 +100,17 @@ export default function ForgotPasswordPage() {
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {errorMessage && (
-                  <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  <p
+                    role="alert"
+                    className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     {errorMessage}
                   </p>
                 )}
 
                 <div>
-                  <label htmlFor="recovery-email" className="mb-2 block text-sm uppercase tracking-wider text-[#6b5e52]">
+                  <label
+                    htmlFor="recovery-email"
+                    className="mb-2 block text-sm uppercase tracking-wider text-[#6b5e52]">
                     Email address
                   </label>
                   <input
@@ -125,8 +129,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full cursor-pointer rounded-full bg-[#e5a930] px-8 py-4 text-white transition-shadow hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
-                >
+                  className="w-full cursor-pointer rounded-full bg-[#e5a930] px-8 py-4 text-white transition-shadow hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60">
                   {isSubmitting ? "Sending reset link…" : "Send reset link"}
                 </button>
               </form>

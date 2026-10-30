@@ -24,7 +24,10 @@ test("serves the exported kiosk only from loopback with security headers", async
   assert.equal(response.status, 200);
   assert.equal(await response.text(), "<h1>Kiosk</h1>");
   assert.match(response.headers.get("content-security-policy"), /frame-ancestors 'none'/);
-  assert.equal(response.headers.get("permissions-policy"), "camera=(self), microphone=(), geolocation=()");
+  assert.equal(
+    response.headers.get("permissions-policy"),
+    "camera=(self), microphone=(), geolocation=()",
+  );
 
   const asset = await fetch(`${origin}/_next/static/app.js`);
   assert.equal(asset.status, 200);

@@ -1,7 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
-
-import type { Database } from "./database.types";
 import { getSupabaseConfig, SUPABASE_AUTH_COOKIE_NAME } from "./config";
+import type { Database } from "./database.types";
 
 export function createClient() {
   const { supabaseUrl, supabasePublishableKey } = getSupabaseConfig();

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ArrowLeft, CalendarDays, Home, MapPin, Search, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 const quickLinks = [
   { href: "/", label: "Go home", icon: Home },
@@ -24,22 +24,20 @@ export default function NotFound() {
             </h1>
 
             <p className="mt-4 max-w-xl text-lg leading-relaxed text-[#6b5e52] sm:text-xl">
-              The page you&apos;re looking for isn&apos;t here, but your next productive session still is.
-              Head back to the homepage or jump straight to the space you need.
+              The page you&apos;re looking for isn&apos;t here, but your next productive session
+              still is. Head back to the homepage or jump straight to the space you need.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg"
-              >
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e5a930] px-6 py-3 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg">
                 <Home className="h-4 w-4" />
                 Back to home
               </Link>
               <Link
                 href="/reserve"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#f3ede4] bg-white/80 px-6 py-3 text-[#2d2520] transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
-              >
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#f3ede4] bg-white/80 px-6 py-3 text-[#2d2520] transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm">
                 <ArrowLeft className="h-4 w-4" />
                 Reserve now
               </Link>
@@ -50,8 +48,7 @@ export default function NotFound() {
                 <Link
                   key={href}
                   href={href}
-                  className="group flex items-center gap-3 rounded-2xl border border-[#f3ede4] bg-white/75 p-4 text-[#2d2520] shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#e5a930] hover:shadow-xl"
-                >
+                  className="group flex items-center gap-3 rounded-2xl border border-[#f3ede4] bg-white/75 p-4 text-[#2d2520] shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#e5a930] hover:shadow-xl">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fef3dc] text-[#e5a930] transition-colors group-hover:bg-[#e5a930] group-hover:text-white">
                     <Icon className="h-5 w-5" />
                   </span>
@@ -65,7 +62,9 @@ export default function NotFound() {
             <div className="absolute inset-0 rounded-4xl bg-[#e5a930]/10 blur-2xl" />
             <div className="relative overflow-hidden rounded-4xl border border-[#f3ede4] bg-white/85 p-8 shadow-2xl backdrop-blur-sm sm:p-10">
               <div className="flex items-center justify-between text-sm text-[#6b5e52]">
-                <span className="rounded-full bg-[#fef3dc] px-3 py-1 text-[#8a6510]">Lost page</span>
+                <span className="rounded-full bg-[#fef3dc] px-3 py-1 text-[#8a6510]">
+                  Lost page
+                </span>
                 <span>Just in Time Study Hub</span>
               </div>
 
@@ -75,8 +74,8 @@ export default function NotFound() {
                 </div>
                 <p className="mt-6 text-2xl font-semibold text-[#2d2520]">Nothing to see here</p>
                 <p className="mt-3 text-sm leading-relaxed text-[#6b5e52]">
-                  Try one of the quick links, or return to the homepage to continue browsing the study spaces,
-                  pricing, and reservations.
+                  Try one of the quick links, or return to the homepage to continue browsing the
+                  study spaces, pricing, and reservations.
                 </p>
               </div>
 

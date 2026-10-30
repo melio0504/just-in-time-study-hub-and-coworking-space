@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { AlertCircle, ScanLine } from "lucide-react";
 import { motion } from "motion/react";
 import QrScanner from "qr-scanner";
+import { useEffect, useRef, useState } from "react";
 
 type CameraState = "starting" | "active" | "denied" | "unavailable" | "insecure" | "error";
 
@@ -16,7 +16,8 @@ const CAMERA_RETRY_DELAY_MS = 5_000;
 const CAMERA_MESSAGES: Record<Exclude<CameraState, "starting" | "active">, string> = {
   denied: "Camera access was denied. Allow camera access in the browser, then try again.",
   unavailable: "No camera was found on this device.",
-  insecure: "Camera access requires a secure context. Open the installed kiosk app or use localhost.",
+  insecure:
+    "Camera access requires a secure context. Open the installed kiosk app or use localhost.",
   error: "The camera could not be started. Check that another app is not using it.",
 };
 
@@ -100,12 +101,12 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
   return (
     <div
       data-testid="camera-frame"
-      className="relative mb-3 aspect-square w-[min(100%,58dvh,560px)] shrink overflow-hidden rounded-2xl bg-[#2d2520] shadow-xl sm:rounded-3xl"
-    >
+      className="relative mb-3 aspect-square w-[min(100%,58dvh,560px)] shrink overflow-hidden rounded-2xl bg-[#2d2520] shadow-xl sm:rounded-3xl">
       <video
         ref={videoRef}
-        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${cameraState === "active" ? "opacity-100" : "opacity-20"
-          }`}
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+          cameraState === "active" ? "opacity-100" : "opacity-20"
+        }`}
         muted
         playsInline
         aria-label="Live QR code camera"
@@ -130,8 +131,7 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 text-center">
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-          >
+            transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}>
             <ScanLine className="mb-4 h-16 w-16 text-[#e5a930]" />
           </motion.div>
           <p className="text-xl text-[#2d2520]">Starting camera…</p>
@@ -144,7 +144,9 @@ export function CameraQrScanner({ onScan }: CameraQrScannerProps) {
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#fee2e2]">
             <AlertCircle className="h-9 w-9 text-[#dc2626]" />
           </div>
-          <p className="mb-4 max-w-md text-lg leading-relaxed text-[#6b5e52]">{CAMERA_MESSAGES[cameraState]}</p>
+          <p className="mb-4 max-w-md text-lg leading-relaxed text-[#6b5e52]">
+            {CAMERA_MESSAGES[cameraState]}
+          </p>
           {cameraState !== "insecure" && (
             <p className="text-base font-medium text-[#2d2520]">Retrying camera automatically…</p>
           )}

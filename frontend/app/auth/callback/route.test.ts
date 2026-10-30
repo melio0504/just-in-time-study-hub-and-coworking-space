@@ -57,9 +57,7 @@ describe("GET /auth/callback", () => {
       auth: { exchangeCodeForSession },
     });
 
-    const request = new NextRequest(
-      "http://localhost:3000/auth/callback?code=google-code",
-    );
+    const request = new NextRequest("http://localhost:3000/auth/callback?code=google-code");
 
     const response = await GET(request);
 

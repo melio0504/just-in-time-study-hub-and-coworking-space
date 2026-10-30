@@ -23,8 +23,7 @@ export async function GET(request: NextRequest) {
   const type = request.nextUrl.searchParams.get("type") as EmailOtpType | null;
   const requestedNext = safeNextPath(request.nextUrl.searchParams.get("next"));
   const isPasswordRecovery =
-    request.nextUrl.searchParams.get("flow") === "recovery" ||
-    requestedNext === "/reset-password";
+    request.nextUrl.searchParams.get("flow") === "recovery" || requestedNext === "/reset-password";
   const next = isPasswordRecovery ? "/reset-password" : requestedNext;
 
   if (isSupabaseConfigured && (code || (tokenHash && type))) {

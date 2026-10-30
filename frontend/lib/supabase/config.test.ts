@@ -28,12 +28,14 @@ describe("Supabase browser configuration", () => {
     },
   );
 
-  it.each(["http://192.168.1.20:54321", "http://supabase.example.com", "not-a-url", "https://your-project-ref.supabase.co"])(
-    "rejects unsafe or placeholder URLs (%s)",
-    async (url) => {
-      const config = await loadConfig(url);
-      expect(config.isSupabaseConfigured).toBe(false);
-      expect(() => config.getSupabaseConfig()).toThrow("Supabase is not configured");
-    },
-  );
+  it.each([
+    "http://192.168.1.20:54321",
+    "http://supabase.example.com",
+    "not-a-url",
+    "https://your-project-ref.supabase.co",
+  ])("rejects unsafe or placeholder URLs (%s)", async (url) => {
+    const config = await loadConfig(url);
+    expect(config.isSupabaseConfigured).toBe(false);
+    expect(() => config.getSupabaseConfig()).toThrow("Supabase is not configured");
+  });
 });

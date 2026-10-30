@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
+import { type CreateBookingInput, cancelBooking, createBooking, listMyBookings } from "./bookings";
 import { createClient } from "./client";
-import { cancelBooking, createBooking, listMyBookings, type CreateBookingInput } from "./bookings";
 
 vi.mock("./client", () => ({ createClient: vi.fn() }));
 
@@ -28,9 +27,7 @@ describe("createBooking", () => {
       rpc,
     } as never);
 
-    await expect(createBooking(bookingInput)).rejects.toThrow(
-      "Sign in before creating a booking.",
-    );
+    await expect(createBooking(bookingInput)).rejects.toThrow("Sign in before creating a booking.");
     expect(rpc).not.toHaveBeenCalled();
   });
 
@@ -38,7 +35,9 @@ describe("createBooking", () => {
     const booking = { id: "booking-1", reservation_code: "JIT-TEST" };
     const rpc = vi.fn().mockResolvedValue({ data: booking, error: null });
     createClientMock.mockReturnValue({
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } }, error: null }) },
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } }, error: null }),
+      },
       rpc,
     } as never);
 
@@ -56,7 +55,9 @@ describe("createBooking", () => {
 
   it("surfaces database errors", async () => {
     createClientMock.mockReturnValue({
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } }, error: null }) },
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } }, error: null }),
+      },
       rpc: vi.fn().mockResolvedValue({ data: null, error: { message: "Seat unavailable" } }),
     } as never);
 
@@ -101,7 +102,9 @@ describe("listMyBookings", () => {
   });
 
   it("surfaces query errors", async () => {
-    const secondOrder = vi.fn().mockResolvedValue({ data: null, error: { message: "Query failed" } });
+    const secondOrder = vi
+      .fn()
+      .mockResolvedValue({ data: null, error: { message: "Query failed" } });
     const firstOrder = vi.fn().mockReturnValue({ order: secondOrder });
     const select = vi.fn().mockReturnValue({ order: firstOrder });
     createClientMock.mockReturnValue({ from: vi.fn().mockReturnValue({ select }) } as never);

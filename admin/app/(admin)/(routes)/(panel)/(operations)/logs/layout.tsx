@@ -7,7 +7,9 @@ export default async function LogsLayout({ children }: { children: React.ReactNo
   if (!isSupabaseConfigured) redirect("/");
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) redirect("/");
 
