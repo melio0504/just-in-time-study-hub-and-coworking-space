@@ -1,0 +1,33 @@
+#!/bin/sh
+
+set -eu
+
+message_file=${1:?"Usage: commit-msg <commit-message-file>"}
+subject=$(sed -n '1p' "$message_file")
+
+# Keep Git-generated merge, revert, and autosquash messages usable. Regular
+# developer-authored commits must match the Conventional Commits header below.
+case "$subject" in
+  "Merge "* | "Revert \""* | "fixup! "* | "squash! "*)
+    exit 0
+    ;;
+esac
+
+header_pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9][a-z0-9._/-]*\))?!?: [^[:space:]].*$'
+
+if ! printf '%s\n' "$subject" | grep -Eq "$header_pattern"; then
+  printf '%s\n' \
+    "Invalid commit message: $subject" \
+    "" \
+    "Use Conventional Commits: type(scope): description" \
+    "Allowed types: build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test" \
+    "Examples: feat: add seat selection" \
+    "          fix(auth): preserve the user session" \
+    "          feat(api)!: remove a legacy endpoint" >&2
+  exit 1
+fi
+
+if [ "${#subject}" -gt 100 ]; then
+  printf 'Commit header must be 100 characters or fewer (received %s).\n' "${#subject}" >&2
+  exit 1
+fi

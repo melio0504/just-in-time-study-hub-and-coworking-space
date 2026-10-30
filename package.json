@@ -52,6 +52,7 @@
     "node": "24.x"
   },
   "scripts": {
+    "prepare": "sh scripts/install-git-hooks.sh",
     "dev:frontend": "npm run dev --workspace @jit-studyhub/frontend",
     "dev:admin": "npm run dev --workspace @jit-studyhub/admin",
     "dev:kiosk": "npm run dev --workspace @jit-studyhub/kiosk",

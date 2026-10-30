@@ -51,23 +51,38 @@ git push origin feature/add-new-section
 
 ## Commit Messages
 
-Write clear commit messages that describe the change.
+Commit messages must follow the Conventional Commits header format:
 
-Common prefixes:
+```text
+type(scope): description
+```
 
+The scope is optional. Add `!` before the colon for a breaking change, such as
+`feat(api)!: remove the legacy booking endpoint`.
+
+Accepted types:
+
+- `build:` for build system or dependency changes
+- `ci:` for continuous integration changes
 - `feat:` for new features
 - `fix:` for bug fixes
 - `docs:` for documentation updates
 - `style:` for formatting or visual-only changes
 - `refactor:` for code restructuring without behavior changes
+- `perf:` for performance improvements
 - `test:` for tests
 - `chore:` for maintenance tasks
+- `revert:` for reverting an earlier change
 
 Examples:
 
 - `feat: add homepage testimonial section`
-- `fix: correct mobile navigation spacing`
+- `fix(frontend): correct mobile navigation spacing`
 - `docs: add contributing guidelines`
+
+Running `npm install` configures the repository's tracked `commit-msg` hook.
+The hook rejects non-conforming commit headers before Git creates the commit.
+Hooks can be installed manually with `npm run prepare` if needed.
 
 ## Local Checks
 
