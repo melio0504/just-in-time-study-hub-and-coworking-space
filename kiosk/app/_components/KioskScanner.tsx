@@ -27,6 +27,8 @@ type KioskAction = "check-in" | "check-out";
 type ScanState = "idle" | "scanning" | "success" | "overtime" | "error";
 const ERROR_DISPLAY_SECONDS = 5;
 const OVERTIME_DISPLAY_SECONDS = 3;
+const KIOSK_STATE_REFRESH_MS = 15_000;
+const DISPLAY_TIME_ZONE = "Asia/Manila";
 
 interface Booking {
   id: string;
@@ -119,6 +121,24 @@ function formatClock(date: Date) {
   });
 }
 
+function formatActivityDateTime(timestamp: string) {
+  const date = new Date(timestamp);
+  const dateLabel = date.toLocaleDateString("en-US", {
+    timeZone: DISPLAY_TIME_ZONE,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const timeLabel = date.toLocaleTimeString("en-US", {
+    timeZone: DISPLAY_TIME_ZONE,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return `${dateLabel} · ${timeLabel}`;
+}
+
 function formatPeso(cents: number) {
   return new Intl.NumberFormat("en-PH", {
     style: "currency",
@@ -155,6 +175,7 @@ export function KioskScanner() {
     useState(OVERTIME_DISPLAY_SECONDS);
   const successSoundRef = useRef<HTMLAudioElement>(null);
   const errorSoundRef = useRef<HTMLAudioElement>(null);
+  const kioskStateVersionRef = useRef(0);
 
   const totalSeats = 50;
   const occupiedCount = sessions.reduce((count, session) => count + session.seats.length, 0);
@@ -170,13 +191,17 @@ export function KioskScanner() {
 
   useEffect(() => {
     let cancelled = false;
+    let requestInFlight = false;
     const loadActiveSessions = async () => {
       const desktop = window.kioskDesktop;
-      if (!desktop) return;
+      if (!desktop || requestInFlight) return;
+
+      requestInFlight = true;
+      const requestedVersion = kioskStateVersionRef.current;
 
       try {
         const response = await desktop.getActiveSessions();
-        if (!cancelled) {
+        if (!cancelled && requestedVersion === kioskStateVersionRef.current) {
           setSessions(response.sessions);
           setActivity(response.activity ?? []);
         }
@@ -184,11 +209,25 @@ export function KioskScanner() {
         if (!cancelled) {
           setServerError(getGuestErrorMessage(error, "The kiosk service is unavailable."));
         }
+      } finally {
+        requestInFlight = false;
       }
     };
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadActiveSessions();
+    };
+
     void loadActiveSessions();
+    const refreshTimer = window.setInterval(refreshWhenVisible, KIOSK_STATE_REFRESH_MS);
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
     return () => {
       cancelled = true;
+      window.clearInterval(refreshTimer);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, []);
 
@@ -326,6 +365,9 @@ export function KioskScanner() {
         scheduledEnd: new Date(result.scheduled_end),
       };
 
+      // Prevent a refresh that started before this scan from replacing the
+      // newer local state with its older response.
+      kioskStateVersionRef.current += 1;
       if (result.action === "check-in") {
         setSessions((current) => [
           ...current.filter((session) => session.bookingId !== booking.id),
@@ -731,11 +773,7 @@ export function KioskScanner() {
                         </span>
                       </p>
                       <p className="text-sm text-[#6b5e52]">
-                        {a.seats.join(", ")} ·{" "}
-                        {new Date(a.timestamp).toLocaleTimeString("en-US", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
+                        {a.seats.join(", ")} · {formatActivityDateTime(a.timestamp)}
                       </p>
                     </div>
                   </li>

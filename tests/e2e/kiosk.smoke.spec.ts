@@ -53,5 +53,47 @@ test("recent activity is restored when the kiosk starts", async ({ page }) => {
 
   await expect(page.getByText("Recent activity")).toBeVisible();
   await expect(page.getByText("Persisted Guest")).toBeVisible();
-  await expect(page.getByText(/SO01/)).toBeVisible();
+  await expect(page.getByText("SO01 · Oct 15, 2026 · 4:00 PM")).toBeVisible();
+});
+
+test("live kiosk state refreshes while the app remains open", async ({ page }) => {
+  await page.addInitScript(() => {
+    let stateIsActive = false;
+    Object.defineProperty(window, "activateKioskState", {
+      value: () => {
+        stateIsActive = true;
+      },
+    });
+    window.kioskDesktop = {
+      isElectron: true,
+      getActiveSessions: async () => ({
+        sessions: stateIsActive
+          ? [
+              {
+                bookingId: "JIT-LIVE",
+                guestName: "Live Guest",
+                seats: ["FD01"],
+                checkedInAt: "2026-11-01T01:00:00.000Z",
+                scheduledEnd: "2026-11-01T03:00:00.000Z",
+              },
+            ]
+          : [],
+        activity: [],
+      }),
+      scanBookingPass: async () => {
+        throw new Error("Not used in this test.");
+      },
+    };
+  });
+
+  await page.goto("/");
+  await expect(page.getByText("No active check-ins.")).toBeVisible();
+
+  await page.evaluate(() => {
+    (window as Window & { activateKioskState: () => void }).activateKioskState();
+    window.dispatchEvent(new Event("focus"));
+  });
+
+  await expect(page.getByText("Live Guest")).toBeVisible();
+  await expect(page.getByText("1").first()).toBeVisible();
 });
