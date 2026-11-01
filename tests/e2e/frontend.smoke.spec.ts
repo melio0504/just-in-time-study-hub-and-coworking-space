@@ -118,7 +118,7 @@ test("the virtual tour supports pinch-to-zoom on touch screens", async ({ page }
   const viewer = page.getByTestId("virtual-tour-viewer");
   await expect(viewer).toBeVisible();
   await expect(viewer).toHaveAttribute("data-pinch-zoom-ready", "true");
-  await expect(viewer.getByText("Pinch / Zoom")).toBeVisible();
+  await expect(viewer.getByText("Zoom", { exact: true })).toBeVisible();
   await viewer.evaluate((element) => element.scrollIntoView({ block: "center" }));
 
   const box = await viewer.boundingBox();
@@ -145,6 +145,125 @@ test("the virtual tour supports pinch-to-zoom on touch screens", async ({ page }
   await expect
     .poll(async () => Number(await viewer.getAttribute("data-zoom-level")))
     .toBeGreaterThan(1);
+});
+
+test("the virtual tour time menu remains visible in fullscreen", async ({ page }) => {
+  const user = {
+    id: "e2e-user",
+    aud: "authenticated",
+    role: "authenticated",
+    email: "member@example.com",
+  };
+  const session = JSON.stringify({
+    access_token:
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlMmUtdXNlciIsImV4cCI6MTk1NjUyODAwMH0.signature",
+    refresh_token: "e2e-refresh-token",
+    expires_at: 1956528000,
+    expires_in: 3600,
+    token_type: "bearer",
+    user,
+  });
+  await page.context().addCookies([
+    {
+      name: "jit-frontend-auth",
+      value: `base64-${Buffer.from(session).toString("base64url")}`,
+      domain: "127.0.0.1",
+      path: "/",
+      sameSite: "Lax",
+    },
+  ]);
+  await page.route("**/auth/v1/user*", (route) => fulfillSupabaseJson(route, { user }));
+  await page.route("**/rest/v1/business_hours*", (route) =>
+    fulfillSupabaseJson(
+      route,
+      Array.from({ length: 7 }, (_, dayOfWeek) => ({
+        day_of_week: dayOfWeek,
+        is_open: true,
+        opens_at: "00:00:00",
+        closes_at: "23:59:00",
+      })),
+    ),
+  );
+  await page.route("**/rest/v1/booking_settings*", (route) =>
+    fulfillSupabaseJson(route, {
+      max_seats_per_booking: 5,
+      min_duration_hours: 1,
+      max_duration_hours: 8,
+      minimum_notice_minutes: 0,
+      maximum_advance_days: 90,
+    }),
+  );
+  const seatCodes = [
+    "SO01",
+    "SO02",
+    "SO03",
+    "SO04",
+    "SO05",
+    "SO06",
+    "SO07",
+    "SO08",
+    "SO09",
+    "SO10",
+    "SO11",
+    "SO12",
+  ];
+  await page.route("**/rest/v1/seats*", (route) =>
+    fulfillSupabaseJson(
+      route,
+      seatCodes.map((code) => ({ code, name: `Seat ${code}`, status: "available" })),
+    ),
+  );
+  await page.route("**/rest/v1/rpc/get_available_seats*", (route) =>
+    fulfillSupabaseJson(
+      route,
+      seatCodes.map((code) => ({ code })),
+    ),
+  );
+  await page.route("**/rest/v1/rpc/get_reserved_seat_windows*", (route) =>
+    fulfillSupabaseJson(route, []),
+  );
+
+  await page.goto("/virtual-tour");
+
+  const viewer = page.getByTestId("virtual-tour-viewer");
+  await expect(viewer).toHaveAttribute("data-pinch-zoom-ready", "true");
+  await viewer.getByRole("button", { name: "Full Screen" }).click();
+  await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+
+  const seatButtons = page.locator('button[aria-label$=": Free"]');
+  await expect(seatButtons.first()).toBeAttached();
+  const seatButtonCount = await seatButtons.count();
+  const viewport = page.viewportSize();
+  let openedSeat = false;
+  for (let index = 0; index < seatButtonCount; index += 1) {
+    const seatButton = seatButtons.nth(index);
+    const bounds = await seatButton.boundingBox();
+    const isInsideViewport = Boolean(
+      bounds &&
+        viewport &&
+        bounds.x + bounds.width > 0 &&
+        bounds.y + bounds.height > 0 &&
+        bounds.x < viewport.width &&
+        bounds.y < viewport.height,
+    );
+    if ((await seatButton.isVisible()) && isInsideViewport) {
+      await seatButton.click();
+      openedSeat = true;
+      break;
+    }
+  }
+  expect(openedSeat).toBe(true);
+
+  await page.getByRole("combobox", { name: "Start Time" }).click();
+  const timeMenu = page.getByRole("listbox", { name: /Available start times/ });
+  await expect(timeMenu).toBeVisible();
+  await expect
+    .poll(() => timeMenu.evaluate((menu) => Boolean(document.fullscreenElement?.contains(menu))))
+    .toBe(true);
+  await timeMenu.getByRole("option").first().click();
+  await expect(page.getByRole("combobox", { name: "Start Time" })).not.toHaveText(
+    "Select start time",
+  );
 });
 
 test("pricing exposes hourly and package options", async ({ page }) => {

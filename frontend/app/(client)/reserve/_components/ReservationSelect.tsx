@@ -23,6 +23,7 @@ type ReservationSelectProps = {
   onChange: (value: string) => void;
   options: ReservationOption[];
   placeholder: string;
+  portalContainer?: HTMLElement | null;
   portalMenu?: boolean;
   separateNextDay?: boolean;
   value: string;
@@ -39,6 +40,7 @@ export function ReservationSelect({
   onChange,
   options,
   placeholder,
+  portalContainer,
   portalMenu = false,
   separateNextDay = false,
   value,
@@ -143,7 +145,7 @@ export function ReservationSelect({
       id={optionsId}
       role="listbox"
       aria-label={listboxLabel}
-      className={`${portalMenu ? "fixed z-[45]" : `absolute inset-x-0 z-50 ${opensAbove ? "bottom-full mb-2" : "top-full mt-2"}`} overflow-y-auto overscroll-contain rounded-xl border border-[#e8e0d4] bg-white p-1.5 shadow-2xl [scrollbar-color:#c4b5a3_transparent] [scrollbar-width:thin]`}
+      className={`${portalMenu ? "fixed z-[60]" : `absolute inset-x-0 z-50 ${opensAbove ? "bottom-full mb-2" : "top-full mt-2"}`} overflow-y-auto overscroll-contain rounded-xl border border-[#e8e0d4] bg-white p-1.5 shadow-2xl [scrollbar-color:#c4b5a3_transparent] [scrollbar-width:thin]`}
       style={{ maxHeight: menuHeight, ...(portalMenu ? portalStyle : {}) }}
     >
       {options.length > 0 ? (
@@ -244,7 +246,7 @@ export function ReservationSelect({
         />
       </button>
 
-      {portalMenu && menu ? createPortal(menu, document.body) : menu}
+      {portalMenu && menu ? createPortal(menu, portalContainer ?? document.body) : menu}
     </div>
   );
 }

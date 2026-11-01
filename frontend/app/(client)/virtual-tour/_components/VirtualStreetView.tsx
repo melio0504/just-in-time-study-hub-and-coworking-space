@@ -1156,10 +1156,7 @@ export function VirtualStreetView() {
             >
               −
             </button>
-            <div className="px-4 py-3 text-sm font-medium text-white/80">
-              <span className="sm:hidden">Pinch / Zoom</span>
-              <span className="hidden sm:inline">Zoom</span>
-            </div>
+            <div className="px-4 py-3 text-sm font-medium text-white/80">Zoom</div>
             <button
               type="button"
               onClick={() =>
@@ -1445,6 +1442,7 @@ export function VirtualStreetView() {
                   placeholder={configurationLoading ? "Loading times…" : "Select start time"}
                   listboxLabel={`Available start times for seat ${activeSeat.code}`}
                   emptyMessage="No start times are available for this date."
+                  portalContainer={isFullscreen ? containerRef.current : null}
                   portalMenu
                   separateNextDay
                 />
@@ -1466,6 +1464,7 @@ export function VirtualStreetView() {
                   placeholder={draftStartTime ? "Select end time" : "Select a start time first"}
                   listboxLabel={`Available end times for seat ${activeSeat.code}`}
                   emptyMessage="No end times are available for this start time."
+                  portalContainer={isFullscreen ? containerRef.current : null}
                   portalMenu
                 />
               </div>
