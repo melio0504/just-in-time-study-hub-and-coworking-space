@@ -89,6 +89,24 @@ const PANORAMA_RADIUS = 500;
 const MARKER_RADIUS = 480;
 const MARKER_HORIZONTAL_OFFSET = 70;
 const MARKER_VERTICAL_OFFSET = 40;
+const MIN_ZOOM = 0.75;
+const MAX_ZOOM = 1.8;
+const ZOOM_STEP = 0.16;
+
+type TouchPoint = {
+  clientX: number;
+  clientY: number;
+};
+
+type PinchGesture = {
+  distance: number;
+  zoom: number;
+};
+
+const getTouchDistance = (first?: TouchPoint, second?: TouchPoint) =>
+  first && second ? Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY) : 0;
+
+const clampZoom = (zoom: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
 
 type SeatDisplayStatus = "free" | "reserved" | "in_use";
 
@@ -488,6 +506,7 @@ export function VirtualStreetView() {
   const [transitionProgress, setTransitionProgress] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPointerInside, setIsPointerInside] = useState(false);
+  const [isPinchZoomReady, setIsPinchZoomReady] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [zoomTarget, setZoomTarget] = useState<number | null>(null);
   const [panoramaAspectRatios, setPanoramaAspectRatios] = useState<
@@ -523,9 +542,8 @@ export function VirtualStreetView() {
   const [eventSource, setEventSource] = useState<HTMLDivElement | null>(null);
   const cameraRef = useRef<ThreePerspectiveCamera | null>(null);
   const markerElementsRef = useRef(new Map<string, HTMLDivElement>());
-  const minZoom = 0.75;
-  const maxZoom = 1.8;
-  const zoomStep = 0.16;
+  const zoomLevelRef = useRef(zoomLevel);
+  const pinchGestureRef = useRef<PinchGesture | null>(null);
   const today = getManilaDateString();
 
   useLayoutEffect(() => {
@@ -557,7 +575,7 @@ export function VirtualStreetView() {
   );
   const activePanoramaAspectRatio = panoramaAspectRatios[activePanoramaId] ?? 2;
   const activeVerticalCoverage = getVerticalCoverage(activePanoramaAspectRatio);
-  const widestCameraVerticalFov = 2 * Math.atan(Math.tan((CAMERA_FOV * Math.PI) / 360) / minZoom);
+  const widestCameraVerticalFov = 2 * Math.atan(Math.tan((CAMERA_FOV * Math.PI) / 360) / MIN_ZOOM);
   const verticalLookRange = Math.max(0.04, (activeVerticalCoverage - widestCameraVerticalFov) / 2);
   const minPolarAngle = Math.PI / 2 - verticalLookRange;
   const maxPolarAngle = Math.PI / 2 + verticalLookRange;
@@ -803,10 +821,57 @@ export function VirtualStreetView() {
   }, [zoomTarget, zoomLevel]);
 
   useEffect(() => {
+    zoomLevelRef.current = zoomLevel;
     if (!cameraRef.current) return;
     cameraRef.current.zoom = zoomLevel;
     cameraRef.current.updateProjectionMatrix();
   }, [zoomLevel]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const startPinch = (touches: TouchList) => {
+      const distance = getTouchDistance(touches[0], touches[1]);
+      if (distance === 0) return;
+      pinchGestureRef.current = { distance, zoom: zoomLevelRef.current };
+      setZoomTarget(null);
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length >= 2) startPinch(event.touches);
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const pinchGesture = pinchGestureRef.current;
+      if (!pinchGesture || event.touches.length < 2) return;
+
+      event.preventDefault();
+      const distance = getTouchDistance(event.touches[0], event.touches[1]);
+      const nextZoom = clampZoom(pinchGesture.zoom * (distance / pinchGesture.distance));
+      zoomLevelRef.current = nextZoom;
+      setZoomLevel(nextZoom);
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      if (event.touches.length >= 2) startPinch(event.touches);
+      else pinchGestureRef.current = null;
+    };
+
+    container.addEventListener("touchstart", handleTouchStart);
+    container.addEventListener("touchmove", handleTouchMove, { passive: false });
+    container.addEventListener("touchend", handleTouchEnd);
+    container.addEventListener("touchcancel", handleTouchEnd);
+    setIsPinchZoomReady(true);
+
+    return () => {
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("touchend", handleTouchEnd);
+      container.removeEventListener("touchcancel", handleTouchEnd);
+      pinchGestureRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -817,9 +882,7 @@ export function VirtualStreetView() {
       event.preventDefault();
       setZoomTarget(null);
       const change = event.deltaY > 0 ? -0.1 : 0.1;
-      setZoomLevel((current) =>
-        Math.min(maxZoom, Math.max(minZoom, Number((current + change).toFixed(2)))),
-      );
+      setZoomLevel((current) => clampZoom(Number((current + change).toFixed(2))));
     };
 
     container.addEventListener("wheel", handleWheel, { passive: false });
@@ -1010,6 +1073,11 @@ export function VirtualStreetView() {
   return (
     <div
       ref={setContainer}
+      role="region"
+      aria-label="360-degree virtual tour. Drag to look around and pinch to zoom."
+      data-testid="virtual-tour-viewer"
+      data-pinch-zoom-ready={isPinchZoomReady}
+      data-zoom-level={zoomLevel.toFixed(3)}
       onPointerEnter={() => setIsPointerInside(true)}
       onPointerLeave={() => setIsPointerInside(false)}
       className={`relative isolate w-full select-none touch-none overflow-hidden bg-[#120f0b] shadow-2xl transition-all duration-300 ${
@@ -1081,18 +1149,21 @@ export function VirtualStreetView() {
             <button
               type="button"
               onClick={() =>
-                setZoomTarget(Number(Math.max(minZoom, zoomLevel - zoomStep).toFixed(2)))
+                setZoomTarget(Number(Math.max(MIN_ZOOM, zoomLevel - ZOOM_STEP).toFixed(2)))
               }
               className="px-4 py-3 text-sm font-medium text-white transition hover:bg-white/10"
               aria-label="Zoom out"
             >
               −
             </button>
-            <div className="px-4 py-3 text-sm font-medium text-white/80">Zoom</div>
+            <div className="px-4 py-3 text-sm font-medium text-white/80">
+              <span className="sm:hidden">Pinch / Zoom</span>
+              <span className="hidden sm:inline">Zoom</span>
+            </div>
             <button
               type="button"
               onClick={() =>
-                setZoomTarget(Number(Math.min(maxZoom, zoomLevel + zoomStep).toFixed(2)))
+                setZoomTarget(Number(Math.min(MAX_ZOOM, zoomLevel + ZOOM_STEP).toFixed(2)))
               }
               className="px-4 py-3 text-sm font-medium text-white transition hover:bg-white/10"
               aria-label="Zoom in"

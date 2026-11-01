@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Route } from "@playwright/test";
+import { expect, type Page, type Route, test } from "@playwright/test";
 
 const supabaseCorsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -103,6 +103,48 @@ test("the back-to-top button scrolls gradually", async ({ page }) => {
   expect(duringAnimation).toBeLessThan(start);
 
   await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 2_500 }).toBe(0);
+});
+
+test("the virtual tour supports pinch-to-zoom on touch screens", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const client = await page.context().newCDPSession(page);
+  await client.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 2 });
+  await page.route("**/auth/v1/user*", (route) =>
+    fulfillSupabaseJson(route, { code: "session_not_found", message: "Auth session missing" }, 401),
+  );
+  await page.route("**/rest/v1/**", (route) => fulfillSupabaseJson(route, []));
+  await page.goto("/virtual-tour");
+
+  const viewer = page.getByTestId("virtual-tour-viewer");
+  await expect(viewer).toBeVisible();
+  await expect(viewer).toHaveAttribute("data-pinch-zoom-ready", "true");
+  await expect(viewer.getByText("Pinch / Zoom")).toBeVisible();
+  await viewer.evaluate((element) => element.scrollIntoView({ block: "center" }));
+
+  const box = await viewer.boundingBox();
+  if (!box) throw new Error("The virtual tour viewer has no visible bounds.");
+
+  const centerX = box.x + box.width / 2;
+  const centerY = Math.min(box.y + box.height * 0.6, 744);
+  await client.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [
+      { x: centerX - 40, y: centerY, id: 0 },
+      { x: centerX + 40, y: centerY, id: 1 },
+    ],
+  });
+  await client.send("Input.dispatchTouchEvent", {
+    type: "touchMove",
+    touchPoints: [
+      { x: centerX - 70, y: centerY, id: 0 },
+      { x: centerX + 70, y: centerY, id: 1 },
+    ],
+  });
+  await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+
+  await expect
+    .poll(async () => Number(await viewer.getAttribute("data-zoom-level")))
+    .toBeGreaterThan(1);
 });
 
 test("pricing exposes hourly and package options", async ({ page }) => {
