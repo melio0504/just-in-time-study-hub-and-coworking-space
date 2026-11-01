@@ -12,6 +12,7 @@ COPY package.json package-lock.json ./
 COPY admin/package.json admin/package.json
 COPY frontend/package.json frontend/package.json
 COPY kiosk/package.json kiosk/package.json
+COPY scripts/install-git-hooks.sh scripts/install-git-hooks.sh
 
 RUN --mount=type=cache,target=/root/.npm \
   npm ci --workspace=@jit-studyhub/kiosk
