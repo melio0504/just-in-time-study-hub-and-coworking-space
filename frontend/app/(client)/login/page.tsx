@@ -70,7 +70,7 @@ export default function Login() {
   const benefits = [
     "Access your booking history instantly",
     "View your study analytics dashboard",
-    "Redeem your loyalty points",
+    "Manage your upcoming reservations",
     "Manage your account preferences",
   ];
 
@@ -102,7 +102,7 @@ export default function Login() {
               </p>
               <p className="text-2xl text-[#2d2520] mb-2">Track Your Progress</p>
               <p className="text-[#6b5e52]">
-                See your study hours, loyalty points, and upcoming bookings
+                See your study hours, booking history, and upcoming reservations
               </p>
             </div>
           </div>

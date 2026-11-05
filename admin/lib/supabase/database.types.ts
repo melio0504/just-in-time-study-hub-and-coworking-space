@@ -417,14 +417,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "avatar_url": string | null,"created_at": string,"email": string | null,"full_name": string,"id": string,"is_active": boolean,"loyalty_points": number,"must_change_password": boolean,"phone": string | null,"role": Database["public"]['Enums']["profile_role"],"staff_permissions": (Database["public"]['Enums']["staff_permission"])[],"updated_at": string,"username_changed_at": string | null
+                    "avatar_url": string | null,"created_at": string,"email": string | null,"full_name": string,"id": string,"is_active": boolean,"must_change_password": boolean,"phone": string | null,"role": Database["public"]['Enums']["profile_role"],"staff_permissions": (Database["public"]['Enums']["staff_permission"])[],"updated_at": string,"username_changed_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "avatar_url"?: string | null,"created_at"?: string,"email"?: string | null,"full_name"?: string,"id": string,"is_active"?: boolean,"loyalty_points"?: number,"must_change_password"?: boolean,"phone"?: string | null,"role"?: Database["public"]['Enums']["profile_role"],"staff_permissions"?: (Database["public"]['Enums']["staff_permission"])[],"updated_at"?: string,"username_changed_at"?: string | null
+                    "avatar_url"?: string | null,"created_at"?: string,"email"?: string | null,"full_name"?: string,"id": string,"is_active"?: boolean,"must_change_password"?: boolean,"phone"?: string | null,"role"?: Database["public"]['Enums']["profile_role"],"staff_permissions"?: (Database["public"]['Enums']["staff_permission"])[],"updated_at"?: string,"username_changed_at"?: string | null
                   }
                   Update: {
-                    "avatar_url"?: string | null,"created_at"?: string,"email"?: string | null,"full_name"?: string,"id"?: string,"is_active"?: boolean,"loyalty_points"?: number,"must_change_password"?: boolean,"phone"?: string | null,"role"?: Database["public"]['Enums']["profile_role"],"staff_permissions"?: (Database["public"]['Enums']["staff_permission"])[],"updated_at"?: string,"username_changed_at"?: string | null
+                    "avatar_url"?: string | null,"created_at"?: string,"email"?: string | null,"full_name"?: string,"id"?: string,"is_active"?: boolean,"must_change_password"?: boolean,"phone"?: string | null,"role"?: Database["public"]['Enums']["profile_role"],"staff_permissions"?: (Database["public"]['Enums']["staff_permission"])[],"updated_at"?: string,"username_changed_at"?: string | null
                   }
                   Relationships: [
 
