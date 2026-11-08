@@ -83,14 +83,18 @@ export default {
     }
 
     if (request.method === "GET") {
-      const [sessionsResult, activityResult] = await Promise.all([
+      const [sessionsResult, activityResult, seatCountResult] = await Promise.all([
         context.supabaseAdmin.rpc("get_kiosk_active_sessions"),
         context.supabaseAdmin.rpc("get_kiosk_recent_activity"),
+        context.supabaseAdmin.rpc("get_kiosk_active_seat_count"),
       ]);
 
-      if (sessionsResult.error || activityResult.error) {
-        const error = sessionsResult.error ?? activityResult.error;
-        console.error("Unable to load kiosk state:", error?.code, error?.message);
+      if (sessionsResult.error || activityResult.error || seatCountResult.error) {
+        console.error("Unable to load kiosk state:", {
+          sessions: sessionsResult.error,
+          activity: activityResult.error,
+          seatCount: seatCountResult.error,
+        });
         return json({ error: "The kiosk state could not be loaded." }, 500);
       }
 
@@ -109,7 +113,7 @@ export default {
         seats: row.seats,
         timestamp: row.occurred_at,
       }));
-      return json({ sessions, activity });
+      return json({ sessions, activity, totalSeats: seatCountResult.data ?? 0 });
     }
 
     if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);

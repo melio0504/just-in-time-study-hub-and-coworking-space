@@ -682,11 +682,6 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
-"get_reserved_seat_windows":
-{ Args: { "p_ends_at": string,"p_starts_at": string }; Returns: {
-              "ends_at": string,"seat_code": string,"starts_at": string
-            }[]
-                           },
 "get_available_seats_for_booking":
 { Args: { "p_booking_id": string,"p_ends_at": string,"p_starts_at": string }; Returns: {
               "code": string,
@@ -721,6 +716,9 @@ isOneToOne: false
               "booking_id": string,"expires_at": string,"reservation_code": string
             }[]
                            },
+"get_kiosk_active_seat_count":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "get_kiosk_active_sessions":
 { Args: Record<PropertyKey, never>; Returns: {
               "booking_id": string,"checked_in_at": string,"guest_name": string,"scheduled_end": string,"seats": (string)[]
@@ -729,6 +727,11 @@ isOneToOne: false
 "get_kiosk_recent_activity":
 { Args: Record<PropertyKey, never>; Returns: {
               "activity_id": string,"activity_type": string,"booking_id": string,"guest_name": string,"occurred_at": string,"seats": (string)[]
+            }[]
+                           },
+"get_reserved_seat_windows":
+{ Args: { "p_ends_at": string,"p_starts_at": string }; Returns: {
+              "ends_at": string,"seat_code": string,"starts_at": string
             }[]
                            },
 "log_admin_access":

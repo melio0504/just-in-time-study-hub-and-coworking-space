@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(67);
+SELECT plan(73);
 
 SELECT has_table('public', 'profiles', 'profiles table exists');
 SELECT has_table('public', 'seats', 'seats table exists');
@@ -16,6 +16,7 @@ SELECT has_function('public', 'log_admin_access', ARRAY['text'], 'admin access a
 SELECT has_function('public', 'revoke_staff_sessions', ARRAY['uuid'], 'staff session revocation RPC exists');
 SELECT has_function('public', 'process_kiosk_scan', ARRAY['text'], 'kiosk scan RPC exists');
 SELECT has_function('public', 'get_kiosk_active_sessions', ARRAY[]::text[], 'kiosk active-session RPC exists');
+SELECT has_function('public', 'get_kiosk_active_seat_count', ARRAY[]::text[], 'kiosk active-seat count RPC exists');
 SELECT has_function('public', 'get_kiosk_recent_activity', ARRAY[]::text[], 'kiosk recent-activity RPC exists');
 SELECT has_table('public', 'booking_confirmation_tokens', 'local QR confirmation token table exists');
 SELECT has_function('public', 'create_booking_confirmation_token', ARRAY['uuid', 'uuid', 'text'], 'confirmation token creation RPC exists');
@@ -83,6 +84,16 @@ SELECT ok(
   'the server-side kiosk function can list active sessions'
 );
 SELECT ok(
+  NOT has_function_privilege('anon', 'public.get_kiosk_active_seat_count()', 'execute')
+    AND NOT has_function_privilege('authenticated', 'public.get_kiosk_active_seat_count()', 'execute'),
+  'browser roles cannot query the kiosk capacity RPC'
+);
+SELECT ok(
+  has_function_privilege('service_role', 'public.get_kiosk_active_seat_count()', 'execute')
+    AND has_function_privilege('service_role', 'private.get_kiosk_active_seat_count()', 'execute'),
+  'the server-side kiosk function can query active facility capacity'
+);
+SELECT ok(
   NOT has_function_privilege('anon', 'public.get_kiosk_recent_activity()', 'execute')
     AND NOT has_function_privilege('authenticated', 'public.get_kiosk_recent_activity()', 'execute'),
   'browser roles cannot list kiosk activity history'
@@ -100,8 +111,28 @@ SELECT ok('not_required' = ANY(enum_range(NULL::public.payment_status)::text[]),
 
 SELECT is(
   (SELECT count(*)::integer FROM public.seats),
-  50,
-  'all 50 facility seats are provisioned'
+  49,
+  'the facility has exactly 49 seat records'
+);
+
+SELECT is(
+  (SELECT count(*)::integer FROM public.seats WHERE is_active),
+  49,
+  'the facility has 49 active seats'
+);
+
+SELECT ok(
+  NOT EXISTS (SELECT 1 FROM public.seats WHERE code = 'HC16'),
+  'HC16 is completely removed from the seat inventory'
+);
+
+SELECT ok(
+  EXISTS (
+    SELECT 1
+    FROM public.get_kiosk_active_sessions()
+    WHERE booking_id LIKE 'walk-in:%'
+  ),
+  'kiosk active sessions include current walk-ins'
 );
 
 SELECT is(
@@ -130,7 +161,7 @@ SELECT is(
 
 SELECT is(
   (SELECT count(*)::integer FROM public.seats WHERE code ~ '^HC[0-9]{2}$' AND zone = 'High Chair' AND seat_type = 'high-chair'),
-  16,
+  15,
   'high-chair seats use the HC category'
 );
 

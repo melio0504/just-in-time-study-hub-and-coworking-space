@@ -44,7 +44,6 @@ export const allSeatIds = [
     "HC13",
     "HC14",
     "HC15",
-    "HC16",
   ],
 ];
 
@@ -67,7 +66,7 @@ export const getReservedSeatsForDate = (date: string): string[] => {
     return ["SO01", "SO05", "FD02", "FD09", "GS11", "HC11", "HC13"];
   }
   if (dayOfWeek === 3) {
-    return ["SO10", "FD06", "GS04", "GS06", "HC05", "HC09", "HC16"];
+    return ["SO10", "FD06", "GS04", "GS06", "HC05", "HC09"];
   }
   if (dayOfWeek === 4) {
     return ["SO03", "SO07", "FD01", "HC01", "HC04", "GS08", "GS09", "HC14"];

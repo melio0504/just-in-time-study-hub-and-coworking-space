@@ -155,7 +155,6 @@ export function SeatingPlanMini({ seats, onSeatClick, busySeatId }: SeatingPlanM
               {renderSeat("HC15")}
               {renderSeat("HC14")}
               {renderSeat("HC13")}
-              {renderSeat("HC16")}
             </div>
 
             <div className="absolute top-[81%] right-[3%] left-[47%] flex justify-between border-t-2 border-dashed border-[#c4b5a3]/40 pt-2">

@@ -22,7 +22,7 @@ declare global {
     guestName: string;
     seats: string[];
     checkedInAt: string;
-    scheduledEnd: string;
+    scheduledEnd: string | null;
   };
 
   type KioskActivityEntry = {
@@ -41,6 +41,7 @@ declare global {
       getActiveSessions: () => Promise<{
         sessions: KioskActiveSession[];
         activity?: KioskActivityEntry[];
+        totalSeats: number;
       }>;
     };
   }

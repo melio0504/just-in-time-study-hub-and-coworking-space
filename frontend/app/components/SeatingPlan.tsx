@@ -160,7 +160,6 @@ export function SeatingPlan({ renderSeat }: SeatingPlanProps) {
             {renderSeat("HC15")}
             {renderSeat("HC14")}
             {renderSeat("HC13")}
-            {renderSeat("HC16")}
           </div>
 
           {/* High Chair — bottom bank */}

@@ -47,7 +47,7 @@ interface ActiveSession {
   guestName: string;
   seats: string[];
   checkedInAt: string;
-  scheduledEnd: string;
+  scheduledEnd: string | null;
 }
 
 interface ActivityEntry {
@@ -167,6 +167,7 @@ export function KioskScanner() {
   const [successBooking, setSuccessBooking] = useState<Booking | null>(null);
   const [lastAction, setLastAction] = useState<KioskAction | null>(null);
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
+  const [totalSeats, setTotalSeats] = useState(0);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [overtimeNotice, setOvertimeNotice] = useState<OvertimeNotice | null>(null);
   const [serverError, setServerError] = useState("");
@@ -177,8 +178,9 @@ export function KioskScanner() {
   const errorSoundRef = useRef<HTMLAudioElement>(null);
   const kioskStateVersionRef = useRef(0);
 
-  const totalSeats = 50;
-  const occupiedCount = sessions.reduce((count, session) => count + session.seats.length, 0);
+  const occupiedCount = new Set(sessions.flatMap((session) => session.seats)).size;
+  const capacityPercent = totalSeats > 0 ? Math.round((occupiedCount / totalSeats) * 100) : 0;
+  const availableCount = Math.max(0, totalSeats - occupiedCount);
 
   useEffect(() => {
     const initialTick = window.setTimeout(() => setNow(new Date()), 0);
@@ -204,6 +206,7 @@ export function KioskScanner() {
         if (!cancelled && requestedVersion === kioskStateVersionRef.current) {
           setSessions(response.sessions);
           setActivity(response.activity ?? []);
+          setTotalSeats(response.totalSeats);
         }
       } catch (error) {
         if (!cancelled) {
@@ -483,10 +486,10 @@ export function KioskScanner() {
         <div className="flex-1 h-2 bg-[#f3ede4] rounded-full overflow-hidden max-w-[140px]">
           <div
             className="h-full bg-[#e5a930] rounded-full transition-all duration-500"
-            style={{ width: `${(occupiedCount / totalSeats) * 100}%` }}
+            style={{ width: `${capacityPercent}%` }}
           />
         </div>
-        <span className="text-[#6b5e52]">{totalSeats - occupiedCount} free</span>
+        <span className="text-[#6b5e52]">{availableCount} free</span>
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 overflow-hidden lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -699,9 +702,7 @@ export function KioskScanner() {
               </div>
               <div className="bg-white rounded-xl border border-[#f3ede4] p-3">
                 <Armchair className="w-5 h-5 text-[#e5a930] mb-1.5" />
-                <p className="text-3xl leading-none text-[#2d2520]">
-                  {Math.round((occupiedCount / totalSeats) * 100)}%
-                </p>
+                <p className="text-3xl leading-none text-[#2d2520]">{capacityPercent}%</p>
                 <p className="text-sm text-[#6b5e52]">Capacity</p>
               </div>
             </div>
@@ -709,13 +710,11 @@ export function KioskScanner() {
               <motion.div
                 className="h-full bg-[#e5a930] rounded-full"
                 initial={false}
-                animate={{ width: `${(occupiedCount / totalSeats) * 100}%` }}
+                animate={{ width: `${capacityPercent}%` }}
                 transition={{ duration: 0.5 }}
               />
             </div>
-            <p className="mt-1.5 text-base text-[#6b5e52]">
-              {totalSeats - occupiedCount} seats available
-            </p>
+            <p className="mt-1.5 text-base text-[#6b5e52]">{availableCount} seats available</p>
           </div>
 
           <div className="shrink-0 min-h-0">
@@ -736,7 +735,10 @@ export function KioskScanner() {
                   >
                     <p className="truncate text-lg font-medium text-[#2d2520]">{s.guestName}</p>
                     <p className="text-sm text-[#6b5e52]">
-                      {s.seats.join(", ")} · {getRemainingMinutes(s.scheduledEnd)} min left
+                      {s.seats.join(", ")} ·{" "}
+                      {s.scheduledEnd
+                        ? `${getRemainingMinutes(s.scheduledEnd)} min left`
+                        : "Walk-in"}
                     </p>
                   </li>
                 ))}
