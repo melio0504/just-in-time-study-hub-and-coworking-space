@@ -88,10 +88,15 @@ test("the landing page presents the primary booking journey", async ({ page }) =
 test("the back-to-top button scrolls gradually", async ({ page }) => {
   await page.route("**/rest/v1/announcements*", (route) => fulfillSupabaseJson(route, []));
   await page.goto("/about");
-  await page.waitForTimeout(250);
+  await expect
+    .poll(() =>
+      page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight),
+    )
+    .toBeGreaterThan(320);
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
 
   const button = page.getByRole("button", { name: "Scroll to top" });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(320);
   await expect(button).toHaveClass(/pointer-events-auto/);
   const start = await page.evaluate(() => window.scrollY);
   expect(start).toBeGreaterThan(320);
@@ -148,6 +153,7 @@ test("the virtual tour supports pinch-to-zoom on touch screens", async ({ page }
 });
 
 test("the virtual tour time menu remains visible in fullscreen", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-11-08T00:00:00.000Z"));
   const user = {
     id: "e2e-user",
     aud: "authenticated",
@@ -260,7 +266,9 @@ test("the virtual tour time menu remains visible in fullscreen", async ({ page }
   await expect
     .poll(() => timeMenu.evaluate((menu) => Boolean(document.fullscreenElement?.contains(menu))))
     .toBe(true);
-  await timeMenu.getByRole("option").first().click();
+  const enabledTimeOption = timeMenu.locator('[role="option"]:not(:disabled)').first();
+  await expect(enabledTimeOption).toBeVisible();
+  await enabledTimeOption.click();
   await expect(page.getByRole("combobox", { name: "Start Time" })).not.toHaveText(
     "Select start time",
   );

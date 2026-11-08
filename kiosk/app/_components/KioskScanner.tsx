@@ -194,24 +194,34 @@ export function KioskScanner() {
   useEffect(() => {
     let cancelled = false;
     let requestInFlight = false;
+    let refreshQueued = false;
     const loadActiveSessions = async () => {
       const desktop = window.kioskDesktop;
-      if (!desktop || requestInFlight) return;
+      if (!desktop) return;
+      if (requestInFlight) {
+        refreshQueued = true;
+        return;
+      }
 
       requestInFlight = true;
-      const requestedVersion = kioskStateVersionRef.current;
-
       try {
-        const response = await desktop.getActiveSessions();
-        if (!cancelled && requestedVersion === kioskStateVersionRef.current) {
-          setSessions(response.sessions);
-          setActivity(response.activity ?? []);
-          setTotalSeats(response.totalSeats);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setServerError(getGuestErrorMessage(error, "The kiosk service is unavailable."));
-        }
+        do {
+          refreshQueued = false;
+          const requestedVersion = kioskStateVersionRef.current;
+
+          try {
+            const response = await desktop.getActiveSessions();
+            if (!cancelled && requestedVersion === kioskStateVersionRef.current) {
+              setSessions(response.sessions);
+              setActivity(response.activity ?? []);
+              setTotalSeats(response.totalSeats);
+            }
+          } catch (error) {
+            if (!cancelled) {
+              setServerError(getGuestErrorMessage(error, "The kiosk service is unavailable."));
+            }
+          }
+        } while (!cancelled && refreshQueued);
       } finally {
         requestInFlight = false;
       }

@@ -42,6 +42,7 @@ test("recent activity is restored when the kiosk starts", async ({ page }) => {
             timestamp: "2026-10-15T08:00:00.000Z",
           },
         ],
+        totalSeats: 49,
       }),
       scanBookingPass: async () => {
         throw new Error("Not used in this test.");
@@ -59,27 +60,42 @@ test("recent activity is restored when the kiosk starts", async ({ page }) => {
 test("live kiosk state refreshes while the app remains open", async ({ page }) => {
   await page.addInitScript(() => {
     let stateIsActive = false;
+    let requestCount = 0;
+    let resolveInitialState:
+      | ((state: { sessions: never[]; activity: never[]; totalSeats: number }) => void)
+      | undefined;
     Object.defineProperty(window, "activateKioskState", {
       value: () => {
         stateIsActive = true;
+        resolveInitialState?.({ sessions: [], activity: [], totalSeats: 49 });
       },
     });
     window.kioskDesktop = {
       isElectron: true,
-      getActiveSessions: async () => ({
-        sessions: stateIsActive
-          ? [
-              {
-                bookingId: "JIT-LIVE",
-                guestName: "Live Guest",
-                seats: ["FD01"],
-                checkedInAt: "2026-11-01T01:00:00.000Z",
-                scheduledEnd: "2026-11-01T03:00:00.000Z",
-              },
-            ]
-          : [],
-        activity: [],
-      }),
+      getActiveSessions: async () => {
+        requestCount += 1;
+        if (requestCount === 1) {
+          return await new Promise((resolve) => {
+            resolveInitialState = resolve;
+          });
+        }
+
+        return {
+          sessions: stateIsActive
+            ? [
+                {
+                  bookingId: "JIT-LIVE",
+                  guestName: "Live Guest",
+                  seats: ["FD01"],
+                  checkedInAt: "2026-11-01T01:00:00.000Z",
+                  scheduledEnd: "2026-11-01T03:00:00.000Z",
+                },
+              ]
+            : [],
+          activity: [],
+          totalSeats: 49,
+        };
+      },
       scanBookingPass: async () => {
         throw new Error("Not used in this test.");
       },

@@ -11,15 +11,17 @@ export function ScrollToTop() {
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
   const scrollAnimationRef = useRef<number | null>(null);
+  const previousPathnameRef = useRef(pathname);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (scrollAnimationRef.current !== null) {
-        window.cancelAnimationFrame(scrollAnimationRef.current);
-        scrollAnimationRef.current = null;
-      }
-      window.scrollTo(0, 0);
+    if (previousPathnameRef.current === pathname) return;
+
+    previousPathnameRef.current = pathname;
+    if (scrollAnimationRef.current !== null) {
+      window.cancelAnimationFrame(scrollAnimationRef.current);
+      scrollAnimationRef.current = null;
     }
+    window.scrollTo(0, 0);
   }, [pathname]);
 
   useEffect(() => {
