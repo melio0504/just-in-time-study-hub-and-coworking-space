@@ -23,9 +23,9 @@
     "test": "node --test electron/*.test.cjs"
   },
   "dependencies": {
-    "lucide-react": "1.64.0",
-    "motion": "14.8.0",
-    "next": "16.4.3",
+    "lucide-react": "1.69.0",
+    "motion": "14.9.1",
+    "next": "16.4.5",
     "qr-scanner": "1.4.2",
     "react": "19.3.1",
     "react-dom": "19.3.1"
