@@ -119,7 +119,7 @@
   "devDependencies": {
     "@playwright/test": "1.65.0",
     "@vitest/coverage-v8": "5.1.0",
-    "supabase": "^2.122.0",
+    "supabase": "^3.0.0",
     "vitest": "5.1.0"
   },
   "overrides": {
