@@ -287,6 +287,9 @@ entrypoint = "./functions/abandon-booking/index.ts"
 [functions.delete-account]
 verify_jwt = true
 
+[functions.request-password-reset]
+verify_jwt = false
+
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
 enable_signup = false

@@ -1,5 +1,6 @@
 "use client";
 
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { ArrowLeft, CheckCircle2, Mail } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -7,9 +8,22 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
+interface RecoveryResult {
+  email: string;
+  signInMethod: "email" | "google";
+}
+
+async function getFunctionError(error: unknown, fallback: string) {
+  if (error instanceof FunctionsHttpError) {
+    const payload = (await error.context.json().catch(() => null)) as { error?: unknown } | null;
+    if (typeof payload?.error === "string") return payload.error;
+  }
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [sentTo, setSentTo] = useState("");
+  const [recoveryResult, setRecoveryResult] = useState<RecoveryResult | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,17 +51,25 @@ export default function ForgotPasswordPage() {
 
     setIsSubmitting(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-      redirectTo: callbackUrl.toString(),
+    const { data, error } = await supabase.functions.invoke("request-password-reset", {
+      body: {
+        email: normalizedEmail,
+        redirectTo: callbackUrl.toString(),
+      },
     });
     setIsSubmitting(false);
 
-    if (error) {
-      setErrorMessage(error.message);
+    if (error || data?.accepted !== true) {
+      setErrorMessage(
+        await getFunctionError(error, "Password recovery is unavailable. Please try again."),
+      );
       return;
     }
 
-    setSentTo(normalizedEmail);
+    setRecoveryResult({
+      email: normalizedEmail,
+      signInMethod: data.signInMethod === "google" ? "google" : "email",
+    });
   };
 
   return (
@@ -62,25 +84,48 @@ export default function ForgotPasswordPage() {
             Back to sign in
           </Link>
 
-          {sentTo ? (
+          {recoveryResult ? (
             <div className="text-center" aria-live="polite">
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#fef3dc]">
                 <CheckCircle2 className="h-8 w-8 text-[#e5a930]" />
               </div>
-              <h1 className="mb-3 text-3xl text-[#2d2520]">Check your email</h1>
-              <p className="mb-3 leading-relaxed text-[#6b5e52]">
-                If an account exists for{" "}
-                <span className="font-medium text-[#2d2520]">{sentTo}</span>, we sent a password
-                reset link.
-              </p>
-              <p className="mb-8 text-sm text-[#6b5e52]">
-                Open the link to choose a new password. Check your spam folder if it does not
-                arrive.
-              </p>
+              {recoveryResult.signInMethod === "google" ? (
+                <>
+                  <h1 className="mb-3 text-3xl text-[#2d2520]">Continue with Google</h1>
+                  <p className="mb-3 leading-relaxed text-[#6b5e52]">
+                    <span className="font-medium text-[#2d2520]">{recoveryResult.email}</span> uses
+                    Google to sign in.
+                  </p>
+                  <p className="mb-8 text-sm leading-relaxed text-[#6b5e52]">
+                    Google-only accounts do not have a Just In Time Study Hub password to reset, so
+                    we did not send a reset email. Return to sign in and choose Continue with
+                    Google.
+                  </p>
+                  <Link
+                    href="/login"
+                    className="mb-3 block w-full rounded-full bg-[#e5a930] px-8 py-3 text-white transition-shadow hover:shadow-lg"
+                  >
+                    Go to sign in
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <h1 className="mb-3 text-3xl text-[#2d2520]">Check your email</h1>
+                  <p className="mb-3 leading-relaxed text-[#6b5e52]">
+                    If an email-and-password account exists for{" "}
+                    <span className="font-medium text-[#2d2520]">{recoveryResult.email}</span>, we
+                    sent it a secure reset link.
+                  </p>
+                  <p className="mb-8 text-sm text-[#6b5e52]">
+                    Open the link to choose a new password. Check your spam folder if it does not
+                    arrive.
+                  </p>
+                </>
+              )}
               <button
                 type="button"
                 onClick={() => {
-                  setSentTo("");
+                  setRecoveryResult(null);
                   setErrorMessage("");
                 }}
                 className="w-full cursor-pointer rounded-full border border-[#e5a930] px-8 py-3 text-[#b57b08] transition-colors hover:bg-[#fef3dc]"
