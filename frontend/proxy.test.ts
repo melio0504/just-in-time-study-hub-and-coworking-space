@@ -40,6 +40,18 @@ describe("frontend proxy", () => {
     expect(updateSessionMock).not.toHaveBeenCalled();
   });
 
+  it("recovers a password reset token sent to the landing page", async () => {
+    const response = await proxy(
+      new NextRequest("https://www.jit-studyhub.com/?token_hash=recovery-token&type=recovery"),
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://www.jit-studyhub.com/auth/callback?token_hash=recovery-token&type=recovery",
+    );
+    expect(updateSessionMock).not.toHaveBeenCalled();
+  });
+
   it("continues normal session handling for ordinary landing-page visits", async () => {
     const expectedResponse = new Response(null, { status: 204 });
     updateSessionMock.mockResolvedValue(expectedResponse as never);

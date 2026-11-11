@@ -100,6 +100,25 @@ describe("GET /auth/callback", () => {
     expect(response.headers.get("location")).toBe("http://localhost:3000/reset-password");
   });
 
+  it("verifies a recovery token hash and opens the reset form", async () => {
+    const verifyOtp = vi.fn().mockResolvedValue({ error: null });
+    createClientMock.mockResolvedValue({
+      auth: { verifyOtp },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/auth/callback?token_hash=recovery-token&type=recovery",
+    );
+
+    const response = await GET(request);
+
+    expect(verifyOtp).toHaveBeenCalledWith({
+      token_hash: "recovery-token",
+      type: "recovery",
+    });
+    expect(response.headers.get("location")).toBe("http://localhost:3000/reset-password");
+  });
+
   it("returns an expired password recovery link to the request form", async () => {
     const request = new NextRequest(
       "http://localhost:3000/auth/callback?error=access_denied&error_code=otp_expired&flow=recovery&next=/reset-password",

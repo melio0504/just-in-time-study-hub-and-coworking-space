@@ -25,7 +25,7 @@
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                   <tr>
                     <td style="border-radius: 999px; background: #e5a930;">
-                      <a href="{{ .ConfirmationURL }}" style="display: inline-block; padding: 14px 26px; color: #ffffff; font-size: 16px; font-weight: 700; text-decoration: none;">Reset my password</a>
+                      <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&amp;type=recovery&amp;flow=recovery&amp;next=/reset-password" style="display: inline-block; padding: 14px 26px; color: #ffffff; font-size: 16px; font-weight: 700; text-decoration: none;">Reset my password</a>
                     </td>
                   </tr>
                 </table>
