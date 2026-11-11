@@ -170,7 +170,9 @@ export function AdminShell({
   };
 
   const renderSidebar = (collapsed: boolean, mobile = false) => (
-    <div className={`flex h-full flex-col ${collapsed ? "p-3" : "p-5"}`}>
+    <div
+      className={`flex h-full flex-col overflow-y-auto overscroll-contain [scrollbar-color:#d8c9b8_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#d8c9b8] [&::-webkit-scrollbar-track]:bg-transparent ${collapsed ? "p-3" : "p-5"}`}
+    >
       <div className="relative mb-7 flex h-14 items-center justify-center">
         <Image
           src={collapsed ? "/icon.png" : "/images/logo.png"}
