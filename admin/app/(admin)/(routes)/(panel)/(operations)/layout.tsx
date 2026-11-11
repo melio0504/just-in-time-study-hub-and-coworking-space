@@ -34,8 +34,8 @@ export default async function DashboardLayout({
         .order("created_at", { ascending: false }),
       supabase
         .from("audit_logs")
-        .select("*, profile:profiles(full_name, email)", { count: "exact" })
-        .not("actor_id", "is", null)
+        .select("*, profile:profiles!inner(full_name, email)", { count: "exact" })
+        .ilike("profile.email", "%@jit-studyhub.com")
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
         .range(0, logsPerPage - 1),

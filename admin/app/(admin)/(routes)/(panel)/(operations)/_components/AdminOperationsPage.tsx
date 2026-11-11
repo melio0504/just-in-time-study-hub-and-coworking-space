@@ -208,8 +208,8 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
 
     const { data, error, count } = await createClient()
       .from("audit_logs")
-      .select("*, profile:profiles(full_name, email)", { count: "exact" })
-      .not("actor_id", "is", null)
+      .select("*, profile:profiles!inner(full_name, email)", { count: "exact" })
+      .ilike("profile.email", "%@jit-studyhub.com")
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .range(from, from + logsPerPage - 1);
