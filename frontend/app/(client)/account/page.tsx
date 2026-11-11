@@ -26,6 +26,7 @@ import {
 } from "@/lib/study-history";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { canUserChangePassword } from "@/lib/supabase/user";
 import { AccountSettings } from "./_components/AccountSettings";
 import { ReservationManager } from "./_components/ReservationManager";
 
@@ -44,6 +45,7 @@ export default function Account() {
   const flashcardAudioRef = useRef<HTMLAudioElement>(null);
   const [userName, setUserName] = useState("User");
   const [userEmail, setUserEmail] = useState("");
+  const [canChangePassword, setCanChangePassword] = useState(false);
   const [usernameChangedAt, setUsernameChangedAt] = useState<string | null>(null);
   const [accountClock, setAccountClock] = useState(() => Date.now());
   const [bookingCount, setBookingCount] = useState(0);
@@ -111,6 +113,7 @@ export default function Account() {
       if (!cancelled) {
         setUserName(profile?.full_name || user.user_metadata.full_name || "User");
         setUserEmail(user.email || "");
+        setCanChangePassword(canUserChangePassword(user));
         setUsernameChangedAt(profile?.username_changed_at ?? null);
         setBookingCount(bookingHistory.length);
         setStudyData(buildStudyHistory(bookingHistory));
@@ -900,6 +903,7 @@ export default function Account() {
             key={userEmail}
             username={userName}
             email={userEmail}
+            canChangePassword={canChangePassword}
             usernameChangedAt={usernameChangedAt}
             currentTimestamp={accountClock}
             onUsernameChanged={(nextUsername, changedAt) => {
