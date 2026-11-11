@@ -250,7 +250,7 @@ otp_expiry = 3600
 [auth.email.notification.password_changed]
 enabled = true
 subject = "Your Just In Time Study Hub password was changed"
-content_path = "./supabase/templates/password_changed_notification.html"
+content_path = "./templates/password_changed_notification.html"
 
 [auth.email.template.confirmation]
 subject = "Confirm your Just In Time Study Hub account"
