@@ -26,6 +26,20 @@ describe("frontend proxy", () => {
     expect(updateSessionMock).not.toHaveBeenCalled();
   });
 
+  it("recovers an email confirmation sent to the landing page", async () => {
+    const response = await proxy(
+      new NextRequest(
+        "https://www.jit-studyhub.com/?token_hash=pkce_35375fd3749341d4a95df76a631236a5b824e15f9e7755f25a47080c&type=email",
+      ),
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://www.jit-studyhub.com/auth/callback?token_hash=pkce_35375fd3749341d4a95df76a631236a5b824e15f9e7755f25a47080c&type=email",
+    );
+    expect(updateSessionMock).not.toHaveBeenCalled();
+  });
+
   it("continues normal session handling for ordinary landing-page visits", async () => {
     const expectedResponse = new Response(null, { status: 204 });
     updateSessionMock.mockResolvedValue(expectedResponse as never);
