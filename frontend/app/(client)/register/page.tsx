@@ -4,6 +4,11 @@ import { Check, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  MIN_PASSWORD_LENGTH,
+  PASSWORD_REQUIREMENTS_MESSAGE,
+  validateNewPassword,
+} from "@/lib/password";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { EXISTING_ACCOUNT_MESSAGE, isExistingAccountSignUp } from "@/lib/supabase/sign-up";
@@ -51,8 +56,9 @@ export default function Register() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (formData.password !== formData.confirmPassword) {
-      setErrorMessage("Passwords do not match.");
+    const passwordError = validateNewPassword(formData.password, formData.confirmPassword);
+    if (passwordError) {
+      setErrorMessage(passwordError);
       return;
     }
 
@@ -268,6 +274,7 @@ export default function Register() {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
+                    aria-describedby="password-requirements"
                     required
                     className="w-full px-4 py-3 pr-12 rounded-xl border border-[#f3ede4] bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a930] transition-all placeholder:text-[#2d2520]/80 text-[#2d2520]"
                     placeholder="Create a strong password"
@@ -282,6 +289,9 @@ export default function Register() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                <p id="password-requirements" className="mt-2 text-sm leading-6 text-[#6b5e52]">
+                  Use at least {MIN_PASSWORD_LENGTH} characters. {PASSWORD_REQUIREMENTS_MESSAGE}
+                </p>
               </div>
 
               <div>

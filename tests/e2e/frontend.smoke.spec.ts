@@ -26,6 +26,38 @@ async function mockPublicSupabaseContext(page: Page) {
   await page.route("**/rest/v1/business_hours*", (route) => fulfillSupabaseJson(route, null));
 }
 
+test("registration rejects weak passwords before contacting Supabase", async ({ page }) => {
+  let signUpRequests = 0;
+  await page.route("**/auth/v1/signup", (route) => {
+    signUpRequests += 1;
+    return fulfillSupabaseJson(route, { error: "A weak password reached Supabase" }, 500);
+  });
+  await page.goto("/register");
+
+  await expect(page.getByText(/at least 8 characters/i)).toBeVisible();
+  await page.locator('input[name="username"]').fill("Password Policy Test");
+  await page.locator('input[name="email"]').fill("password-policy@example.com");
+
+  const password = page.locator('input[name="password"]');
+  const confirmation = page.locator('input[name="confirmPassword"]');
+  await password.fill("Ab1!");
+  await confirmation.fill("Ab1!");
+  await page.getByRole("button", { name: "Create Account" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Password must be at least 8 characters." }),
+  ).toBeVisible();
+
+  await password.fill("lowercase1!");
+  await confirmation.fill("lowercase1!");
+  await page.getByRole("button", { name: "Create Account" }).click();
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "one lowercase letter, one uppercase letter, one number, and one symbol",
+    }),
+  ).toBeVisible();
+  expect(signUpRequests).toBe(0);
+});
+
 test("the landing page presents the primary booking journey", async ({ page }) => {
   await page.route("**/rest/v1/announcements*", (route) =>
     fulfillSupabaseJson(route, {
