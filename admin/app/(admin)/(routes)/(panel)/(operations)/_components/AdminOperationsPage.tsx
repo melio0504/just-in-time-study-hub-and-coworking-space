@@ -208,8 +208,8 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
 
     const { data, error, count } = await createClient()
       .from("audit_logs")
-      .select("*, profile:profiles!inner(full_name, email)", { count: "exact" })
-      .eq("profile.role", "staff")
+      .select("*, profile:profiles(full_name, email)", { count: "exact" })
+      .not("actor_id", "is", null)
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .range(from, from + logsPerPage - 1);
@@ -1090,7 +1090,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
           <PageHeading
             eyebrow="Security & accountability"
             title="Access logs"
-            detail="A realtime history of employee account activity."
+            detail="A realtime history of administrator and employee account activity."
           />
           <div
             className="overflow-hidden rounded-3xl border border-[#e8dfd4] bg-white shadow-sm"
@@ -1111,7 +1111,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
                   {logs.map((log) => (
                     <tr key={log.id} className="border-t border-[#eee6dc]">
                       <td className="px-5 py-4 font-medium text-[#2d2520]">
-                        {log.profile?.full_name || "Former employee account"}
+                        {log.profile?.full_name || "Former account"}
                       </td>
                       <td className="px-5 py-4 text-sm text-[#6b5e52]">
                         {log.profile?.email || "—"}
@@ -1133,7 +1133,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
               </table>
             </div>
             {logs.length === 0 && (
-              <EmptyState icon={ShieldCheck} text="No employee activity has been logged yet." />
+              <EmptyState icon={ShieldCheck} text="No account activity has been logged yet." />
             )}
             <LogPagination
               currentPage={logPage}
@@ -1577,7 +1577,7 @@ function LogPagination({
     >
       <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
         <p className="text-sm font-medium text-[#5f5248]">
-          Showing {firstResult}–{lastResult} of {resultCount} employee activities
+          Showing {firstResult}–{lastResult} of {resultCount} account activities
         </p>
         <div className="flex flex-wrap items-center justify-center gap-2">
           <button
