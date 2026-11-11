@@ -3,6 +3,8 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { type DashboardAuditLog, DashboardDataProvider } from "./_components/DashboardDataProvider";
 
+const logsPerPage = 10;
+
 export default async function DashboardLayout({
   children,
 }: Readonly<{
@@ -32,9 +34,11 @@ export default async function DashboardLayout({
         .order("created_at", { ascending: false }),
       supabase
         .from("audit_logs")
-        .select("*, profile:profiles(full_name, email)")
+        .select("*, profile:profiles!inner(full_name, email)", { count: "exact" })
+        .eq("profile.role", "staff")
         .order("created_at", { ascending: false })
-        .limit(200),
+        .order("id", { ascending: false })
+        .range(0, logsPerPage - 1),
     ]);
   const firstError =
     bookingResult.error ||
@@ -53,6 +57,7 @@ export default async function DashboardLayout({
         walkIns: walkInResult.data ?? [],
         announcements: announcementResult.data ?? [],
         logs: (logResult.data ?? []) as DashboardAuditLog[],
+        logCount: logResult.count ?? 0,
         error: firstError?.message ?? "",
       }}
     >

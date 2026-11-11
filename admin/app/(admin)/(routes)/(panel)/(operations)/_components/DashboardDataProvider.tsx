@@ -15,6 +15,7 @@ export type DashboardInitialData = {
   walkIns: Tables<"walk_in_occupancies">[];
   announcements: Tables<"announcements">[];
   logs: DashboardAuditLog[];
+  logCount: number;
   error: string;
 };
 

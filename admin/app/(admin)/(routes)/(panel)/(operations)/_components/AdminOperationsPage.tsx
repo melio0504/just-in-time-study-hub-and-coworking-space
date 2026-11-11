@@ -61,6 +61,7 @@ const today = () =>
   }).format(new Date());
 const cleanForm: NoticeForm = { date: today(), title: "", description: "", status: "published" };
 const announcementsPerPage = 6;
+const logsPerPage = 10;
 const terminalStatuses = new Set(["cancelled", "completed", "declined", "no_show"]);
 const availabilityTimes = [
   ["00:00", "12:00 AM"],
@@ -125,16 +126,6 @@ function statusStyle(status: string) {
   return "bg-amber-100 text-amber-800";
 }
 
-function isAutomationLog(log: DashboardAuditLog) {
-  return (
-    log.actor_id === null &&
-    typeof log.details === "object" &&
-    log.details !== null &&
-    !Array.isArray(log.details) &&
-    log.details.source === "automation"
-  );
-}
-
 export function AdminOperationsPage({ section }: { section: OperationsSection }) {
   const access = useAdminAccess();
   const initialData = useDashboardInitialData();
@@ -152,6 +143,11 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const [walkIns, setWalkIns] = useState<WalkIn[]>(initialData.walkIns);
   const [announcements, setAnnouncements] = useState<Announcement[]>(initialData.announcements);
   const [logs, setLogs] = useState<DashboardAuditLog[]>(initialData.logs);
+  const [logCount, setLogCount] = useState(initialData.logCount);
+  const [logPage, setLogPage] = useState(1);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const logPageRef = useRef(1);
+  const logRequestRef = useRef(0);
   const [selectedDate, setSelectedDate] = useState(today());
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedDuration, setSelectedDuration] = useState("");
@@ -205,9 +201,43 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     setAvailabilityLoading(false);
   }, [selectedDate, selectedDuration, selectedTime]);
 
+  const loadLogs = useCallback(async (page: number) => {
+    const requestId = ++logRequestRef.current;
+    const from = (page - 1) * logsPerPage;
+    setLogsLoading(true);
+
+    const { data, error, count } = await createClient()
+      .from("audit_logs")
+      .select("*, profile:profiles!inner(full_name, email)", { count: "exact" })
+      .eq("profile.role", "staff")
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, from + logsPerPage - 1);
+
+    if (requestId !== logRequestRef.current) return;
+
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setLogs((data ?? []) as DashboardAuditLog[]);
+      setLogCount(count ?? 0);
+    }
+    setLogsLoading(false);
+  }, []);
+
+  const changeLogPage = (page: number) => {
+    const pageCount = Math.max(1, Math.ceil(logCount / logsPerPage));
+    const nextPage = Math.min(Math.max(page, 1), pageCount);
+    if (nextPage === logPageRef.current) return;
+
+    logPageRef.current = nextPage;
+    setLogPage(nextPage);
+    void loadLogs(nextPage);
+  };
+
   const loadData = useCallback(async () => {
     const supabase = createClient();
-    const [bookingResult, checkInResult, seatResult, walkInResult, announcementResult, logResult] =
+    const [bookingResult, checkInResult, seatResult, walkInResult, announcementResult] =
       await Promise.all([
         supabase.from("bookings").select().order("created_at", { ascending: false }).limit(250),
         supabase
@@ -226,26 +256,19 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
           .select()
           .order("starts_at", { ascending: false, nullsFirst: false })
           .order("created_at", { ascending: false }),
-        supabase
-          .from("audit_logs")
-          .select("*, profile:profiles(full_name, email)")
-          .order("created_at", { ascending: false })
-          .limit(200),
       ]);
     const firstError =
       bookingResult.error ||
       checkInResult.error ||
       seatResult.error ||
       walkInResult.error ||
-      announcementResult.error ||
-      logResult.error;
+      announcementResult.error;
     if (firstError) setMessage(firstError.message);
     setBookings(bookingResult.data ?? []);
     setCheckIns(checkInResult.data ?? []);
     setSeats(seatResult.data ?? []);
     setWalkIns(walkInResult.data ?? []);
     setAnnouncements(announcementResult.data ?? []);
-    setLogs((logResult.data ?? []) as DashboardAuditLog[]);
   }, []);
 
   useEffect(() => {
@@ -281,7 +304,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "audit_logs" },
-        () => void loadData(),
+        () => void loadLogs(logPageRef.current),
       )
       .subscribe((status) => {
         if (status === "SUBSCRIBED") reloadOperations();
@@ -289,7 +312,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [loadData, loadSeatAvailability]);
+  }, [loadData, loadLogs, loadSeatAvailability]);
 
   useEffect(() => {
     const refreshAvailability = () => void loadSeatAvailability();
@@ -404,6 +427,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     (currentAnnouncementPage - 1) * announcementsPerPage,
     currentAnnouncementPage * announcementsPerPage,
   );
+  const logPageCount = Math.max(1, Math.ceil(logCount / logsPerPage));
 
   const beginAvailabilityWindowChange = () => {
     availabilityRequestRef.current += 1;
@@ -1066,9 +1090,12 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
           <PageHeading
             eyebrow="Security & accountability"
             title="Access logs"
-            detail="A realtime history of staff activity and automated operational changes."
+            detail="A realtime history of employee account activity."
           />
-          <div className="overflow-hidden rounded-3xl border border-[#e8dfd4] bg-white shadow-sm">
+          <div
+            className="overflow-hidden rounded-3xl border border-[#e8dfd4] bg-white shadow-sm"
+            aria-busy={logsLoading}
+          >
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-left">
                 <thead className="bg-[#faf7f2] text-xs uppercase tracking-wider text-[#5f5248]">
@@ -1081,38 +1108,40 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
                   </tr>
                 </thead>
                 <tbody>
-                  {logs.map((log) => {
-                    const automated = isAutomationLog(log);
-                    return (
-                      <tr key={log.id} className="border-t border-[#eee6dc]">
-                        <td className="px-5 py-4 font-medium text-[#2d2520]">
-                          {automated
-                            ? "System automation"
-                            : log.profile?.full_name || "Former staff account"}
-                        </td>
-                        <td className="px-5 py-4 text-sm text-[#6b5e52]">
-                          {automated ? "Scheduled database job" : log.profile?.email || "—"}
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className="rounded-full bg-[#fef3dc] px-3 py-1 text-sm text-[#8a671a]">
-                            {log.action}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 text-sm text-[#6b5e52]">
-                          {titleCase(log.entity_type)}
-                        </td>
-                        <td className="px-5 py-4 text-sm text-[#6b5e52]">
-                          {formatDateTime(log.created_at)}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {logs.map((log) => (
+                    <tr key={log.id} className="border-t border-[#eee6dc]">
+                      <td className="px-5 py-4 font-medium text-[#2d2520]">
+                        {log.profile?.full_name || "Former employee account"}
+                      </td>
+                      <td className="px-5 py-4 text-sm text-[#6b5e52]">
+                        {log.profile?.email || "—"}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="rounded-full bg-[#fef3dc] px-3 py-1 text-sm text-[#8a671a]">
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-sm text-[#6b5e52]">
+                        {titleCase(log.entity_type)}
+                      </td>
+                      <td className="px-5 py-4 text-sm text-[#6b5e52]">
+                        {formatDateTime(log.created_at)}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
             {logs.length === 0 && (
-              <EmptyState icon={ShieldCheck} text="No staff access has been logged yet." />
+              <EmptyState icon={ShieldCheck} text="No employee activity has been logged yet." />
             )}
+            <LogPagination
+              currentPage={logPage}
+              pageCount={logPageCount}
+              resultCount={logCount}
+              loading={logsLoading}
+              onPageChange={changeLogPage}
+            />
           </div>
         </>
       )}
@@ -1514,6 +1543,79 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
         </div>
       )}
     </div>
+  );
+}
+
+function LogPagination({
+  currentPage,
+  pageCount,
+  resultCount,
+  loading,
+  onPageChange,
+}: {
+  currentPage: number;
+  pageCount: number;
+  resultCount: number;
+  loading: boolean;
+  onPageChange: (page: number) => void;
+}) {
+  if (resultCount <= logsPerPage) return null;
+
+  const visiblePageCount = Math.min(5, pageCount);
+  const firstVisiblePage = Math.max(1, Math.min(currentPage - 2, pageCount - 4));
+  const visiblePages = Array.from(
+    { length: visiblePageCount },
+    (_, index) => firstVisiblePage + index,
+  );
+  const firstResult = (currentPage - 1) * logsPerPage + 1;
+  const lastResult = Math.min(currentPage * logsPerPage, resultCount);
+
+  return (
+    <nav
+      aria-label="Access log pagination"
+      className="border-t border-[#eee6dc] bg-[#faf7f2] px-5 py-4"
+    >
+      <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+        <p className="text-sm font-medium text-[#5f5248]">
+          Showing {firstResult}–{lastResult} of {resultCount} employee activities
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1 || loading}
+            className="rounded-xl border border-[#cfc3b6] bg-white px-4 py-2 text-sm font-semibold text-[#4f443c] hover:bg-[#f7f1e8] disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            Previous
+          </button>
+          {visiblePages.map((page) => (
+            <button
+              key={page}
+              type="button"
+              onClick={() => onPageChange(page)}
+              disabled={loading}
+              aria-label={`Go to access log page ${page}`}
+              aria-current={page === currentPage ? "page" : undefined}
+              className={`min-w-10 rounded-xl border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${
+                page === currentPage
+                  ? "border-[#2d2520] bg-[#2d2520] text-white"
+                  : "border-[#cfc3b6] bg-white text-[#4f443c] hover:bg-[#f7f1e8]"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === pageCount || loading}
+            className="rounded-xl border border-[#cfc3b6] bg-white px-4 py-2 text-sm font-semibold text-[#4f443c] hover:bg-[#f7f1e8] disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </nav>
   );
 }
 
