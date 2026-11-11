@@ -160,6 +160,9 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const [announcementFilter, setAnnouncementFilter] = useState<AnnouncementFilter>("all");
   const [announcementSearch, setAnnouncementSearch] = useState("");
   const [announcementPage, setAnnouncementPage] = useState(1);
+  const [archiveTarget, setArchiveTarget] = useState<Announcement | null>(null);
+  const [archiveError, setArchiveError] = useState("");
+  const [archiving, setArchiving] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
   const [cancelReason, setCancelReason] = useState("Cancelled by staff");
@@ -325,6 +328,25 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
       window.removeEventListener("focus", refreshAvailability);
     };
   }, [loadSeatAvailability]);
+
+  useEffect(() => {
+    if (!archiveTarget) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !archiving) {
+        setArchiveTarget(null);
+        setArchiveError("");
+      }
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [archiveTarget, archiving]);
 
   const seatCodeById = useMemo(() => new Map(seats.map((seat) => [seat.id, seat.code])), [seats]);
   const activeWalkInByCode = useMemo(
@@ -606,14 +628,39 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
     }
     setSaving(false);
   };
-  const archiveAnnouncement = async (announcement: Announcement) => {
-    if (!window.confirm(`Archive “${announcement.title}”?`)) return;
+  const requestAnnouncementArchive = (announcement: Announcement) => {
+    setArchiveTarget(announcement);
+    setArchiveError("");
+  };
+
+  const closeAnnouncementArchive = () => {
+    if (archiving) return;
+    setArchiveTarget(null);
+    setArchiveError("");
+  };
+
+  const archiveAnnouncement = async (event: React.SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!archiveTarget || archiving) return;
+
+    setArchiving(true);
+    setArchiveError("");
+    setMessage("");
     const { error } = await createClient()
       .from("announcements")
       .update({ status: "archived" })
-      .eq("id", announcement.id);
-    setMessage(error ? error.message : "Announcement archived.");
-    if (!error) await loadData();
+      .eq("id", archiveTarget.id);
+
+    if (error) {
+      setArchiveError(error.message);
+      setArchiving(false);
+      return;
+    }
+
+    setArchiveTarget(null);
+    setArchiving(false);
+    setMessage("Announcement archived.");
+    await loadData();
   };
 
   if (!canViewSection) {
@@ -1063,7 +1110,7 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
                       </button>
                       {item.status !== "archived" && (
                         <button
-                          onClick={() => archiveAnnouncement(item)}
+                          onClick={() => requestAnnouncementArchive(item)}
                           className="rounded-xl border border-red-100 p-2.5 text-red-600 hover:bg-red-50"
                           title="Archive"
                         >
@@ -1144,6 +1191,82 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
             />
           </div>
         </>
+      )}
+
+      {archiveTarget && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#2d2520]/55 p-4 backdrop-blur-sm"
+          onMouseDown={closeAnnouncementArchive}
+        >
+          <form
+            onSubmit={archiveAnnouncement}
+            className="w-full max-w-lg rounded-3xl bg-white p-6 text-[#2d2520] shadow-2xl sm:p-7"
+            onMouseDown={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="archive-announcement-title"
+            aria-describedby="archive-announcement-description"
+          >
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700">
+                  <Trash2 className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-red-700">
+                    Announcement status
+                  </p>
+                  <h2 id="archive-announcement-title" className="mt-1 text-2xl font-semibold">
+                    Archive announcement?
+                  </h2>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeAnnouncementArchive}
+                disabled={archiving}
+                className="rounded-xl p-2 text-[#4f443c] hover:bg-[#f7f1e8] disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Close announcement archive dialog"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p id="archive-announcement-description" className="text-sm leading-6 text-[#574b42]">
+              Archive “{archiveTarget.title}”? It will no longer appear as an active customer
+              announcement, but it will remain available in the archived list.
+            </p>
+
+            {archiveError && (
+              <p
+                role="alert"
+                className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"
+              >
+                {archiveError}
+              </p>
+            )}
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={closeAnnouncementArchive}
+                disabled={archiving}
+                autoFocus
+                className="rounded-xl border border-[#b9aa9b] bg-white px-5 py-3 font-semibold text-[#3f3630] hover:bg-[#f7f1e8] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Keep announcement
+              </button>
+              <button
+                type="submit"
+                disabled={archiving}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {archiving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {archiving ? "Archiving…" : "Archive announcement"}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
 
       {walkInTarget && (
