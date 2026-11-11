@@ -102,7 +102,7 @@ export default function ForgotPasswordPage() {
                     Google.
                   </p>
                   <Link
-                    href="/login"
+                    href="/register"
                     className="mb-3 block w-full rounded-full bg-[#e5a930] px-8 py-3 text-white transition-shadow hover:shadow-lg"
                   >
                     Go to sign in
