@@ -1582,11 +1582,12 @@ function LogPagination({
         <div className="flex flex-wrap items-center justify-center gap-2">
           <button
             type="button"
-            onClick={() => onPageChange(currentPage - 1)}
+            onClick={() => onPageChange(1)}
             disabled={currentPage === 1 || loading}
+            aria-label="Go to first access log page"
             className="rounded-xl border border-[#cfc3b6] bg-white px-4 py-2 text-sm font-semibold text-[#4f443c] hover:bg-[#f7f1e8] disabled:cursor-not-allowed disabled:opacity-45"
           >
-            Previous
+            First
           </button>
           {visiblePages.map((page) => (
             <button
@@ -1607,11 +1608,12 @@ function LogPagination({
           ))}
           <button
             type="button"
-            onClick={() => onPageChange(currentPage + 1)}
+            onClick={() => onPageChange(pageCount)}
             disabled={currentPage === pageCount || loading}
+            aria-label="Go to last access log page"
             className="rounded-xl border border-[#cfc3b6] bg-white px-4 py-2 text-sm font-semibold text-[#4f443c] hover:bg-[#f7f1e8] disabled:cursor-not-allowed disabled:opacity-45"
           >
-            Next
+            Last
           </button>
         </div>
       </div>
