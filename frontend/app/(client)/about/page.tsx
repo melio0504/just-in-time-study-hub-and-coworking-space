@@ -41,7 +41,7 @@ export default function About() {
               Where Time Meets <span className="text-[#e5a930]">Purpose</span>
             </h1>
             <p className="text-xl text-[#6b5e52] leading-relaxed max-w-3xl mx-auto">
-              Just In Time Study Hub is more than a workspace. We&apos;re dedicated to helping you
+              Just In Time Study Hub and Coworking Space is more than a workspace. We&apos;re dedicated to helping you
               reclaim focus in an age of distraction.
             </p>
           </motion.div>
@@ -61,7 +61,7 @@ export default function About() {
               <h2 className="text-5xl md:text-4xl mb-6 text-[#2d2520]">Our Story</h2>
               <div className="space-y-4 text-lg md:text-lg text-[#6b5e52] leading-relaxed">
                 <p>
-                  Founded in 2019, Just In Time Study Hub emerged from a simple observation.
+                  Founded in 2019, Just In Time Study Hub and Coworking Space emerged from a simple observation.
                   Students and professionals needed more than just a desk. They needed an
                   environment designed for success.
                 </p>
