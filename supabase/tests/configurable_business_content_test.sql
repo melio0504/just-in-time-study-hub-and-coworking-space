@@ -184,7 +184,7 @@ select throws_ok(
     )
   $$,
   '22023',
-  'Choose between 1 and 2 seats',
+  'Choose between 1 and 2 unique seats',
   'the configured maximum seat count is enforced in the database'
 );
 select throws_ok(

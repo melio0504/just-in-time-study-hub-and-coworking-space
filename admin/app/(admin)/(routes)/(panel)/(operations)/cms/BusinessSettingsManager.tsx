@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
+import { TOTAL_SEATS } from "@/lib/seats";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables, TablesUpdate } from "@/lib/supabase/database.types";
 
@@ -744,7 +744,7 @@ export function BusinessSettingsManager() {
               <NumberSetting
                 label="Maximum seats"
                 min={1}
-                max={5}
+                max={TOTAL_SEATS}
                 value={settings.max_seats_per_booking}
                 onChange={(value) => setSettings({ ...settings, max_seats_per_booking: value })}
                 suffix="per booking"
