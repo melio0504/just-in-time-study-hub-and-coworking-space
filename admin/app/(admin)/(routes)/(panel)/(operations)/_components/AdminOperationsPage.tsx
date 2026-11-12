@@ -29,6 +29,7 @@ import type { Tables } from "@/lib/supabase/database.types";
 import { useAdminAccess } from "../../../_components/AdminShell";
 import { SeatingPlanMini } from "../../../_components/SeatingPlanMini";
 import { type DashboardAuditLog, useDashboardInitialData } from "./DashboardDataProvider";
+import { ReservationSelect } from "./ReservationSelect";
 
 type Booking = Tables<"bookings">;
 type CheckIn = Tables<"check_in_sessions">;
@@ -416,6 +417,11 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
   const availableDurationOptions = availabilityDurations.filter(
     ([value]) => Number(value) <= getHoursUntilClosing(selectedTime),
   );
+  const dashboardTimeOptions = [["", "All operating day"], ...availabilityTimes] as const;
+  const dashboardDurationOptions = [
+    ["", selectedTime ? "Select duration" : "All day"],
+    ...availableDurationOptions,
+  ] as const;
   const filteredBookings = useMemo(
     () =>
       bookings.filter((booking) => {
@@ -723,49 +729,46 @@ export function AdminOperationsPage({ section }: { section: OperationsSection })
                   className="w-full bg-transparent font-semibold text-[#2d2520] outline-none"
                 />
               </label>
-              <label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wider">
+              <div className="text-sm text-[#6b5e52]">
+                <label
+                  htmlFor="dashboard-start-time"
+                  className="mb-1 block text-xs font-semibold uppercase tracking-wider"
+                >
                   Start time
-                </span>
-                <select
+                </label>
+                <ReservationSelect
+                  id="dashboard-start-time"
                   value={selectedTime}
-                  onChange={(event) => {
+                  options={[...dashboardTimeOptions]}
+                  onChange={(value) => {
                     beginAvailabilityWindowChange();
-                    const value = event.target.value;
                     setSelectedTime(value);
                     setSelectedDuration(value ? "1" : "");
                   }}
-                  className="w-full bg-transparent font-semibold text-[#2d2520] outline-none"
+                  placeholder="All operating day"
+                  listboxLabel="Dashboard start times"
+                />
+              </div>
+              <div className="text-sm text-[#6b5e52]">
+                <label
+                  htmlFor="dashboard-duration"
+                  className="mb-1 block text-xs font-semibold uppercase tracking-wider"
                 >
-                  <option value="">All operating day</option>
-                  {availabilityTimes.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="rounded-2xl border border-[#e8dfd4] bg-white px-4 py-3 text-sm text-[#6b5e52]">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wider">
                   Duration
-                </span>
-                <select
+                </label>
+                <ReservationSelect
+                  id="dashboard-duration"
                   value={selectedDuration}
                   disabled={!selectedTime}
-                  onChange={(event) => {
+                  options={[...dashboardDurationOptions]}
+                  onChange={(value) => {
                     beginAvailabilityWindowChange();
-                    setSelectedDuration(event.target.value);
+                    setSelectedDuration(value);
                   }}
-                  className="w-full bg-transparent font-semibold text-[#2d2520] outline-none disabled:text-[#9b9188]"
-                >
-                  <option value="">{selectedTime ? "Select duration" : "All day"}</option>
-                  {availableDurationOptions.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  placeholder={selectedTime ? "Select duration" : "All day"}
+                  listboxLabel="Dashboard reservation durations"
+                />
+              </div>
             </div>
           </div>
           {overtimeBookings.length > 0 && (
