@@ -35,7 +35,7 @@ update public.bookings
 set status = 'confirmed', payment_status = 'paid', hold_expires_at = null
 where id = current_setting('test.booking_id')::uuid;
 insert into public.payments (booking_id, method, status, amount_cents, paid_at)
-values (current_setting('test.booking_id')::uuid, 'qrph', 'paid', 5000, now());
+values (current_setting('test.booking_id')::uuid, 'qrph', 'paid', 8000, now());
 insert into public.qr_access_passes (booking_id, token_hash, expires_at)
 values (
   current_setting('test.booking_id')::uuid,
@@ -179,16 +179,14 @@ select set_config(
   true
 );
 set local role authenticated;
-select throws_ok(
+select lives_ok(
   format(
     'select public.customer_update_booking(%L::uuid, current_date + 52, %L::time, array[%L])',
     current_setting('test.booking_id'),
     '10:00',
     'TP98'
   ),
-  'P0001',
-  'Choose seats with the same total price as the paid reservation',
-  'a customer cannot change a paid reservation total'
+  'seat-specific overtime rates do not affect a paid reservation reschedule'
 );
 select throws_ok(
   format(
@@ -199,7 +197,7 @@ select throws_ok(
     'SO04'
   ),
   '22023',
-  'Choose between 1 and 1 unique seats (the number paid for)',
+  'Choose exactly 1 unique seats (the number paid for)',
   'a customer cannot select more seats than the original paid quantity'
 );
 select throws_ok(

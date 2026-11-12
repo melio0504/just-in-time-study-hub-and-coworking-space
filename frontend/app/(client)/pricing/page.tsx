@@ -138,7 +138,7 @@ export default function Pricing() {
                 <thead>
                   <tr className="border-b border-[#f3ede4]">
                     <th className="text-left p-6 text-[#2d2520]">Duration</th>
-                    <th className="text-right p-6 text-[#2d2520]">Price</th>
+                    <th className="text-right p-6 text-[#2d2520]">Price per seat</th>
                   </tr>
                 </thead>
                 <tbody>

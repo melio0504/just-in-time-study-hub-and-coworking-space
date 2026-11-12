@@ -301,7 +301,7 @@ export function BusinessSettingsManager() {
       p_seat_type: seatType,
       p_hourly_rate_cents: centsFromInput(amount),
     });
-    setMessage(error?.message ?? `${labelForSeatType(seatType)} reservation rate saved.`);
+    setMessage(error?.message ?? `${labelForSeatType(seatType)} overtime rate saved.`);
     setSaving("");
     if (!error) await load();
   };
@@ -537,7 +537,7 @@ export function BusinessSettingsManager() {
         <SettingsCard
           icon={PhilippinePeso}
           title="Customer pricing"
-          description="Hourly walk-in plans and package deals appear on the public pricing page immediately after saving."
+          description="Hourly plans set walk-in and online reservation prices. Package deals and hourly plans appear on the public pricing page immediately after saving."
         >
           <div className="space-y-6">
             <div>
@@ -712,8 +712,8 @@ export function BusinessSettingsManager() {
 
         <SettingsCard
           icon={Armchair}
-          title="Reservation seat rates"
-          description="These hourly rates calculate the online reservation total. Saving a category updates every active seat in it."
+          title="Overtime seat rates"
+          description="These per-seat hourly rates calculate reservation overtime charges. Saving a category updates every active seat in it."
         >
           <div className="grid min-w-0 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
             {seatRates.map((rate) => (

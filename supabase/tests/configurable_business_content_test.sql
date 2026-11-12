@@ -1,5 +1,5 @@
 begin;
-select plan(33);
+select plan(34);
 
 select has_table('public', 'business_hours', 'weekly business hours table exists');
 select has_table('public', 'business_closures', 'business closures table exists');
@@ -219,6 +219,17 @@ select throws_ok(
   '22023',
   'Reservations can only be made up to 90 days ahead',
   'the configured advance-booking window is enforced in the database'
+);
+select is(
+  (
+    select subtotal_cents
+    from public.create_booking(
+      'Pricing Sync Test', 'maria.santos.jit@gmail.com', current_date + 74,
+      '09:00'::time, 2::smallint, 'study-seat', array['TC91']
+    )
+  ),
+  (select price_cents from public.service_rate_plans where code = 'hours-2'),
+  'a two-hour online reservation uses the same price shown on the pricing page'
 );
 
 reset role;

@@ -61,8 +61,8 @@ SELECT is(
 );
 SELECT is(
   (SELECT subtotal_cents FROM public.bookings WHERE id = current_setting('test.booking_id')::uuid),
-  10000::bigint,
-  'booking creation calculates the subtotal from every selected seat'
+  16000::bigint,
+  'booking creation applies the public one-hour rate to every selected seat'
 );
 SELECT is(
   (
