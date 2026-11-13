@@ -491,7 +491,7 @@ export default function Home() {
             <h2 className="text-4xl md:text-5xl mb-6 text-[#2d2520]">
               Want to Know More About
               <br />
-              <span className="text-[#e5a930]">Just In Time Study Hub?</span>
+              <span className="text-[#e5a930]">Just In Time Study Hub and Coworking Space?</span>
             </h2>
             <p className="text-xl text-[#6b5e52] mb-8 max-w-3xl mx-auto">
               Explore our spaces, learn our story, or book a visit. We&apos;re here to help you find
