@@ -3,7 +3,7 @@
 import { Banknote, Clock3, History, Loader2, Plus, ReceiptText, UserRound, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { currentBusinessDateKey } from "@/lib/business-reports";
+import { currentBusinessDateKey, summarizeWalkInCheckoutActivity } from "@/lib/business-reports";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables } from "@/lib/supabase/database.types";
 import { useAdminAccess } from "../../_components/AdminShell";
@@ -137,19 +137,7 @@ export default function WalkInsPage() {
     [activeSeatIds, seats],
   );
   const today = currentBusinessDateKey();
-  const completedToday = completed.filter(
-    (walkIn) => walkIn.business_date === today && walkIn.status === "completed",
-  );
-  const revenueToday = completedToday.reduce(
-    (sum, walkIn) =>
-      sum + (walkIn.payment_status === "paid" ? (walkIn.charged_amount_cents ?? 0) : 0),
-    0,
-  );
-  const outstandingToday = completedToday.reduce(
-    (sum, walkIn) =>
-      sum + (walkIn.payment_status === "unpaid" ? (walkIn.charged_amount_cents ?? 0) : 0),
-    0,
-  );
+  const checkoutActivity = summarizeWalkInCheckoutActivity(completed, today);
 
   const getRate = useCallback(
     (minutes: number) =>
@@ -372,19 +360,19 @@ export default function WalkInsPage() {
         <SummaryCard
           icon={UserRound}
           label="Completed today"
-          value={String(completedToday.length)}
+          value={String(checkoutActivity.completed)}
           detail="Walk-in customers served"
         />
         <SummaryCard
           icon={Banknote}
           label="Paid today"
-          value={peso(revenueToday)}
+          value={peso(checkoutActivity.paidCents)}
           detail="Collected walk-in revenue"
         />
         <SummaryCard
           icon={ReceiptText}
           label="Outstanding"
-          value={peso(outstandingToday)}
+          value={peso(checkoutActivity.outstandingCents)}
           detail="Unpaid completed sessions"
         />
       </div>

@@ -5,6 +5,7 @@ import {
   getReportRange,
   type ReportMetric,
   summarizeReport,
+  summarizeWalkInCheckoutActivity,
 } from "./business-reports";
 
 describe("getReportRange", () => {
@@ -34,6 +35,46 @@ describe("getReportRange", () => {
 
   it("formats a readable reporting period", () => {
     expect(formatReportPeriod("monthly", "2026-10-01", "2026-10-31")).toBe("October 2026");
+  });
+});
+
+describe("summarizeWalkInCheckoutActivity", () => {
+  it("groups completed sessions by checkout date instead of their starting business date", () => {
+    const summary = summarizeWalkInCheckoutActivity(
+      [
+        {
+          business_date: "2026-10-11",
+          ended_at: "2026-10-12T01:00:00.000Z",
+          charged_amount_cents: 37000,
+          payment_status: "paid",
+          status: "completed",
+        },
+        {
+          business_date: "2026-10-11",
+          ended_at: "2026-10-12T01:30:00.000Z",
+          charged_amount_cents: 12000,
+          payment_status: "unpaid",
+          status: "completed",
+        },
+        {
+          business_date: "2026-10-11",
+          ended_at: "2026-10-11T23:30:00.000Z",
+          charged_amount_cents: 8000,
+          payment_status: "paid",
+          status: "completed",
+        },
+        {
+          business_date: "2026-10-12",
+          ended_at: "2026-10-12T02:00:00.000Z",
+          charged_amount_cents: 15000,
+          payment_status: "voided",
+          status: "voided",
+        },
+      ],
+      "2026-10-12",
+    );
+
+    expect(summary).toEqual({ completed: 2, paidCents: 37000, outstandingCents: 12000 });
   });
 });
 

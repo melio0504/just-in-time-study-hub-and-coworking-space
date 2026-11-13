@@ -45,6 +45,37 @@ export function currentBusinessDateKey(now = new Date()) {
   );
 }
 
+type WalkInCheckoutActivity = Pick<
+  ReportWalkIn,
+  "business_date" | "ended_at" | "charged_amount_cents" | "payment_status" | "status"
+>;
+
+export function summarizeWalkInCheckoutActivity(
+  walkIns: WalkInCheckoutActivity[],
+  businessDate: string,
+) {
+  return walkIns.reduce(
+    (summary, walkIn) => {
+      if (
+        walkIn.status !== "completed" ||
+        !walkIn.ended_at ||
+        currentBusinessDateKey(new Date(walkIn.ended_at)) !== businessDate
+      ) {
+        return summary;
+      }
+
+      summary.completed += 1;
+      if (walkIn.payment_status === "paid") {
+        summary.paidCents += walkIn.charged_amount_cents ?? 0;
+      } else if (walkIn.payment_status === "unpaid") {
+        summary.outstandingCents += walkIn.charged_amount_cents ?? 0;
+      }
+      return summary;
+    },
+    { completed: 0, paidCents: 0, outstandingCents: 0 },
+  );
+}
+
 export function getReportRange(period: ReportPeriod, anchor: string) {
   const date = parseDateKey(anchor);
   const start = new Date(date);
